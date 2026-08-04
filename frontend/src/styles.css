@@ -1529,8 +1529,8 @@ body.force-mobile::before {
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
-/* Combined Real Mobile Devices AND Force Mobile Toggle Mode */
-@media screen and (max-width: 768px), body.force-mobile {
+/* Real Mobile Devices (Width <= 768px) */
+@media screen and (max-width: 768px) {
 
   /* Global Container Adjustments */
   body, .landing-page, .app-container {
@@ -2003,6 +2003,192 @@ body.force-mobile::before {
     padding: 18px 14px !important;
     border-radius: 20px !important;
   }
+}
+
+/* Force Mobile Mode (Simulated Phone View on Desktop) */
+body.force-mobile,
+body.force-mobile .landing-page,
+body.force-mobile .app-container {
+  font-size: 13px !important;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .main-content {
+  padding: 12px 10px !important;
+  margin-left: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .top-header,
+body.force-mobile .main-header {
+  padding: 10px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  min-height: auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .header-brand,
+body.force-mobile .logo-area {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  font-size: 15px !important;
+}
+
+body.force-mobile .header-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  width: 100% !important;
+  gap: 6px !important;
+  justify-content: space-between !important;
+}
+
+body.force-mobile .header-actions button,
+body.force-mobile .header-actions .btn,
+body.force-mobile .view-toggle {
+  flex: 1 1 calc(50% - 4px) !important;
+  height: 38px !important;
+  padding: 6px 8px !important;
+  font-size: 11.5px !important;
+  text-align: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 84vw !important;
+  max-width: 320px !important;
+  z-index: 100000 !important;
+  box-shadow: 0 10px 50px rgba(0,0,0,0.8) !important;
+  transform: translateX(-100%) !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.force-mobile .sidebar.open {
+  transform: translateX(0) !important;
+}
+
+body.force-mobile .auth-card,
+body.force-mobile .signup-card,
+body.force-mobile .landing-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 12px 0 !important;
+  padding: 16px 12px !important;
+  border-radius: 18px !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .official-access {
+  width: 100% !important;
+  margin-top: 16px !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .official-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .official-btn {
+  width: 100% !important;
+  padding: 12px 14px !important;
+  min-height: 54px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  border-radius: 14px !important;
+  box-sizing: border-box !important;
+  border: 1px solid var(--border-subtle) !important;
+  background: rgba(255,255,255,0.04) !important;
+}
+
+body.force-mobile .twofa-modal-card {
+  width: 100% !important;
+  padding: 18px 14px !important;
+  border-radius: 18px !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .weather-widget-card {
+  width: 100% !important;
+  padding: 14px 12px !important;
+  border-radius: 18px !important;
+  margin-bottom: 14px !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .weather-metrics-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .toolbar-bar {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin-bottom: 14px !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .stats-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .analytics-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  width: 100% !important;
+}
+
+body.force-mobile .table-card,
+body.force-mobile .data-table-container {
+  width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  border-radius: 16px !important;
+  margin: 10px 0 !important;
+  box-sizing: border-box !important;
+}
+
+body.force-mobile .modal-container,
+body.force-mobile .form-modal-card {
+  width: 96vw !important;
+  max-width: 440px !important;
+  max-height: 88vh !important;
+  overflow-y: auto !important;
+  padding: 16px 12px !important;
+  border-radius: 20px !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
 }
 
 /* Extra Small Mobile Screens (<= 480px) */
