@@ -43,7 +43,13 @@ export class WeatherService {
     'calcutta': { lat: 22.5726, lon: 88.3639, country: 'India' },
     'mumbai': { lat: 19.0760, lon: 72.8777, country: 'India' },
     'delhi': { lat: 28.6139, lon: 77.2090, country: 'India' },
-    'bangalore': { lat: 12.9716, lon: 77.5946, country: 'India' }
+    'bangalore': { lat: 12.9716, lon: 77.5946, country: 'India' },
+    'berlin': { lat: 52.5200, lon: 13.4050, country: 'Germany' },
+    'zurich': { lat: 47.3769, lon: 8.5417, country: 'Switzerland' },
+    'toronto': { lat: 43.6532, lon: -79.3832, country: 'Canada' },
+    'chicago': { lat: 41.8781, lon: -87.6298, country: 'United States' },
+    'los angeles': { lat: 34.0522, lon: -118.2437, country: 'United States' },
+    'seoul': { lat: 37.5665, lon: 126.9780, country: 'South Korea' }
   };
 
   constructor(private http: HttpClient) {}
@@ -55,7 +61,7 @@ export class WeatherService {
     const preset = this.cityCoords[cityKey];
 
     if (preset) {
-      return this.fetchForecastData(preset.lat, preset.lon, cleanCity, preset.country);
+      return this.fetchForecastData(preset.lat, preset.lon, rawCity, preset.country);
     }
 
     // Geocode ANY destination city worldwide
@@ -64,12 +70,13 @@ export class WeatherService {
       switchMap(geo => {
         if (geo?.results && geo.results.length > 0) {
           const res = geo.results[0];
-          return this.fetchForecastData(res.latitude, res.longitude, res.name, res.country || 'Global');
+          const countryStr = res.country || (rawCity.includes(',') ? rawCity.split(',')[1].trim() : 'Global');
+          return this.fetchForecastData(res.latitude, res.longitude, rawCity, countryStr);
         }
-        return this.fetchForecastData(35.6762, 139.6503, cleanCity, 'Global');
+        return this.fetchForecastData(35.6762, 139.6503, rawCity, 'Global');
       }),
       catchError(() => {
-        return this.fetchForecastData(35.6762, 139.6503, cleanCity, 'Global');
+        return this.fetchForecastData(35.6762, 139.6503, rawCity, 'Global');
       })
     );
   }
@@ -113,9 +120,18 @@ export class WeatherService {
           });
         }
 
+        // Standardize city display name (strip redundant country if already present in cityName)
+        let displayCity = cityName;
+        let displayCountry = countryName;
+        if (cityName.includes(',')) {
+          const parts = cityName.split(',');
+          displayCity = parts[0].trim();
+          displayCountry = parts.slice(1).join(',').trim();
+        }
+
         return {
-          city: cityName,
-          country: countryName,
+          city: displayCity,
+          country: displayCountry,
           temperature: tempC,
           tempFahrenheit: tempF,
           feelsLike: Math.round(cur.apparent_temperature ?? tempC),
@@ -155,9 +171,16 @@ export class WeatherService {
 
   private getMockWeatherFallback(city: string, country: string): LiveDestinationWeather {
     const now = new Date();
+    let displayCity = city || 'Tokyo';
+    let displayCountry = country || 'Japan';
+    if (displayCity.includes(',')) {
+      const parts = displayCity.split(',');
+      displayCity = parts[0].trim();
+      displayCountry = parts.slice(1).join(',').trim();
+    }
     return {
-      city: city || 'Tokyo',
-      country: country || 'Japan',
+      city: displayCity,
+      country: displayCountry,
       temperature: 24,
       tempFahrenheit: 75,
       feelsLike: 25,

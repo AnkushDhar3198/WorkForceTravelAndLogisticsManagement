@@ -183,6 +183,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     public weatherService: WeatherService
   ) {}
 
+  get destinationList(): string[] {
+    const list = new Set<string>();
+    if (this.activeWeatherCity) list.add(this.activeWeatherCity);
+    this.travelRequests.forEach(r => {
+      if (r.destination) list.add(r.destination);
+    });
+    ['Tokyo, Japan', 'London, UK', 'New York, USA', 'Paris, France', 'Singapore', 'Sydney, Australia', 'San Francisco, USA', 'Frankfurt, Germany', 'Dubai, UAE', 'Kolkata, India', 'Bangalore, India', 'Zurich, Switzerland', 'Toronto, Canada'].forEach(c => list.add(c));
+    return Array.from(list);
+  }
+
   fetchLiveDestinationWeather(city?: string) {
     const targetCity = city || (this.travelRequests.length > 0 ? this.travelRequests[0].destination : 'Tokyo');
     this.activeWeatherCity = targetCity;

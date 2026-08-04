@@ -537,8 +537,13 @@
           </div>
 
           <div class="weather-search-wrap">
+            <!-- Destination Quick Selector Dropdown -->
+            <select class="weather-search-input" style="width:auto; max-width:220px; cursor:pointer;" [ngModel]="activeWeatherCity" (ngModelChange)="fetchLiveDestinationWeather($event)">
+              <option *ngFor="let dest of destinationList" [value]="dest">📍 {{dest}}</option>
+            </select>
+
             <!-- Search ANY City Worldwide -->
-            <input type="text" class="weather-search-input" placeholder="Search ANY city..." [(ngModel)]="weatherSearchInput" (keyup.enter)="onSearchWeather()">
+            <input type="text" class="weather-search-input" placeholder="Type city..." [(ngModel)]="weatherSearchInput" (keyup.enter)="onSearchWeather()">
             
             <button class="weather-refresh-btn" (click)="onSearchWeather()">🔍 Find</button>
 
