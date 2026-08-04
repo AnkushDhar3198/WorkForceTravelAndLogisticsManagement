@@ -79,16 +79,21 @@ export class AuthService {
   }
 
   /**
-   * 1-Click Official Login (Pre-fills Step 1 & 2)
+   * Direct 1-Click Login for Official Testing
    */
-  loginAsOfficial(employee: Employee): void {
-    const syntheticToken = 'Bearer ' + btoa(`${employee.id}:${employee.email}:${Date.now()}`);
-    localStorage.setItem('auth_token', syntheticToken);
-    localStorage.setItem('current_user', JSON.stringify(employee));
-    this.tokenSubject.next(syntheticToken);
-    this.currentUserSubject.next(employee);
-    this.step1Complete = false;
-    this.pendingEmail = '';
+  loginDirect(email: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/login`, { email }).pipe(
+      tap(res => {
+        if (res && res.token) {
+          localStorage.setItem('auth_token', res.token);
+          localStorage.setItem('current_user', JSON.stringify(res.employee));
+          this.tokenSubject.next(res.token);
+          this.currentUserSubject.next(res.employee);
+          this.step1Complete = false;
+          this.pendingEmail = '';
+        }
+      })
+    );
   }
 
   logout(): void {

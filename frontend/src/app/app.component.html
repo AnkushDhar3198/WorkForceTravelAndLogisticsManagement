@@ -40,7 +40,7 @@
     <!-- STEP 2: 2FA Verification Code -->
     <form *ngIf="auth.step1Complete" (ngSubmit)="onStep2Submit()">
       <div style="background: rgba(10,132,255,0.1); border: 1px solid rgba(10,132,255,0.2); border-radius: 12px; padding: 12px; margin-bottom: 20px; font-size: 13px; text-align: center;">
-        🔒 Step 1 Verified for <strong>{{auth.pendingEmail}}</strong>.<br>Please enter your 6-digit 2FA Security Code.
+        🔒 Step 1 Verified for <strong>{{auth.pendingEmail || loginEmail}}</strong>.<br>Please enter your 6-digit 2FA Security Code.
       </div>
 
       <div class="form-group">
@@ -61,51 +61,57 @@
       </button>
     </form>
 
-    <!-- 1-CLICK OFFICIAL LOGIN (Pre-fills Step 1 Passkey & Step 2 Code) -->
+    <!-- 1-CLICK OFFICIAL TEST LOGIN BUTTONS -->
     <div class="persona-picker">
       <div class="persona-title">1-Click Test Official Access</div>
       <div class="persona-grid">
-        <button class="persona-btn" (click)="quickLoginAsOfficial('travel.manager@cbg-enterprise.com')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('CTM')">
           <div>
             ✈️ Victoria Vance
             <span class="role">Corporate Travel Manager</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsOfficial('manager.david@cbg-enterprise.com')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('MGR')">
           <div>
             👨‍💼 David Chen
             <span class="role">Approving Manager</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsOfficial('finance.lisa@cbg-enterprise.com')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('FIN')">
           <div>
             💼 Lisa Park
             <span class="role">Finance & Procurement</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsOfficial('security.elena@cbg-enterprise.com')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('SEC')">
           <div>
             🛡️ Elena Rostova
             <span class="role">Security / Risk Officer</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsOfficial('logistics.raj@cbg-enterprise.com')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('LOG')">
           <div>
             📦 Raj Patel
             <span class="role">Logistics Coordinator</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsOfficial('employee.sarah@cbg-enterprise.com')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('EMP')">
           <div>
             👩‍💻 Sarah Jenkins
             <span class="role">Traveling Employee</span>
           </div>
         </button>
+      </div>
+
+      <!-- Auto-Fill Inputs Link -->
+      <div style="text-align: center; margin-top: 12px; font-size: 11px; color: var(--text-tertiary);">
+        Want to test manual 2-step verification?
+        <a href="javascript:void(0)" (click)="fillCredentials('CTM')" style="color: var(--accent-blue);">Auto-fill CTM Credentials</a>
       </div>
     </div>
   </div>
@@ -441,7 +447,6 @@
             <h2>Preferred Vendors</h2>
             <p>Corporate-negotiated travel contracts & rate management (BRD FR14)</p>
           </div>
-          <!-- Corporate Travel Manager Only Action -->
           <button class="btn btn-primary" (click)="openCreateVendorModal()" *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
             ✚ Add Preferred Vendor
           </button>
@@ -465,7 +470,6 @@
             <span class="vendor-badge" *ngFor="let badge of getVendorBadges(vendor.badges)">{{badge}}</span>
           </div>
 
-          <!-- Vendor Deletion for Corporate Travel Manager -->
           <div style="margin-top: 14px; text-align: right;" *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
             <button class="btn btn-sm btn-danger" (click)="deleteVendor(vendor.id)">🗑 Remove Vendor</button>
           </div>
@@ -483,7 +487,6 @@
             <h2>Asset Cargo & Logistics</h2>
             <p>Synchronized transport of prototypes, trade show booths & equipment (BRD FR6)</p>
           </div>
-          <!-- Logistics Coordinator Action -->
           <button class="btn btn-primary" (click)="openCreateShipmentModal()" *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR'">
             ✚ Dispatch New Shipment
           </button>
@@ -541,7 +544,6 @@
             <h2>Expenses & Audit</h2>
             <p>Digital receipt claims, fraud auditing, and payout approvals (BRD FR8 & FR9)</p>
           </div>
-          <!-- Employee Action -->
           <button class="btn btn-primary" (click)="openCreateExpenseModal()" *ngIf="auth.currentRole === 'EMPLOYEE'">
             ✚ Upload Expense Receipt
           </button>
@@ -563,7 +565,6 @@
             {{exp.auditStatus.replace('_', ' ')}}
           </span>
 
-          <!-- Finance Admin Payout Controls -->
           <div style="display:flex; gap:6px;" *ngIf="exp.auditStatus === 'PENDING_AUDIT' && (auth.currentRole === 'FINANCE_ADMIN' || auth.currentRole === 'MANAGER')">
             <button class="btn btn-sm btn-success" (click)="approveExpense(exp)">✓ Approve Payout</button>
             <button class="btn btn-sm btn-danger" (click)="flagExpense(exp)">⚑ Flag</button>
@@ -604,7 +605,6 @@
           <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;" *ngIf="loc.advisoryNotes">
             ⚠️ {{loc.advisoryNotes}}
           </div>
-          <!-- Risk Officer SOS Control -->
           <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)" *ngIf="auth.currentRole === 'RISK_OFFICER' || auth.currentRole === 'MANAGER'">
             🚨 Dispatch Emergency SOS
           </button>

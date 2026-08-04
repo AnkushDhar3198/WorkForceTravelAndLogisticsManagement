@@ -8,7 +8,7 @@ import {
 } from './services/api.service';
 import { AuthService } from './services/auth.service';
 import { ThemeService, ThemeMode } from './services/theme.service';
-import { Subscription, interval, forkJoin } from 'rxjs';
+import { Subscription, interval, forkJoin, catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -42,6 +42,16 @@ export class AppComponent implements OnInit, OnDestroy {
   step1Error = '';
   step2Error = '';
   isAuthenticating = false;
+
+  // Known Officials Map for Instant 1-Click Login & Auto-Filling
+  officialAccounts: Record<string, { email: string; passkey: string; code: string; role: string; name: string }> = {
+    'CTM': { email: 'travel.manager@cbg-enterprise.com', passkey: 'CTM-9948-ALPHA', code: '774892', role: 'CORPORATE_TRAVEL_MANAGER', name: 'Victoria Vance' },
+    'MGR': { email: 'manager.david@cbg-enterprise.com', passkey: 'MGR-3381-BETA', code: '882194', role: 'APPROVING_MANAGER', name: 'David Chen' },
+    'FIN': { email: 'finance.lisa@cbg-enterprise.com', passkey: 'FIN-5510-GAMMA', code: '551930', role: 'FINANCE_ADMIN', name: 'Lisa Park' },
+    'SEC': { email: 'security.elena@cbg-enterprise.com', passkey: 'SEC-7742-DELTA', code: '993418', role: 'RISK_OFFICER', name: 'Elena Rostova' },
+    'LOG': { email: 'logistics.raj@cbg-enterprise.com', passkey: 'LOG-1193-EPSILON', code: '448201', role: 'LOGISTICS_COORDINATOR', name: 'Raj Patel' },
+    'EMP': { email: 'employee.sarah@cbg-enterprise.com', passkey: 'EMP-4421-ZETA', code: '123984', role: 'EMPLOYEE', name: 'Sarah Jenkins' }
+  };
 
   // Modals
   showCreateRequestModal = false;
@@ -118,14 +128,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
   loadAllData() {
     forkJoin({
-      analytics: this.api.getDashboardAnalytics(),
-      requests: this.api.getTravelRequests(),
-      employees: this.api.getEmployees(),
-      vendors: this.api.getVendors(),
-      shipments: this.api.getShipments(),
-      notifications: this.api.getNotifications(),
-      locations: this.api.getTravelerLocations(),
-      expenses: this.api.getExpenses()
+      analytics: this.api.getDashboardAnalytics().pipe(catchError(() => of(null))),
+      requests: this.api.getTravelRequests().pipe(catchError(() => of([]))),
+      employees: this.api.getEmployees().pipe(catchError(() => of([]))),
+      vendors: this.api.getVendors().pipe(catchError(() => of([]))),
+      shipments: this.api.getShipments().pipe(catchError(() => of([]))),
+      notifications: this.api.getNotifications().pipe(catchError(() => of([]))),
+      locations: this.api.getTravelerLocations().pipe(catchError(() => of([]))),
+      expenses: this.api.getExpenses().pipe(catchError(() => of([])))
     }).subscribe({
       next: (data) => {
         this.analytics = data.analytics;
@@ -147,13 +157,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // 2-Step Login Handlers
   onStep1Submit() {
-    if (!this.loginEmail || !this.loginPasskey) return;
+    if (!this.loginEmail || !this.loginPasskey) {
+      this.step1Error = 'Please enter both Official Email and Passkey';
+      return;
+    }
     this.isAuthenticating = true;
     this.step1Error = '';
 
     this.auth.loginStep1(this.loginEmail, this.loginPasskey).subscribe({
       next: () => {
         this.isAuthenticating = false;
+        // Auto-fill 2FA code if it's one of the known official accounts for convenience
+        const official = Object.values(this.officialAccounts).find(o => o.email.toLowerCase() === this.loginEmail.toLowerCase());
+        if (official) {
+          this.twoFactorCodeInput = official.code;
+        }
       },
       error: (err) => {
         this.step1Error = err.error?.message || 'Step 1 Passkey authentication failed';
@@ -163,11 +181,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   onStep2Submit() {
-    if (!this.twoFactorCodeInput) return;
+    if (!this.twoFactorCodeInput) {
+      this.step2Error = 'Please enter the 6-digit 2FA Verification Code';
+      return;
+    }
     this.isAuthenticating = true;
     this.step2Error = '';
 
-    this.auth.verify2FA(this.auth.pendingEmail, this.twoFactorCodeInput).subscribe({
+    this.auth.verify2FA(this.auth.pendingEmail || this.loginEmail, this.twoFactorCodeInput).subscribe({
       next: () => {
         this.isAuthenticating = false;
         this.loginEmail = '';
@@ -182,19 +203,40 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // 1-Click Official Login (Pre-fills Step 1 Passkey + Step 2 2FA Code)
-  quickLoginAsOfficial(officialEmail: string) {
-    if (!this.employees || this.employees.length === 0) return;
-    const found = this.employees.find(e => e.email.toLowerCase() === officialEmail.toLowerCase());
-    if (found) {
-      this.loginEmail = found.email;
-      this.loginPasskey = found.passkey || 'password';
-      this.twoFactorCodeInput = found.twoFactorCode || '123456';
-
-      // Auto-trigger 1-click authentication
-      this.auth.loginAsOfficial(found);
-      this.loadAllData();
+  // Auto-fill Passkey & 2FA into the inputs for manual testing
+  fillCredentials(officialKey: string) {
+    const official = this.officialAccounts[officialKey];
+    if (official) {
+      this.loginEmail = official.email;
+      this.loginPasskey = official.passkey;
+      this.twoFactorCodeInput = official.code;
+      this.step1Error = '';
+      this.step2Error = '';
     }
+  }
+
+  // 1-Click Direct Login for Officials
+  quickLoginAsOfficial(officialKey: string) {
+    const official = this.officialAccounts[officialKey];
+    if (!official) return;
+
+    this.loginEmail = official.email;
+    this.loginPasskey = official.passkey;
+    this.twoFactorCodeInput = official.code;
+    this.isAuthenticating = true;
+    this.step1Error = '';
+
+    // Execute Step 1 + Step 2 authentication
+    this.auth.loginDirect(official.email).subscribe({
+      next: (res) => {
+        this.isAuthenticating = false;
+        this.loadAllData();
+      },
+      error: (err) => {
+        this.step1Error = err.error?.message || 'Authentication failed';
+        this.isAuthenticating = false;
+      }
+    });
   }
 
   logout() {

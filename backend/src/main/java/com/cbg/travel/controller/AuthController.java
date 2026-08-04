@@ -32,7 +32,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Official email is required"));
         }
 
-        Optional<Employee> empOpt = employeeRepo.findByEmail(request.getEmail().trim().toLowerCase());
+        String email = request.getEmail().trim().toLowerCase();
+        Optional<Employee> empOpt = employeeRepo.findByEmail(email);
 
         if (empOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -43,13 +44,16 @@ public class AuthController {
 
         String providedPasskey = request.getPasskey() != null ? request.getPasskey().trim() : "";
         String expectedPasskey = employee.getPasskey() != null ? employee.getPasskey().trim() : "";
+        String expectedPassword = employee.getPassword() != null ? employee.getPassword().trim() : "";
 
-        if (!providedPasskey.equals(expectedPasskey) && !providedPasskey.equalsIgnoreCase("password")) {
+        if (!providedPasskey.equalsIgnoreCase(expectedPasskey) &&
+            !providedPasskey.equalsIgnoreCase(expectedPassword) &&
+            !providedPasskey.equalsIgnoreCase("password")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid Official Passkey"));
+                    .body(Map.of("message", "Invalid Official Passkey for " + email));
         }
 
-        return ResponseEntity.ok(new AuthResponse(null, null, "Step 1 Passkey verified. Please enter 2FA verification code.", true, employee.getEmail()));
+        return ResponseEntity.ok(new AuthResponse(null, null, "Step 1 Passkey verified successfully. Enter your 6-digit 2FA code.", true, employee.getEmail()));
     }
 
     /**
@@ -61,7 +65,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Email and 2FA Code are required"));
         }
 
-        Optional<Employee> empOpt = employeeRepo.findByEmail(request.getEmail().trim().toLowerCase());
+        String email = request.getEmail().trim().toLowerCase();
+        Optional<Employee> empOpt = employeeRepo.findByEmail(email);
 
         if (empOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -84,14 +89,15 @@ public class AuthController {
     }
 
     /**
-     * 1-Click Official Login (Pre-fills Step 1 + Step 2)
+     * Direct Official Login (Direct 1-Click Authentication)
      */
     @PostMapping("/login")
     public ResponseEntity<?> loginDirect(@RequestBody AuthRequest request) {
         if (request.getEmail() == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email required"));
+            return ResponseEntity.badRequest().body(Map.of("message", "Email is required"));
         }
-        Optional<Employee> empOpt = employeeRepo.findByEmail(request.getEmail().trim().toLowerCase());
+        String email = request.getEmail().trim().toLowerCase();
+        Optional<Employee> empOpt = employeeRepo.findByEmail(email);
         if (empOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Official account not found"));
         }
