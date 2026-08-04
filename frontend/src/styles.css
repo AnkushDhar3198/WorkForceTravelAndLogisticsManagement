@@ -1570,79 +1570,82 @@ body.force-mobile {
 
   /* Hero Section */
   .landing-hero {
-    padding: 80px 16px 40px; text-align: center;
+    padding: 70px 16px 32px; text-align: center;
   }
   .landing-hero::before {
-    width: 300px; height: 300px;
+    width: 250px; height: 250px;
   }
   .hero-badge {
-    font-size: 11px; padding: 5px 12px; margin-bottom: 16px;
+    font-size: 10px; padding: 4px 10px; margin-bottom: 12px;
   }
   .hero-title {
-    font-size: 28px; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px;
+    font-size: 26px; letter-spacing: -0.8px; line-height: 1.15; margin-bottom: 10px;
   }
   .hero-subtitle {
-    font-size: 14px; line-height: 1.5; margin-bottom: 24px;
+    font-size: 13px; line-height: 1.45; margin-bottom: 20px;
     max-width: 100%;
   }
   .hero-actions {
-    flex-direction: column; gap: 10px; width: 100%;
+    flex-direction: column; gap: 8px; width: 100%;
   }
   .hero-actions .btn {
     width: 100%; justify-content: center;
   }
   .hero-actions .btn-lg {
-    padding: 14px 24px; font-size: 15px; border-radius: 14px;
+    padding: 12px 20px; font-size: 14px; border-radius: 12px;
   }
 
   /* Features Grid */
   .landing-features {
-    padding: 40px 16px;
+    padding: 32px 16px;
   }
   .section-label {
-    margin-bottom: 24px;
+    margin-bottom: 18px;
   }
   .section-label h2 {
-    font-size: 24px; letter-spacing: -0.5px;
+    font-size: 22px; letter-spacing: -0.5px;
   }
   .section-label p {
-    font-size: 13px;
+    font-size: 12px;
   }
   .features-grid {
-    grid-template-columns: 1fr; gap: 12px;
+    grid-template-columns: 1fr; gap: 10px;
   }
   .feature-card {
-    padding: 20px; border-radius: 16px;
+    padding: 16px; border-radius: 14px;
   }
   .feature-card:hover {
     transform: none;
   }
   .feature-icon {
-    width: 40px; height: 40px; font-size: 18px; margin-bottom: 12px;
+    width: 36px; height: 36px; font-size: 16px; margin-bottom: 10px;
   }
-  .feature-card h3 { font-size: 15px; }
-  .feature-card p { font-size: 13px; }
+  .feature-card h3 { font-size: 14px; }
+  .feature-card p { font-size: 12px; }
 
   /* Roles Grid */
-  .landing-roles { padding: 40px 16px; }
+  .landing-roles { padding: 32px 16px; }
   .roles-grid {
-    grid-template-columns: 1fr; gap: 10px;
+    grid-template-columns: 1fr; gap: 8px;
   }
   .role-showcase-card {
-    padding: 18px; border-radius: 14px;
+    padding: 14px; border-radius: 12px;
   }
   .role-showcase-card:hover { transform: none; }
-  .role-showcase-card .role-emoji { font-size: 24px; margin-bottom: 8px; }
-  .role-showcase-card h4 { font-size: 14px; }
-  .role-showcase-card p { font-size: 12px; }
+  .role-showcase-card .role-emoji { font-size: 22px; margin-bottom: 6px; }
+  .role-showcase-card h4 { font-size: 13px; }
+  .role-showcase-card p { font-size: 11px; }
 
   /* Footer */
-  .landing-footer { padding: 32px 16px 24px; }
+  .landing-footer { padding: 24px 16px 20px; }
   .footer-grid {
-    grid-template-columns: 1fr; gap: 20px;
+    grid-template-columns: 1fr; gap: 16px;
   }
-  .footer-brand p { max-width: 100%; }
-  .footer-bottom { font-size: 11px; }
+  .footer-brand p { max-width: 100%; font-size: 12px; }
+  .footer-brand h3 { font-size: 16px; }
+  .footer-col h4 { font-size: 10px; }
+  .footer-col a { font-size: 12px; margin-bottom: 6px; }
+  .footer-bottom { font-size: 10px; }
 
   /* === AUTH PAGES (Login / Signup) === */
   .auth-page {
@@ -1771,63 +1774,65 @@ body.force-mobile {
     width: 100%;
   }
 
-  /* === WEATHER WIDGET === */
+  /* === WEATHER WIDGET (compact mobile) === */
   .weather-widget-card {
-    padding: 16px 14px; border-radius: 16px;
-    margin-bottom: 16px; width: 100%;
+    padding: 12px 10px; border-radius: 14px;
+    margin-bottom: 12px; width: 100%;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   }
   .weather-top-row {
-    flex-direction: column; align-items: stretch; gap: 12px;
-    margin-bottom: 14px;
+    flex-direction: column; align-items: stretch; gap: 8px;
+    margin-bottom: 10px;
   }
   .weather-location-info h3 {
-    font-size: 16px; flex-wrap: wrap; gap: 6px;
+    font-size: 14px; flex-wrap: wrap; gap: 4px;
   }
   .weather-location-info p {
-    font-size: 11px;
+    font-size: 10px; margin-top: 2px;
   }
   .weather-local-time-badge {
-    font-size: 10px; padding: 4px 10px; white-space: normal;
-    display: inline-flex; margin-top: 6px;
+    font-size: 9px; padding: 3px 8px; white-space: normal;
+    display: inline-flex; margin-top: 4px;
   }
   .weather-search-wrap {
-    flex-direction: column; align-items: stretch; gap: 8px; width: 100%;
+    flex-direction: column; align-items: stretch; gap: 6px; width: 100%;
   }
   .weather-search-input {
-    width: 100%; max-width: 100%; height: 36px;
-    font-size: 12px; border-radius: 10px; padding: 6px 12px;
+    width: 100%; max-width: 100%; height: 32px;
+    font-size: 11px; border-radius: 8px; padding: 5px 10px;
   }
   .weather-refresh-btn {
-    width: 100%; height: 36px; justify-content: center;
-    font-size: 12px; border-radius: 10px;
+    width: 100%; height: 32px; justify-content: center;
+    font-size: 11px; border-radius: 8px;
   }
   .weather-verify-badge {
-    width: 100%; justify-content: center; font-size: 10px; padding: 5px 10px;
+    width: 100%; justify-content: center; font-size: 9px; padding: 4px 8px;
   }
   .weather-main-grid {
-    grid-template-columns: 1fr; gap: 14px;
+    grid-template-columns: 1fr; gap: 10px;
+    margin-bottom: 10px;
   }
-  .weather-temp-display { gap: 10px; }
-  .weather-condition-icon { font-size: 38px; }
-  .weather-temp-degree { font-size: 36px; }
-  .weather-temp-degree span { font-size: 16px; }
-  .weather-condition-desc { font-size: 13px; }
+  .weather-temp-display { gap: 8px; }
+  .weather-condition-icon { font-size: 30px; }
+  .weather-temp-degree { font-size: 28px; }
+  .weather-temp-degree span { font-size: 14px; }
+  .weather-condition-desc { font-size: 12px; margin-top: 2px; }
   .weather-metrics-grid {
-    grid-template-columns: repeat(2, 1fr); gap: 8px;
-    padding: 10px; border-radius: 12px;
+    grid-template-columns: repeat(2, 1fr); gap: 6px;
+    padding: 8px; border-radius: 10px;
   }
-  .weather-metric-label { font-size: 9px; }
-  .weather-metric-val { font-size: 13px; }
+  .weather-metric-label { font-size: 8px; letter-spacing: 0.4px; }
+  .weather-metric-val { font-size: 12px; }
   .weather-forecast-row {
-    gap: 8px; padding-top: 12px;
+    gap: 6px; padding-top: 8px;
     -webkit-overflow-scrolling: touch;
   }
   .weather-forecast-pill {
-    min-width: 60px; padding: 6px 4px; border-radius: 10px;
+    min-width: 52px; flex: 0 0 52px; padding: 5px 3px; border-radius: 8px;
   }
-  .weather-forecast-pill .time { font-size: 9px; }
-  .weather-forecast-pill .icon { font-size: 16px; }
-  .weather-forecast-pill .temp { font-size: 11px; }
+  .weather-forecast-pill .time { font-size: 8px; }
+  .weather-forecast-pill .icon { font-size: 14px; margin: 2px 0; }
+  .weather-forecast-pill .temp { font-size: 10px; }
 
   /* === KPI GRID === */
   .kpi-grid {
