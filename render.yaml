@@ -34,6 +34,6 @@ services:
 databases:
   - name: workforce-travel-db
     databaseName: workforce_travel
-    user: postgres
+    user: workforce_user
     plan: free
     region: singapore
