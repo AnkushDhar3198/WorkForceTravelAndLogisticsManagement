@@ -1529,3 +1529,161 @@ textarea.form-control { min-height: 80px; resize: vertical; }
   }
 }
 
+/* ============================================
+   NEXT-GEN MOBILE & TABLET RESPONSIVE ENGINE
+   ============================================ */
+
+/* Tablet & Mobile Screens (<= 992px) */
+@media screen and (max-width: 992px) {
+  .landing-hero { padding: 40px 20px; text-align: center; }
+  .hero-title { font-size: 38px; line-height: 1.15; }
+  .hero-subtitle { font-size: 16px; max-width: 100%; }
+  
+  .features-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .analytics-grid { grid-template-columns: 1fr; gap: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
+
+/* Mobile Devices (<= 768px) */
+@media screen and (max-width: 768px) {
+  /* Layout Containers */
+  body { font-size: 13.5px; overflow-x: hidden; }
+  .main-content { padding: 14px 10px; margin-left: 0 !important; width: 100% !important; }
+  
+  /* Navbar & Header */
+  .landing-nav { padding: 12px 14px; flex-wrap: wrap; gap: 10px; }
+  .landing-nav-links { display: none; }
+  .landing-nav-actions { width: 100%; justify-content: space-between; }
+  
+  .top-header, .main-header {
+    padding: 10px 12px; flex-wrap: wrap; gap: 10px; min-height: 56px;
+  }
+  .logo-area, .header-brand { font-size: 16px; }
+  .header-actions {
+    width: 100%; justify-content: flex-end; gap: 6px; flex-wrap: wrap;
+  }
+  .header-actions button, .header-actions .btn {
+    padding: 6px 10px; font-size: 12px; height: 36px;
+  }
+  
+  /* Mobile Sidebar Drawer */
+  .sidebar {
+    width: 84vw !important; max-width: 310px !important; z-index: 1000;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  }
+  
+  /* Auth Cards & 1-Click Official Login */
+  .auth-card, .signup-card, .landing-card {
+    width: 96% !important; max-width: 100% !important; margin: 16px auto;
+    padding: 18px 14px !important; border-radius: 18px !important;
+  }
+  .official-grid {
+    grid-template-columns: 1fr !important; gap: 10px !important; width: 100%;
+  }
+  .official-btn {
+    padding: 12px 14px !important; min-height: 52px !important;
+    text-align: left !important; display: flex !important; align-items: center !important;
+    justify-content: flex-start !important; border-radius: 14px !important;
+  }
+  .official-btn div {
+    display: flex; flex-direction: column; gap: 2px; text-align: left; width: 100%;
+  }
+  .off-role { margin-top: 2px; font-size: 11px; }
+
+  /* 2FA Code Input Modal */
+  .twofa-modal-card {
+    width: 95% !important; padding: 20px 14px !important; border-radius: 18px !important;
+  }
+  .twofa-code-input {
+    letter-spacing: 6px !important; font-size: 20px !important; height: 48px !important;
+  }
+
+  /* Weather Widget Mobile Optimization */
+  .weather-widget-card {
+    padding: 14px 12px !important; border-radius: 18px !important; margin-bottom: 16px;
+  }
+  .weather-header {
+    flex-direction: column !important; align-items: flex-start !important; gap: 10px !important;
+  }
+  .weather-location-select {
+    width: 100% !important; flex-wrap: wrap !important; gap: 8px !important;
+  }
+  .weather-select-dropdown, .weather-search-input {
+    width: 100% !important; font-size: 13px !important; height: 38px !important;
+  }
+  .weather-search-bar {
+    width: 100% !important; flex-wrap: wrap !important; gap: 6px !important;
+  }
+  .weather-search-bar input { flex: 1; min-width: 140px; }
+  .weather-search-bar button { height: 38px; }
+  .weather-main-row {
+    flex-direction: column !important; align-items: flex-start !important; gap: 10px !important;
+  }
+  .weather-temp-badge { font-size: 34px !important; }
+  .weather-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; padding: 10px 12px !important;
+  }
+
+  /* Form & Modals */
+  .modal-container, .form-modal-card {
+    width: 95vw !important; max-width: 100% !important;
+    max-height: 90vh !important; padding: 16px 12px !important; border-radius: 20px !important;
+  }
+  .form-grid, .form-row, .modal-body {
+    grid-template-columns: 1fr !important; gap: 12px !important;
+  }
+  .modal-actions {
+    flex-direction: column-reverse !important; width: 100% !important; gap: 8px !important;
+  }
+  .modal-actions button, .modal-actions .btn {
+    width: 100% !important; height: 42px !important; font-size: 14px !important;
+  }
+
+  /* Tables & Responsive Scrolling */
+  .data-table-container {
+    overflow-x: auto !important; -webkit-overflow-scrolling: touch;
+    border-radius: 14px !important; margin: 10px 0;
+  }
+  .data-table { min-width: 600px !important; font-size: 12.5px !important; }
+  .data-table th, .data-table td { padding: 10px 8px !important; }
+
+  /* Toolbar Bar */
+  .toolbar-bar {
+    flex-direction: column !important; align-items: stretch !important; gap: 10px !important;
+  }
+  .toolbar-bar .search-input, .toolbar-bar select {
+    width: 100% !important;
+  }
+
+  /* PDF & Document Modal */
+  .doc-modal-overlay { padding: 10px 6px !important; }
+  .doc-modal-content {
+    width: 100% !important; max-height: 95vh !important; border-radius: 16px !important;
+  }
+  .doc-toolbar {
+    padding: 10px !important; flex-wrap: wrap !important; justify-content: center !important; gap: 8px !important;
+  }
+  .doc-toolbar button { padding: 6px 10px !important; font-size: 12px !important; }
+  .doc-paper {
+    padding: 16px 12px !important; margin: 0 auto !important; max-width: 100% !important;
+    font-size: 12px !important; border-radius: 12px !important;
+  }
+}
+
+/* Extra Small Mobile Screens (<= 480px) */
+@media screen and (max-width: 480px) {
+  .hero-title { font-size: 28px !important; }
+  .hero-subtitle { font-size: 14px !important; }
+  .hero-actions { flex-direction: column; width: 100%; gap: 10px; }
+  .hero-actions button { width: 100%; }
+
+  .features-grid { grid-template-columns: 1fr !important; }
+  .stats-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+  
+  .auth-title { font-size: 22px !important; }
+  .auth-subtitle { font-size: 12.5px !important; }
+  
+  .popup-card { width: 92% !important; padding: 18px 14px !important; }
+}
+
+
