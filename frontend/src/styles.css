@@ -1566,7 +1566,6 @@ body.force-mobile::before {
   .landing-hero { padding: 40px 20px; text-align: center; }
   .hero-title { font-size: 36px; line-height: 1.15; }
   .hero-subtitle { font-size: 15px; max-width: 100%; }
-  
   .features-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .analytics-grid { grid-template-columns: 1fr; gap: 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
