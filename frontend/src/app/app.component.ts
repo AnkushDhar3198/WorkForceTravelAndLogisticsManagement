@@ -8,6 +8,7 @@ import {
 } from './services/api.service';
 import { AuthService } from './services/auth.service';
 import { ThemeService, ThemeMode } from './services/theme.service';
+import { WeatherService, LiveDestinationWeather } from './services/weather.service';
 import { Subscription, interval, forkJoin, catchError, of } from 'rxjs';
 
 @Component({
@@ -162,6 +163,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   approvalRemarks = '';
   isLoading = true;
 
+  // Live Weather Tracking State
+  currentWeather: LiveDestinationWeather | null = null;
+  activeWeatherCity = 'Tokyo';
+
   // Charts
   private chartsDrawn = false;
   @ViewChild('pieChart1') pieChart1Ref?: ElementRef<HTMLCanvasElement>;
@@ -172,8 +177,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   constructor(
     private api: ApiService,
     public auth: AuthService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    public weatherService: WeatherService
   ) {}
+
+  fetchLiveDestinationWeather(city?: string) {
+    const targetCity = city || (this.travelRequests.length > 0 ? this.travelRequests[0].destination : 'Tokyo');
+    this.activeWeatherCity = targetCity;
+    this.weatherService.getLiveWeather(targetCity).subscribe({
+      next: (data) => { this.currentWeather = data; },
+      error: () => {}
+    });
+  }
 
   ngOnInit() {
     if (this.auth.isAuthenticated) {
@@ -444,6 +459,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.expenses = data.expenses;
         this.isLoading = false;
         this.chartsDrawn = false;
+        this.fetchLiveDestinationWeather();
       },
       error: () => { this.isLoading = false; }
     });

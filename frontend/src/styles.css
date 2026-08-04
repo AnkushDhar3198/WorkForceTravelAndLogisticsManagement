@@ -1338,6 +1338,107 @@ textarea.form-control { min-height: 80px; resize: vertical; }
   font-family: monospace; font-size: 11px; color: #4b5563; letter-spacing: 3px;
 }
 
+/* ============================================
+   APPLE-STYLE LIVE WEATHER WIDGET
+   ============================================ */
+
+.weather-widget-card {
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.14) 0%, rgba(191, 90, 242, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px; padding: 22px 26px;
+  backdrop-filter: blur(32px) saturate(180%);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  position: relative; overflow: hidden;
+  margin-bottom: 24px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.weather-widget-card:hover {
+  border-color: rgba(10, 132, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.weather-top-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.weather-location-info h3 {
+  font-size: 20px; font-weight: 800; letter-spacing: -0.4px; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+
+.weather-location-info p {
+  font-size: 12px; color: var(--text-secondary); margin-top: 3px; font-weight: 500;
+}
+
+.weather-verify-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 100px;
+  background: rgba(48, 209, 88, 0.12); color: var(--accent-green);
+  border: 1px solid rgba(48, 209, 88, 0.25);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+}
+
+.weather-main-grid {
+  display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: center;
+  margin-bottom: 20px;
+}
+
+.weather-temp-display {
+  display: flex; align-items: center; gap: 16px;
+}
+
+.weather-condition-icon {
+  font-size: 52px; line-height: 1; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.weather-temp-degree {
+  font-size: 48px; font-weight: 900; letter-spacing: -1.5px;
+  line-height: 1; color: var(--text-primary);
+}
+
+.weather-temp-degree span {
+  font-size: 22px; font-weight: 600; color: var(--text-tertiary); vertical-align: top;
+}
+
+.weather-condition-desc {
+  font-size: 15px; font-weight: 700; color: var(--text-primary); margin-top: 4px;
+}
+
+.weather-metrics-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  background: rgba(255, 255, 255, 0.04); border-radius: 14px; padding: 12px 16px;
+  border: 1px solid var(--border-subtle);
+}
+
+.weather-metric-item {
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.weather-metric-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  color: var(--text-tertiary); letter-spacing: 0.6px;
+}
+
+.weather-metric-val {
+  font-size: 14px; font-weight: 800; color: var(--text-primary);
+}
+
+.weather-forecast-row {
+  display: flex; gap: 10px; overflow-x: auto; padding-top: 14px;
+  border-top: 1px solid var(--border-subtle); scrollbar-width: none;
+}
+
+.weather-forecast-pill {
+  flex: 1; min-width: 65px; background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px; padding: 8px 6px; text-align: center;
+  border: 1px solid var(--border-subtle);
+}
+
+.weather-forecast-pill .time { font-size: 10px; color: var(--text-tertiary); font-weight: 600; }
+.weather-forecast-pill .icon { font-size: 18px; margin: 4px 0; }
+.weather-forecast-pill .temp { font-size: 12px; font-weight: 800; color: var(--text-primary); }
+
 .doc-seal-stamp {
   width: 90px; height: 90px; border-radius: 50%;
   border: 2px dashed #2563eb; color: #2563eb;
