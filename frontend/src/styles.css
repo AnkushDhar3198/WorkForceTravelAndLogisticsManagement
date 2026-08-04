@@ -1494,914 +1494,176 @@ textarea.form-control { min-height: 80px; resize: vertical; }
 /* Simulated Phone Frame Container when forceMobile = true */
 body.force-mobile {
   max-width: 430px !important;
-  margin: 24px auto !important;
-  border-radius: 44px !important;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 0 12px #1c1c1e, 0 0 0 14px rgba(255, 255, 255, 0.1) !important;
+  margin: 20px auto !important;
+  border-radius: 36px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 10px #1c1c1e !important;
   position: relative !important;
   overflow-x: hidden !important;
-  min-height: 880px !important;
   background: var(--bg-primary) !important;
-}
-
-/* Dynamic Island Notch for Phone View */
-body.force-mobile::before {
-  content: '';
-  position: fixed;
-  top: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 110px;
-  height: 26px;
-  background: #000000;
-  border-radius: 20px;
-  z-index: 999999;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  pointer-events: none;
 }
 
 /* Tablet Screens (<= 992px) */
 @media screen and (max-width: 992px) {
   .landing-hero { padding: 40px 20px; text-align: center; }
-  .hero-title { font-size: 36px; line-height: 1.15; }
+  .hero-title { font-size: 34px; line-height: 1.15; }
   .hero-subtitle { font-size: 15px; max-width: 100%; }
   .features-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .analytics-grid { grid-template-columns: 1fr; gap: 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-}/* Real Mobile Devices (Width <= 768px) */
+}
+
+/* Real Mobile Devices (Width <= 768px) */
 @media screen and (max-width: 768px) {
 
-  /* Global Container Adjustments */
   body, .landing-page, .app-container {
-    font-size: 13px !important;
-    overflow-x: hidden !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    -webkit-font-smoothing: antialiased !important;
+    font-size: 13px;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .main-content {
-    padding: 12px 10px 84px 10px !important;
-    margin-left: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
+    padding: 12px 10px 80px 10px;
+    margin-left: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  /* Header & Navigation Bar */
-  .landing-nav {
-    padding: 12px 14px !important;
-    flex-wrap: wrap !important;
-    gap: 10px !important;
-    height: auto !important;
-    min-height: 54px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    background: rgba(18, 22, 33, 0.85) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    border-bottom: 1px solid var(--border-subtle) !important;
-  }
-  .landing-nav-links { display: none !important; }
-  .landing-nav-actions {
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-  }
-
-  /* Main Authenticated Top Header */
+  /* Main Header Stack */
   .top-header {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    padding: 10px 12px !important;
-    gap: 10px !important;
-    background: rgba(18, 22, 33, 0.88) !important;
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    border-bottom: 1px solid var(--border-subtle) !important;
-    position: sticky !important;
-    top: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    z-index: 900 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 12px;
+    gap: 8px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-subtle);
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .top-header-left {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
   }
 
   .top-header-right {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    gap: 6px !important;
-    width: 100% !important;
-    justify-content: flex-start !important;
-  }
-
-  .top-header-right .theme-switcher {
-    display: flex !important;
-    gap: 4px !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    padding: 3px !important;
-    border-radius: 100px !important;
-    border: 1px solid var(--border-subtle) !important;
-  }
-
-  .top-header-right .theme-pill {
-    padding: 4px 8px !important;
-    font-size: 12px !important;
-    border-radius: 100px !important;
-  }
-
-  .top-header-right .view-toggle,
-  .top-header-right .btn {
-    font-size: 11.5px !important;
-    padding: 5px 10px !important;
-    height: 34px !important;
-    border-radius: 100px !important;
-    white-space: nowrap !important;
-    font-weight: 600 !important;
-  }
-
-  /* Page Header Title */
-  .page-header {
-    margin-top: 10px !important;
-    margin-bottom: 16px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
   }
 
   .page-header h2 {
-    font-size: 22px !important;
-    line-height: 1.25 !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.5px !important;
-    word-break: break-word !important;
-  }
-
-  .page-header p {
-    font-size: 12.5px !important;
-    line-height: 1.45 !important;
-    color: var(--text-secondary) !important;
-    word-break: break-word !important;
+    font-size: 22px;
+    line-height: 1.25;
+    word-break: break-word;
   }
 
   /* Sidebar Drawer */
   .sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    bottom: 0 !important;
-    width: 84vw !important;
-    max-width: 320px !important;
-    z-index: 100000 !important;
-    box-shadow: 0 10px 50px rgba(0,0,0,0.85) !important;
-    transform: translateX(-100%) !important;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    background: var(--bg-card) !important;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 84vw; max-width: 300px;
+    z-index: 100000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
   }
-
   .sidebar.open {
-    transform: translateX(0) !important;
+    transform: translateX(0);
   }
 
-  /* Landing Page Hero & Features */
-  .landing-hero {
-    padding: 36px 16px 24px !important;
-    text-align: center !important;
-  }
-  .hero-title {
-    font-size: 28px !important;
-    line-height: 1.2 !important;
-    font-weight: 800 !important;
-  }
-  .hero-subtitle {
-    font-size: 13.5px !important;
-    margin-top: 12px !important;
-    line-height: 1.5 !important;
-  }
-  .hero-actions {
-    flex-direction: column !important;
-    width: 100% !important;
-    gap: 10px !important;
-    margin-top: 20px !important;
-  }
-  .hero-actions button {
-    width: 100% !important;
-    height: 48px !important;
-    font-size: 14.5px !important;
-    border-radius: 14px !important;
-  }
-  .features-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  /* Auth Cards & 1-Click Official Access */
-  .auth-card, .signup-card, .landing-card {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 12px 0 !important;
-    padding: 20px 14px !important;
-    border-radius: 20px !important;
-    box-sizing: border-box !important;
-  }
-
-  .official-access {
-    width: 100% !important;
-    margin-top: 18px !important;
-    box-sizing: border-box !important;
-  }
-
-  .official-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .official-btn {
-    width: 100% !important;
-    padding: 12px 14px !important;
-    min-height: 56px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    text-align: left !important;
-    border-radius: 14px !important;
-    box-sizing: border-box !important;
-    border: 1px solid var(--border-subtle) !important;
-    background: rgba(255,255,255,0.04) !important;
-    transition: transform 0.2s ease, border-color 0.2s ease !important;
-  }
-
-  .official-btn:active {
-    transform: scale(0.98) !important;
-    border-color: var(--accent-blue) !important;
-  }
-
-  .official-btn div {
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 2px !important;
-    text-align: left !important;
-    word-break: break-word !important;
-  }
-
-  .off-role {
-    font-size: 10.5px !important;
-    color: var(--text-tertiary) !important;
-    display: block !important;
-    margin-top: 1px !important;
-  }
-
-  /* 2FA Verification Card */
-  .twofa-modal-card {
-    width: 100% !important;
-    padding: 20px 14px !important;
-    border-radius: 20px !important;
-    box-sizing: border-box !important;
-  }
-
-  .twofa-code-input {
-    width: 100% !important;
-    letter-spacing: 6px !important;
-    font-size: 22px !important;
-    height: 48px !important;
-    text-align: center !important;
-    border-radius: 14px !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Weather Widget Industry-Grade Mobile UI */
+  /* Weather Widget Mobile Layout */
   .weather-widget-card {
-    padding: 18px 14px !important;
-    border-radius: 22px !important;
-    margin-bottom: 18px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    background: linear-gradient(145deg, rgba(10, 132, 255, 0.18) 0%, rgba(191, 90, 242, 0.10) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35) !important;
+    padding: 16px 12px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .weather-top-row {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 14px !important;
-    width: 100% !important;
-    margin-bottom: 16px !important;
-  }
-
-  .weather-location-info {
-    width: 100% !important;
-  }
-
-  .weather-location-info h3 {
-    font-size: 20px !important;
-    font-weight: 800 !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-  }
-
-  .weather-location-info h3 span {
-    word-break: break-word !important;
-  }
-
-  .weather-local-time-badge {
-    font-size: 11.5px !important;
-    padding: 4px 12px !important;
-    border-radius: 100px !important;
-    white-space: normal !important;
-    word-break: break-word !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 14px;
   }
 
   .weather-search-wrap {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
-    width: 100% !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
   }
 
-  .weather-search-input {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 42px !important;
-    font-size: 13px !important;
-    border-radius: 12px !important;
-    padding: 0 14px !important;
-    box-sizing: border-box !important;
-    background: rgba(0, 0, 0, 0.25) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  }
-
+  .weather-search-input,
   .weather-refresh-btn {
-    width: 100% !important;
-    height: 42px !important;
-    justify-content: center !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    border-radius: 12px !important;
-    box-sizing: border-box !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  }
-
-  .weather-verify-badge {
-    width: 100% !important;
-    justify-content: center !important;
-    font-size: 11px !important;
-    padding: 6px 12px !important;
-    box-sizing: border-box !important;
+    width: 100%;
+    max-width: 100%;
+    height: 38px;
+    box-sizing: border-box;
   }
 
   .weather-main-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 16px !important;
-    width: 100% !important;
-  }
-
-  .weather-temp-display {
-    justify-content: flex-start !important;
-    gap: 14px !important;
-  }
-
-  .weather-temp-degree {
-    font-size: 42px !important;
-    font-weight: 900 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
   }
 
   .weather-metrics-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-    padding: 12px !important;
-    width: 100% !important;
-    border-radius: 16px !important;
-    box-sizing: border-box !important;
-    background: rgba(0, 0, 0, 0.2) !important;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .weather-forecast-row {
-    display: flex !important;
-    gap: 10px !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding-bottom: 6px !important;
-    width: 100% !important;
-  }
-
-  .weather-forecast-pill {
-    flex: 0 0 76px !important;
-    min-width: 76px !important;
-    padding: 10px 8px !important;
-    border-radius: 14px !important;
-  }
-
-  /* Toolbar & Search Bar */
+  /* Toolbar & Action Bar */
   .toolbar-bar {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
-    width: 100% !important;
-    margin-bottom: 14px !important;
-    box-sizing: border-box !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
   }
-
-  .toolbar-bar .search-input, .toolbar-bar input, .toolbar-bar select {
-    width: 100% !important;
-    height: 42px !important;
-    font-size: 13px !important;
-    border-radius: 12px !important;
-    box-sizing: border-box !important;
-  }
-
+  .toolbar-bar .search-input,
+  .toolbar-bar select,
   .toolbar-bar button {
-    width: 100% !important;
-    height: 44px !important;
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    border-radius: 14px !important;
+    width: 100%;
+    height: 40px;
+    box-sizing: border-box;
   }
 
-  /* Dashboard Stats & Analytics Grids */
+  /* Stats & Analytics */
   .stats-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .stat-card {
-    padding: 16px 14px !important;
-    border-radius: 18px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .analytics-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-    width: 100% !important;
+    flex-direction: column;
+    gap: 14px;
   }
 
-  .chart-card {
-    width: 100% !important;
-    padding: 16px 12px !important;
-    border-radius: 18px !important;
-    box-sizing: border-box !important;
-    overflow-x: auto !important;
-  }
-
-  /* Data Tables (Requests, Expenses, Vendors, Shipments) */
+  /* Tables & Modals */
   .table-card, .data-table-container {
-    width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    border-radius: 18px !important;
-    margin: 12px 0 !important;
-    box-sizing: border-box !important;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .data-table {
-    min-width: 620px !important;
-    font-size: 12px !important;
-    width: 100% !important;
-  }
-
-  .data-table th, .data-table td {
-    padding: 12px 10px !important;
-    white-space: nowrap !important;
-  }
-
-  /* Modals & Category Form Inputs */
-  .modal-overlay {
-    padding: 10px !important;
-    display: flex !important;
-    align-items: flex-end !important;
-    justify-content: center !important;
-    z-index: 100000 !important;
-  }
-
-  .modal-container, .form-modal-card {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    max-height: 90vh !important;
-    overflow-y: auto !important;
-    padding: 20px 16px !important;
-    border-radius: 28px 28px 0 0 !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-  }
-
-  .form-grid, .form-row, .modal-body {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-    width: 100% !important;
-  }
-
-  .form-group {
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 5px !important;
-    box-sizing: border-box !important;
-  }
-
-  .form-group input, .form-group select, .form-group textarea {
-    width: 100% !important;
-    height: 44px !important;
-    font-size: 13.5px !important;
-    border-radius: 12px !important;
-    box-sizing: border-box !important;
-  }
-
-  .modal-actions {
-    display: flex !important;
-    flex-direction: column-reverse !important;
-    width: 100% !important;
-    gap: 10px !important;
-    margin-top: 16px !important;
-  }
-
-  .modal-actions button, .modal-actions .btn {
-    width: 100% !important;
-    height: 48px !important;
-    font-size: 14.5px !important;
-    font-weight: 700 !important;
-    border-radius: 14px !important;
-  }
-
-  /* PDF Preview & Document Viewport */
-  .doc-modal-overlay {
-    padding: 0 !important;
-    z-index: 100000 !important;
-  }
-
-  .doc-modal-content {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    border-radius: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .doc-toolbar {
-    padding: 12px 8px !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    gap: 8px !important;
-  }
-
-  .doc-toolbar button {
-    padding: 8px 12px !important;
-    font-size: 11.5px !important;
-    height: 36px !important;
-    border-radius: 10px !important;
-  }
-
-  .doc-viewport {
-    padding: 10px 6px !important;
-    overflow-x: auto !important;
-    overflow-y: auto !important;
-    max-height: calc(100vh - 70px) !important;
-  }
-
-  .doc-paper {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 16px 12px !important;
-    margin: 0 auto !important;
-    font-size: 11.5px !important;
-    box-sizing: border-box !important;
-    border-radius: 14px !important;
-  }
-
-  .doc-grid-2, .doc-grid-3 {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    width: 100% !important;
-  }
-
-  .popup-card {
-    width: 94% !important;
-    padding: 20px 16px !important;
-    border-radius: 24px !important;
+  .modal-container {
+    width: 94vw;
+    max-width: 440px;
+    max-height: 88vh;
+    padding: 16px 12px;
   }
 }
 
-/* Force Mobile Mode (Simulated Phone View on Desktop) */
-body.force-mobile,
-body.force-mobile .landing-page,
-body.force-mobile .app-container {
-  font-size: 13px !important;
-  overflow-x: hidden !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  -webkit-font-smoothing: antialiased !important;
-}
-
-body.force-mobile .main-content {
-  padding: 12px 10px 84px 10px !important;
-  margin-left: 0 !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .top-header {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  padding: 10px 12px !important;
-  gap: 10px !important;
-  background: rgba(18, 22, 33, 0.88) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  border-bottom: 1px solid var(--border-subtle) !important;
-  position: relative !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .top-header-left {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-}
-
-body.force-mobile .top-header-right {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: center !important;
-  gap: 6px !important;
-  width: 100% !important;
-  justify-content: flex-start !important;
-}
-
-body.force-mobile .top-header-right .theme-switcher {
-  display: flex !important;
-  gap: 4px !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  padding: 3px !important;
-  border-radius: 100px !important;
-  border: 1px solid var(--border-subtle) !important;
-}
-
-body.force-mobile .top-header-right .theme-pill {
-  padding: 4px 8px !important;
-  font-size: 12px !important;
-  border-radius: 100px !important;
-}
-
-body.force-mobile .top-header-right .view-toggle,
-body.force-mobile .top-header-right .btn {
-  font-size: 11.5px !important;
-  padding: 5px 10px !important;
-  height: 34px !important;
-  border-radius: 100px !important;
-  white-space: nowrap !important;
-  font-weight: 600 !important;
-}
-
-body.force-mobile .page-header {
-  margin-top: 10px !important;
-  margin-bottom: 16px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .page-header h2 {
-  font-size: 22px !important;
-  line-height: 1.25 !important;
-  font-weight: 800 !important;
-  word-break: break-word !important;
-}
-
-body.force-mobile .sidebar {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  bottom: 0 !important;
-  width: 84vw !important;
-  max-width: 320px !important;
-  z-index: 100000 !important;
-  box-shadow: 0 10px 50px rgba(0,0,0,0.85) !important;
-  transform: translateX(-100%) !important;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-body.force-mobile .sidebar.open {
-  transform: translateX(0) !important;
-}
-
-body.force-mobile .auth-card,
-body.force-mobile .signup-card,
-body.force-mobile .landing-card {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 12px 0 !important;
-  padding: 20px 14px !important;
-  border-radius: 20px !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .official-access {
-  width: 100% !important;
-  margin-top: 18px !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .official-grid {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .official-btn {
-  width: 100% !important;
-  padding: 12px 14px !important;
-  min-height: 56px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  text-align: left !important;
-  border-radius: 14px !important;
-  box-sizing: border-box !important;
-  border: 1px solid var(--border-subtle) !important;
-  background: rgba(255,255,255,0.04) !important;
-}
-
-body.force-mobile .twofa-modal-card {
-  width: 100% !important;
-  padding: 20px 14px !important;
-  border-radius: 20px !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .weather-widget-card {
-  padding: 18px 14px !important;
-  border-radius: 22px !important;
-  margin-bottom: 18px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  background: linear-gradient(145deg, rgba(10, 132, 255, 0.18) 0%, rgba(191, 90, 242, 0.10) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-body.force-mobile .weather-top-row {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 14px !important;
-  width: 100% !important;
-  margin-bottom: 16px !important;
-}
-
-body.force-mobile .weather-location-info {
-  width: 100% !important;
-}
-
-body.force-mobile .weather-location-info h3 {
-  font-size: 20px !important;
-  font-weight: 800 !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-}
-
-body.force-mobile .weather-search-wrap {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 10px !important;
-  width: 100% !important;
-}
-
-body.force-mobile .weather-search-input {
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 42px !important;
-  font-size: 13px !important;
-  border-radius: 12px !important;
-  padding: 0 14px !important;
-  box-sizing: border-box !important;
-  background: rgba(0, 0, 0, 0.25) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-body.force-mobile .weather-refresh-btn {
-  width: 100% !important;
-  height: 42px !important;
-  justify-content: center !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  border-radius: 12px !important;
-  box-sizing: border-box !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-body.force-mobile .weather-verify-badge {
-  width: 100% !important;
-  justify-content: center !important;
-  font-size: 11px !important;
-  padding: 6px 12px !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .weather-main-grid {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 16px !important;
-  width: 100% !important;
-}
-
-body.force-mobile .weather-metrics-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 10px !important;
-  padding: 12px !important;
-  width: 100% !important;
-  border-radius: 16px !important;
-  box-sizing: border-box !important;
-  background: rgba(0, 0, 0, 0.2) !important;
-}
-
-body.force-mobile .toolbar-bar {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 10px !important;
-  width: 100% !important;
-  margin-bottom: 14px !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .stats-grid {
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 12px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .analytics-grid {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 16px !important;
-  width: 100% !important;
-}
-
-body.force-mobile .table-card,
-body.force-mobile .data-table-container {
-  width: 100% !important;
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  border-radius: 18px !important;
-  margin: 12px 0 !important;
-  box-sizing: border-box !important;
-}
-
-body.force-mobile .modal-container,
-body.force-mobile .form-modal-card {
-  width: 96vw !important;
-  max-width: 440px !important;
-  max-height: 88vh !important;
-  overflow-y: auto !important;
-  padding: 20px 16px !important;
-  border-radius: 24px !important;
-  box-sizing: border-box !important;
-  margin: 0 auto !important;
-}
-
-/* Extra Small Mobile Screens (<= 480px) */
-@media screen and (max-width: 480px) {
-  .hero-title { font-size: 26px !important; }
-  .hero-subtitle { font-size: 13px !important; }
-  .hero-actions { flex-direction: column; width: 100%; gap: 10px; }
-  .hero-actions button { width: 100%; }
-
-  .features-grid { grid-template-columns: 1fr !important; }
-  .stats-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
-  
-  .auth-title { font-size: 20px !important; }
-  .auth-subtitle { font-size: 12px !important; }
-  
-  .popup-card { width: 94% !important; padding: 20px 14px !important; }
-}
