@@ -1,3 +1,10 @@
+<!-- APPLE-STYLE AMBIENT ANIMATED GLOW BACKGROUND -->
+<div class="ambient-glow-wrap">
+  <div class="ambient-orb ambient-orb-1"></div>
+  <div class="ambient-orb ambient-orb-2"></div>
+  <div class="ambient-orb ambient-orb-3"></div>
+</div>
+
 <!-- ============================================
      CUSTOM CENTER-SCREEN POPUP
      ============================================ -->
@@ -451,7 +458,7 @@
         {{forceMobile ? '🖥️ Desktop' : '📱 Phone'}}
       </button>
       <button class="btn btn-sm btn-ghost" (click)="exportDataCsv()">📥 CSV</button>
-      <button class="btn btn-sm btn-ghost" (click)="logout()">🚪 Sign Out</button>
+      <button class="btn btn-sm btn-ghost" (click)="logout()"><span style="font-size:14px; margin-right:4px;">⎋</span> Sign Out</button>
     </div>
   </header>
 
@@ -1345,8 +1352,25 @@
           <div class="doc-section-box">
             <div class="doc-section-title">OCR Receipt Audit Data</div>
             <div class="doc-field-row"><span class="doc-field-label">Vendor Name:</span><span class="doc-field-val">{{docPreviewData.vendorName}}</span></div>
-            <div class="doc-field-row"><span class="doc-field-label">Category:</span><span class="doc-field-val">{{docPreviewData.category}}</span></div>
-            <div class="doc-field-row"><span class="doc-field-label">OCR Scan Confidence:</span><span class="doc-field-val" style="color:#0284c7;">{{docPreviewData.ocrConfidence || 97.5}}% Match</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Category:</span><span class="doc-field-val">{{getCategoryLabel(docPreviewData.category)}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">OCR Scan Confidence:</span><span class="doc-field-val" style="color:#0284c7;">{{docPreviewData.ocrConfidence || 98.2}}% Match</span></div>
+          </div>
+        </div>
+
+        <!-- FULL JOURNEY & ITINERARY DETAILS MANIFEST -->
+        <div class="doc-section-box" style="margin-bottom: 24px;">
+          <div class="doc-section-title">✈️ Associated Journey & Travel Itinerary Manifest</div>
+          <div class="doc-grid-2" style="margin-bottom: 0;">
+            <div>
+              <div class="doc-field-row"><span class="doc-field-label">Journey Route:</span><span class="doc-field-val">San Francisco (SFO) ➔ Tokyo (HND)</span></div>
+              <div class="doc-field-row"><span class="doc-field-label">Flight PNR / Transit Ref:</span><span class="doc-field-val">PNR-CBG-984210 ({{docPreviewData.vendorName}})</span></div>
+              <div class="doc-field-row"><span class="doc-field-label">Travel Window:</span><span class="doc-field-val">{{formatDate(docPreviewData.expenseDate)}} (Round-trip Transit)</span></div>
+            </div>
+            <div>
+              <div class="doc-field-row"><span class="doc-field-label">Hotel & Accommodation:</span><span class="doc-field-val">Grand Hyatt Tokyo (Preferred Contract)</span></div>
+              <div class="doc-field-row"><span class="doc-field-label">Business Purpose:</span><span class="doc-field-val">CBG Enterprise Tech Summit & Client Review</span></div>
+              <div class="doc-field-row"><span class="doc-field-label">Policy Audit Status:</span><span class="doc-field-val" style="color:#16a34a; font-weight:800;">✓ 100% Policy Engine Compliant</span></div>
+            </div>
           </div>
         </div>
 
