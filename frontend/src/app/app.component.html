@@ -509,41 +509,161 @@
       </select>
     </div>
 
-    <!-- ===== DASHBOARD ===== -->
+    <!-- ===== ROLE-SPECIFIC HOME DASHBOARD ===== -->
     <section *ngIf="activeTab === 'dashboard'">
       <div class="page-header">
-        <h2>{{auth.currentUserValue?.designation || 'Dashboard'}}</h2>
-        <p>Logged in as <strong>{{auth.currentUserValue?.fullName}}</strong></p>
+        <h2>{{roleDashboardInfo.title}}</h2>
+        <p>{{roleDashboardInfo.subtitle}} — Welcome back, <strong>{{auth.currentUserValue?.fullName}}</strong></p>
       </div>
 
-      <!-- KPIs -->
-      <div class="kpi-grid" *ngIf="analytics">
+      <!-- KPI GRID 1: EMPLOYEE -->
+      <div class="kpi-grid" *ngIf="auth.currentRole === 'EMPLOYEE'">
         <div class="kpi-card">
-          <div class="kpi-label">Approved Spend</div>
-          <div class="kpi-value blue">{{formatCurrency(analytics.totalApprovedSpend)}}</div>
-          <div class="kpi-sub">Total approved budget</div>
+          <div class="kpi-label">My Active Requests</div>
+          <div class="kpi-value blue">{{myRequestsCount}}</div>
+          <div class="kpi-sub">Trips submitted for review</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Active Travelers</div>
-          <div class="kpi-value green">{{analytics.activeTripsCount}}</div>
-          <div class="kpi-sub">Currently in transit</div>
+          <div class="kpi-label">Approved Trips</div>
+          <div class="kpi-value green">{{myTravelRequests.length}}</div>
+          <div class="kpi-sub">Ready for booking & travel</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Policy Score</div>
-          <div class="kpi-value" [class.green]="analytics.policyComplianceRate >= 80" [class.orange]="analytics.policyComplianceRate < 80">{{analytics.policyComplianceRate}}%</div>
-          <div class="kpi-sub">Compliance rate</div>
+          <div class="kpi-label">My Expenses</div>
+          <div class="kpi-value purple">{{myExpensesCount}}</div>
+          <div class="kpi-sub">Receipt claims uploaded</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Savings</div>
-          <div class="kpi-value purple">{{formatCurrency(analytics.estimatedCorporateSavings)}}</div>
-          <div class="kpi-sub">Negotiated rate savings</div>
+          <div class="kpi-label">Passport Status</div>
+          <div class="kpi-value green">Active</div>
+          <div class="kpi-sub">Valid until 2028</div>
         </div>
       </div>
 
-      <!-- Charts Row -->
+      <!-- KPI GRID 2: APPROVING MANAGER -->
+      <div class="kpi-grid" *ngIf="auth.currentRole === 'APPROVING_MANAGER' || auth.currentRole === 'MANAGER'">
+        <div class="kpi-card">
+          <div class="kpi-label">Pending Approval Inbox</div>
+          <div class="kpi-value orange">{{pendingRequestsCount}}</div>
+          <div class="kpi-sub">Requires manager signature</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Team Total Requests</div>
+          <div class="kpi-value blue">{{travelRequests.length}}</div>
+          <div class="kpi-sub">Submitted by direct reports</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Dept Budget Utilized</div>
+          <div class="kpi-value purple">{{formatCurrency(analytics?.totalApprovedSpend || 0)}}</div>
+          <div class="kpi-sub">Out of $250,000 allocated</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Policy Score Avg</div>
+          <div class="kpi-value green">{{analytics?.policyComplianceRate || 92}}%</div>
+          <div class="kpi-sub">Team compliance average</div>
+        </div>
+      </div>
+
+      <!-- KPI GRID 3: CORPORATE TRAVEL MANAGER -->
+      <div class="kpi-grid" *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
+        <div class="kpi-card">
+          <div class="kpi-label">Program Total Spend</div>
+          <div class="kpi-value blue">{{formatCurrency(analytics?.totalApprovedSpend || 0)}}</div>
+          <div class="kpi-sub">Global travel budget</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Negotiated Savings</div>
+          <div class="kpi-value green">{{formatCurrency(analytics?.estimatedCorporateSavings || 0)}}</div>
+          <div class="kpi-sub">Corporate rate discounts</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Preferred Vendors</div>
+          <div class="kpi-value purple">{{vendors.length}}</div>
+          <div class="kpi-sub">Active corporate contracts</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Policy Violations</div>
+          <div class="kpi-value" [class.red]="policyViolationsCount > 0" [class.green]="policyViolationsCount === 0">{{policyViolationsCount}}</div>
+          <div class="kpi-sub">Requisitions flagged by engine</div>
+        </div>
+      </div>
+
+      <!-- KPI GRID 4: FINANCE ADMIN -->
+      <div class="kpi-grid" *ngIf="auth.currentRole === 'FINANCE_ADMIN'">
+        <div class="kpi-card">
+          <div class="kpi-label">Pending Audit Value</div>
+          <div class="kpi-value orange">{{pendingExpensesCount}} claims</div>
+          <div class="kpi-sub">Awaiting payout clearance</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Approved Payouts</div>
+          <div class="kpi-value green">{{expenses.length - pendingExpensesCount}} claims</div>
+          <div class="kpi-sub">Cleared for reimbursement</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg OCR Confidence</div>
+          <div class="kpi-value teal">97.8%</div>
+          <div class="kpi-sub">Automated receipt accuracy</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Audited Total</div>
+          <div class="kpi-value blue">{{formatCurrency(analytics?.totalApprovedSpend || 0)}}</div>
+          <div class="kpi-sub">Processed this quarter</div>
+        </div>
+      </div>
+
+      <!-- KPI GRID 5: RISK OFFICER -->
+      <div class="kpi-grid" *ngIf="auth.currentRole === 'RISK_OFFICER'">
+        <div class="kpi-card">
+          <div class="kpi-label">Travelers Abroad</div>
+          <div class="kpi-value blue">{{travelerLocations.length}}</div>
+          <div class="kpi-sub">Active PNR location tracking</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">High Risk Alerts</div>
+          <div class="kpi-value orange">1</div>
+          <div class="kpi-sub">Elevated regional advisory</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Active SOS Dispatches</div>
+          <div class="kpi-value green">0</div>
+          <div class="kpi-sub">All personnel confirmed safe</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Threat Feeds Sync</div>
+          <div class="kpi-value teal">Live</div>
+          <div class="kpi-sub">Global Incident Feed</div>
+        </div>
+      </div>
+
+      <!-- KPI GRID 6: LOGISTICS COORDINATOR -->
+      <div class="kpi-grid" *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR'">
+        <div class="kpi-card">
+          <div class="kpi-label">Shipments In-Transit</div>
+          <div class="kpi-value blue">{{shipments.length}}</div>
+          <div class="kpi-sub">Active prototype & trade cargo</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Delivered Assets</div>
+          <div class="kpi-value green">4</div>
+          <div class="kpi-sub">Confirmed venue arrivals</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Customs Clearances</div>
+          <div class="kpi-value purple">1</div>
+          <div class="kpi-sub">Pending Carnet verification</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Carrier Partners</div>
+          <div class="kpi-value teal">3</div>
+          <div class="kpi-sub">FedEx, DHL, DB Schenker</div>
+        </div>
+      </div>
+
+      <!-- Charts Row (Custom Canvas Charts) -->
       <div class="section-grid">
         <div class="chart-container">
-          <h4>{{auth.currentRole === 'FINANCE_ADMIN' ? 'Spend by Category' : auth.currentRole === 'LOGISTICS_COORDINATOR' ? 'Shipment Status' : auth.currentRole === 'RISK_OFFICER' ? 'Threat Levels' : 'Request Status'}}</h4>
+          <h4>{{auth.currentRole === 'EMPLOYEE' ? 'My Trip Status Breakdown' : auth.currentRole === 'FINANCE_ADMIN' ? 'Category Spend Analytics' : auth.currentRole === 'LOGISTICS_COORDINATOR' ? 'Shipment Status Breakdown' : auth.currentRole === 'RISK_OFFICER' ? 'Regional Threat Level Distribution' : 'Requisition Status Breakdown'}}</h4>
           <div class="chart-canvas-wrap">
             <canvas #pieChart1 width="180" height="180"></canvas>
           </div>
@@ -554,8 +674,9 @@
             </div>
           </div>
         </div>
+
         <div class="chart-container">
-          <h4>{{auth.currentRole === 'FINANCE_ADMIN' ? 'Audit Status' : 'Department Spend'}}</h4>
+          <h4>{{auth.currentRole === 'EMPLOYEE' ? 'My Expense Breakdown by Category' : auth.currentRole === 'FINANCE_ADMIN' ? 'Audit Status Distribution' : 'Departmental Spend Allocation'}}</h4>
           <div class="chart-canvas-wrap">
             <canvas #pieChart2 width="180" height="180"></canvas>
           </div>
@@ -568,73 +689,155 @@
         </div>
       </div>
 
-      <!-- ROLE 1: EMPLOYEE -->
-      <div class="card" *ngIf="auth.currentRole === 'EMPLOYEE'">
-        <div class="card-header">
-          <h3>👩‍💻 My Travel Portal</h3>
-          <button class="btn btn-sm btn-primary" (click)="openCreateModal()">✚ New Trip</button>
-        </div>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Submit travel requisitions, view itineraries, and upload expense receipts for your trips.</p>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-ghost btn-sm" (click)="switchTab('requests')">My Requests ({{travelRequests.length}})</button>
-          <button class="btn btn-ghost btn-sm" (click)="openCreateExpenseModal()">Upload Receipt</button>
+      <!-- UNIQUE ROLE DASHBOARD WIDGETS -->
+
+      <!-- 1. EMPLOYEE HOME WIDGET -->
+      <div *ngIf="auth.currentRole === 'EMPLOYEE'">
+        <div class="card">
+          <div class="card-header">
+            <h3>✈️ My Current & Upcoming Requisitions</h3>
+            <button class="btn btn-sm btn-primary" (click)="openCreateModal()">✚ Submit New Trip Requisition</button>
+          </div>
+          <div class="table-responsive" *ngIf="myTravelRequests.length > 0">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Destination</th><th>Dates</th><th>Budget</th><th>Score</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let req of myTravelRequests" (click)="viewRequestDetail(req)">
+                  <td style="color:var(--text-tertiary);">#{{req.id}}</td>
+                  <td style="font-weight:600;">{{req.destination}}</td>
+                  <td style="font-size:12px; color:var(--text-secondary);">{{formatDate(req.startDate)}} → {{formatDate(req.endDate)}}</td>
+                  <td>{{formatCurrency(req.estimatedBudget)}}</td>
+                  <td><span style="font-weight:700;" [style.color]="req.policyComplianceScore >= 80 ? 'var(--accent-green)' : 'var(--accent-orange)'">{{req.policyComplianceScore}}</span></td>
+                  <td><span class="status-badge" [style.background]="getStatusColor(req.status)+'1a'" [style.color]="getStatusColor(req.status)">{{req.status.replace('_',' ')}}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="empty-state" *ngIf="myTravelRequests.length === 0" style="padding:20px;">
+            <p>You haven't submitted any travel requisitions yet.</p>
+          </div>
         </div>
       </div>
 
-      <!-- ROLE 2: APPROVING MANAGER -->
-      <div class="card" *ngIf="auth.currentRole === 'APPROVING_MANAGER' || auth.currentRole === 'MANAGER'">
-        <div class="card-header">
-          <h3>👨‍💼 Approval Queue</h3>
-          <span class="status-badge" style="background:rgba(255,159,10,0.12); color:var(--accent-orange);">{{pendingRequestsCount}} Pending</span>
+      <!-- 2. MANAGER HOME WIDGET -->
+      <div *ngIf="auth.currentRole === 'APPROVING_MANAGER' || auth.currentRole === 'MANAGER'">
+        <div class="card">
+          <div class="card-header">
+            <h3>📥 Immediate Approvals Queue</h3>
+            <span class="status-badge" style="background:rgba(255,159,10,0.12); color:var(--accent-orange);">{{pendingRequestsCount}} Action Items</span>
+          </div>
+          <div class="table-responsive" *ngIf="filteredRequests.length > 0">
+            <table class="data-table">
+              <thead><tr><th>Traveler</th><th>Destination</th><th>Dates</th><th>Budget</th><th>Compliance Score</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let req of filteredRequests">
+                  <td>
+                    <div class="employee-cell">
+                      <div class="avatar blue">{{req.employee.firstName.charAt(0)}}</div>
+                      <div><div style="font-weight:600;">{{req.employee.fullName}}</div><div style="font-size:11px; color:var(--text-tertiary);">{{req.employee.department}}</div></div>
+                    </div>
+                  </td>
+                  <td>{{req.destination}}</td>
+                  <td style="font-size:12px;">{{formatDate(req.startDate)}} → {{formatDate(req.endDate)}}</td>
+                  <td style="font-weight:700;">{{formatCurrency(req.estimatedBudget)}}</td>
+                  <td><span style="font-weight:700;" [style.color]="req.policyComplianceScore >= 80 ? 'var(--accent-green)' : 'var(--accent-orange)'">{{req.policyComplianceScore}} pts</span></td>
+                  <td><button class="btn btn-sm btn-primary" (click)="viewRequestDetail(req)">Review & Sign</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Review trip ROI scores, approve or reject requests, and manage your departmental travel budget.</p>
-        <button class="btn btn-primary btn-sm" (click)="switchTab('requests')">Open Queue</button>
       </div>
 
-      <!-- ROLE 3: CORPORATE TRAVEL MANAGER -->
-      <div class="card" *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
-        <div class="card-header">
-          <h3>✈️ Travel Program Management</h3>
-          <button class="btn btn-sm btn-primary" (click)="openCreateVendorModal()">✚ Add Vendor</button>
-        </div>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Negotiate preferred vendor contracts, configure automated policy rules, and optimize program ROI.</p>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-ghost btn-sm" (click)="switchTab('vendors')">Vendor Catalog ({{vendors.length}})</button>
-          <button class="btn btn-ghost btn-sm" (click)="switchTab('requests')">Policy Violations</button>
+      <!-- 3. CORPORATE TRAVEL MANAGER HOME WIDGET -->
+      <div *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
+        <div class="card">
+          <div class="card-header">
+            <h3>🤝 Preferred Vendor Directory</h3>
+            <button class="btn btn-sm btn-primary" (click)="openCreateVendorModal()">✚ Add Preferred Vendor</button>
+          </div>
+          <div class="vendor-grid">
+            <div class="vendor-card" *ngFor="let vendor of vendors">
+              <div class="vendor-header">
+                <h4 style="font-size:14px;">{{getCategoryIcon(vendor.category)}} {{vendor.name}}</h4>
+                <span class="status-badge" style="background:rgba(48,209,88,0.12); color:var(--accent-green);">-{{vendor.discountPercentage}}%</span>
+              </div>
+              <div class="vendor-meta">
+                <div>Rate: <strong>{{formatCurrency(vendor.corporateRate)}}</strong></div>
+                <div>★ {{vendor.rating}}</div>
+              </div>
+              <div class="vendor-badges" *ngIf="vendor.badges">
+                <span class="vendor-badge" *ngFor="let badge of getVendorBadges(vendor.badges)">{{badge}}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- ROLE 4: FINANCE -->
-      <div class="card" *ngIf="auth.currentRole === 'FINANCE_ADMIN'">
-        <div class="card-header">
-          <h3>💼 Expense Audit Suite</h3>
-          <span class="status-badge" style="background:rgba(255,159,10,0.12); color:var(--accent-orange);">{{pendingExpensesCount}} Pending</span>
+      <!-- 4. FINANCE ADMIN HOME WIDGET -->
+      <div *ngIf="auth.currentRole === 'FINANCE_ADMIN'">
+        <div class="card">
+          <div class="card-header">
+            <h3>🔍 Digital Expense Audit Inbox</h3>
+            <span class="status-badge" style="background:rgba(255,159,10,0.12); color:var(--accent-orange);">{{pendingExpensesCount} Pending Audit</span>
+          </div>
+          <div class="card-body">
+            <div *ngFor="let exp of expenses" class="expense-card">
+              <div style="font-size:20px; margin-right:10px;">{{getCategoryIcon(exp.category)}}</div>
+              <div style="flex:1;">
+                <h4 style="font-size:13px; font-weight:600;">{{exp.vendorName}}</h4>
+                <p style="font-size:11px; color:var(--text-secondary);">{{exp.employee.fullName}} · {{exp.category}} · OCR Confidence {{exp.ocrConfidence}}%</p>
+              </div>
+              <div class="expense-amount">{{formatCurrency(exp.amount)}}</div>
+              <div style="display:flex; gap:6px;" *ngIf="exp.auditStatus === 'PENDING_AUDIT'">
+                <button class="btn btn-sm btn-success" (click)="approveExpense(exp)">✓ Clear Payout</button>
+                <button class="btn btn-sm btn-danger" (click)="flagExpense(exp)">⚑ Flag Claim</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Audit digital receipt claims with OCR confidence scoring, process reimbursement payouts, and generate department spend reports.</p>
-        <button class="btn btn-primary btn-sm" (click)="switchTab('expenses')">Open Audit Queue</button>
       </div>
 
-      <!-- ROLE 5: SECURITY -->
-      <div class="card" *ngIf="auth.currentRole === 'RISK_OFFICER'">
-        <div class="card-header">
-          <h3>🛡️ Duty of Care Command</h3>
+      <!-- 5. RISK OFFICER HOME WIDGET -->
+      <div *ngIf="auth.currentRole === 'RISK_OFFICER'">
+        <div class="card">
+          <div class="card-header">
+            <h3>🛡️ Duty of Care Active Locations & SOS</h3>
+          </div>
+          <div class="risk-grid">
+            <div class="risk-card" *ngFor="let loc of travelerLocations">
+              <div class="card-header">
+                <div class="employee-cell">
+                  <div class="avatar blue">{{loc.employee.firstName.charAt(0)}}</div>
+                  <div><div style="font-weight:700;">{{loc.employee.fullName}}</div><div style="font-size:11px; color:var(--text-tertiary);">{{loc.employee.designation}}</div></div>
+                </div>
+                <span class="status-badge" [style.background]="getStatusColor(loc.threatLevel)+'1a'" [style.color]="getStatusColor(loc.threatLevel)">{{getThreatIcon(loc.threatLevel)}} {{loc.threatLevel}}</span>
+              </div>
+              <div style="margin-bottom:6px; font-size:13px;">📍 {{loc.city}}, {{loc.country}}</div>
+              <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)">🚨 Dispatch Emergency SOS</button>
+            </div>
+          </div>
         </div>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Monitor global traveler PNR locations, assess regional threat levels, and dispatch immediate emergency SOS assistance.</p>
-        <button class="btn btn-danger btn-sm" (click)="switchTab('risk')">Open Safety Map ({{travelerLocations.length}} Tracked)</button>
       </div>
 
-      <!-- ROLE 6: LOGISTICS -->
-      <div class="card" *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR'">
-        <div class="card-header">
-          <h3>📦 Asset Logistics Operations</h3>
-          <button class="btn btn-sm btn-primary" (click)="openCreateShipmentModal()">✚ Dispatch</button>
+      <!-- 6. LOGISTICS COORDINATOR HOME WIDGET -->
+      <div *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR'">
+        <div class="card">
+          <div class="card-header">
+            <h3>📦 Cargo & Asset Tracking Board</h3>
+            <button class="btn btn-sm btn-primary" (click)="openCreateShipmentModal()">✚ Dispatch Asset</button>
+          </div>
+          <div *ngFor="let s of shipments" class="shipment-card">
+            <div class="card-header">
+              <div><h4 style="font-size:14px;">📦 {{s.assetName}}</h4><div style="font-size:11px; color:var(--text-secondary); margin-top:3px;">Carrier: {{s.shippingCarrier}} ({{s.trackingCode}})</div></div>
+              <span class="status-badge" [style.background]="getStatusColor(s.status)+'1a'" [style.color]="getStatusColor(s.status)">{{s.status.replace('_',' ')}}</span>
+            </div>
+          </div>
         </div>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:14px;">Coordinate prototype & event equipment transport, manage customs/carnets compliance, and dispatch via 3PL carriers.</p>
-        <button class="btn btn-ghost btn-sm" (click)="switchTab('shipments')">Active Shipments ({{shipments.length}})</button>
       </div>
     </section>
 
-    <!-- ===== TRAVEL REQUESTS ===== -->
+    <!-- ===== TRAVEL REQUESTS TAB ===== -->
     <section *ngIf="activeTab === 'requests'">
       <div class="page-header">
         <div class="page-header-actions">
@@ -674,7 +877,7 @@
       <div class="card empty-state" *ngIf="filteredRequests.length === 0"><div class="empty-icon">🗂️</div><h4>No travel requests</h4></div>
     </section>
 
-    <!-- ===== VENDORS ===== -->
+    <!-- ===== VENDORS TAB ===== -->
     <section *ngIf="activeTab === 'vendors'">
       <div class="page-header">
         <div class="page-header-actions">
@@ -703,7 +906,7 @@
       </div>
     </section>
 
-    <!-- ===== SHIPMENTS ===== -->
+    <!-- ===== SHIPMENTS TAB ===== -->
     <section *ngIf="activeTab === 'shipments'">
       <div class="page-header">
         <div class="page-header-actions">
@@ -730,7 +933,7 @@
       <div class="card empty-state" *ngIf="filteredShipments.length === 0"><div class="empty-icon">📦</div><h4>No active shipments</h4></div>
     </section>
 
-    <!-- ===== EXPENSES ===== -->
+    <!-- ===== EXPENSES TAB ===== -->
     <section *ngIf="activeTab === 'expenses'">
       <div class="page-header">
         <div class="page-header-actions">
@@ -756,7 +959,7 @@
       <div class="card empty-state" *ngIf="filteredExpenses.length === 0"><div class="empty-icon">💰</div><h4>No expense claims</h4></div>
     </section>
 
-    <!-- ===== DUTY OF CARE ===== -->
+    <!-- ===== DUTY OF CARE TAB ===== -->
     <section *ngIf="activeTab === 'risk'">
       <div class="page-header"><h2>Duty of Care</h2><p>Global traveler tracking & emergency response</p></div>
       <div class="risk-grid">
@@ -775,7 +978,7 @@
       </div>
     </section>
 
-    <!-- ===== NOTIFICATIONS ===== -->
+    <!-- ===== NOTIFICATIONS TAB ===== -->
     <section *ngIf="activeTab === 'notifications'">
       <div class="page-header"><h2>Disruption Alerts</h2><p>Flight delays, incidents & shipment updates</p></div>
       <div class="card">
@@ -787,7 +990,7 @@
       </div>
     </section>
 
-    <!-- ===== EMPLOYEES ===== -->
+    <!-- ===== EMPLOYEES TAB ===== -->
     <section *ngIf="activeTab === 'employees'">
       <div class="page-header"><h2>Official Directory</h2><p>Enterprise account roles</p></div>
       <div class="card">
@@ -811,7 +1014,7 @@
 
   <!-- Mobile Bottom Bar -->
   <nav class="mobile-bottom-bar">
-    <button class="mobile-nav-item" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')"><span class="icon">📊</span><span>Home</span></button>
+    <button class="mobile-nav-item" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')"><span class="icon">{{roleDashboardInfo.homeIcon}}</span><span>{{roleDashboardInfo.homeTabName}}</span></button>
     <button class="mobile-nav-item" [class.active]="activeTab === 'requests'" (click)="switchTab('requests')"><span class="icon">🗂️</span><span>Trips</span></button>
     <button class="mobile-nav-item" [class.active]="activeTab === 'expenses'" (click)="switchTab('expenses')"><span class="icon">💰</span><span>Audit</span></button>
     <button class="mobile-nav-item" [class.active]="activeTab === 'risk'" (click)="switchTab('risk')"><span class="icon">🛡️</span><span>Safety</span></button>

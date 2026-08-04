@@ -256,7 +256,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         else if (!/[0-9]/.test(pwd)) { errors['password'] = 'Must contain a number'; }
         else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) { errors['password'] = 'Must contain a special character'; }
         else { errors['password'] = ''; }
-        // Also re-validate confirm password
         if (this.signupTouched['confirmPassword']) {
           errors['confirmPassword'] = f.confirmPassword !== f.password ? 'Passwords do not match' : '';
         }
@@ -305,7 +304,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   onSignup() {
-    // Touch all fields to show errors
     ['firstName', 'lastName', 'employeeCode', 'email', 'phone', 'password', 'confirmPassword', 'nationality'].forEach(f => this.validateSignupField(f));
 
     if (!this.isSignupFormValid) {
@@ -383,7 +381,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.travelerLocations = data.locations;
         this.expenses = data.expenses;
         this.isLoading = false;
-        this.chartsDrawn = false; // Redraw charts on data refresh
+        this.chartsDrawn = false;
       },
       error: () => { this.isLoading = false; }
     });
@@ -421,60 +419,125 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-  // ===== Role-Specific Sidebar Items =====
+  // ===== 100% DISTINCT ROLE-BASED SIDEBAR & DASHBOARD LABELS =====
+  get roleDashboardInfo(): { homeTabName: string; homeIcon: string; homeSection: string; title: string; subtitle: string } {
+    const role = this.auth.currentRole;
+    switch (role) {
+      case 'EMPLOYEE':
+        return {
+          homeTabName: 'My Travel Hub',
+          homeIcon: '🏠',
+          homeSection: 'Personal Space',
+          title: 'My Travel Hub & Itineraries',
+          subtitle: 'Manage your active requisitions, itineraries, and reimbursement claims'
+        };
+      case 'APPROVING_MANAGER':
+      case 'MANAGER':
+        return {
+          homeTabName: 'Manager Action Center',
+          homeIcon: '📥',
+          homeSection: 'Executive Control',
+          title: 'Executive Approvals & Budget Control',
+          subtitle: 'Review team requisitions, ROI scores, and department budget status'
+        };
+      case 'CORPORATE_TRAVEL_MANAGER':
+        return {
+          homeTabName: 'Travel Ops Console',
+          homeIcon: '✈️',
+          homeSection: 'Program Governance',
+          title: 'Enterprise Travel Operations Console',
+          subtitle: 'Manage preferred vendors, policy engine, and global program savings'
+        };
+      case 'FINANCE_ADMIN':
+        return {
+          homeTabName: 'Finance Audit Portal',
+          homeIcon: '💼',
+          homeSection: 'Financial Oversight',
+          title: 'Expense Audit & Payout Operations',
+          subtitle: 'OCR receipt verification, fraud detection, and budget reconciliation'
+        };
+      case 'RISK_OFFICER':
+        return {
+          homeTabName: 'Security Command Center',
+          homeIcon: '🛡️',
+          homeSection: 'Duty of Care',
+          title: 'Global Security & Duty of Care Command',
+          subtitle: 'Traveler tracking, threat level assessments, and emergency SOS dispatch'
+        };
+      case 'LOGISTICS_COORDINATOR':
+        return {
+          homeTabName: 'Logistics Control Tower',
+          homeIcon: '📦',
+          homeSection: 'Cargo Operations',
+          title: 'Equipment & Asset Transport Control',
+          subtitle: 'Track prototype cargo, customs clearance, and 3PL carrier dispatch'
+        };
+      default:
+        return {
+          homeTabName: 'Dashboard',
+          homeIcon: '📊',
+          homeSection: 'Overview',
+          title: 'Command Center',
+          subtitle: 'Enterprise Travel & Logistics System'
+        };
+    }
+  }
+
   get sidebarItems(): { section: string; items: { tab: string; icon: string; label: string; badge?: number }[] }[] {
     const role = this.auth.currentRole;
+    const dashInfo = this.roleDashboardInfo;
     const items: { section: string; items: { tab: string; icon: string; label: string; badge?: number }[] }[] = [];
 
-    items.push({ section: 'Overview', items: [{ tab: 'dashboard', icon: '📊', label: 'Command Center' }] });
+    // Role-specific home tab
+    items.push({
+      section: dashInfo.homeSection,
+      items: [{ tab: 'dashboard', icon: dashInfo.homeIcon, label: dashInfo.homeTabName }]
+    });
 
     switch (role) {
       case 'EMPLOYEE':
-        items.push({ section: 'My Travel', items: [
-          { tab: 'requests', icon: '🗂️', label: 'My Trip Requests', badge: this.pendingRequestsCount },
-          { tab: 'expenses', icon: '🧾', label: 'My Expense Receipts', badge: this.pendingExpensesCount }
+        items.push({ section: 'My Activities', items: [
+          { tab: 'requests', icon: '🗂️', label: 'My Trip Requests', badge: this.myRequestsCount },
+          { tab: 'expenses', icon: '🧾', label: 'My Expense Claims', badge: this.myExpensesCount }
         ]});
         break;
 
       case 'APPROVING_MANAGER':
       case 'MANAGER':
-        items.push({ section: 'Approvals', items: [
-          { tab: 'requests', icon: '✅', label: 'Approval Queue', badge: this.pendingRequestsCount },
-          { tab: 'expenses', icon: '💰', label: 'Budget Overview' }
-        ]});
-        items.push({ section: 'Team', items: [
-          { tab: 'employees', icon: '👥', label: 'My Team Directory' }
+        items.push({ section: 'Approvals & Team', items: [
+          { tab: 'requests', icon: '✅', label: 'Pending Approvals Queue', badge: this.pendingRequestsCount },
+          { tab: 'employees', icon: '👥', label: 'Direct Reports Directory' }
         ]});
         break;
 
       case 'CORPORATE_TRAVEL_MANAGER':
-        items.push({ section: 'Program Management', items: [
-          { tab: 'vendors', icon: '🤝', label: 'Vendor Catalog' },
-          { tab: 'requests', icon: '📋', label: 'Policy Compliance', badge: this.pendingRequestsCount }
+        items.push({ section: 'Program Assets', items: [
+          { tab: 'vendors', icon: '🤝', label: 'Preferred Vendor Directory' },
+          { tab: 'requests', icon: '📋', label: 'Policy Violation Alerts', badge: this.policyViolationsCount }
         ]});
-        items.push({ section: 'Analytics', items: [
-          { tab: 'expenses', icon: '📊', label: 'Spend Analytics' }
+        items.push({ section: 'Financial Control', items: [
+          { tab: 'expenses', icon: '📊', label: 'Program Spend Analytics' }
         ]});
         break;
 
       case 'FINANCE_ADMIN':
-        items.push({ section: 'Audit & Payout', items: [
-          { tab: 'expenses', icon: '🔍', label: 'Expense Audit Queue', badge: this.pendingExpensesCount },
-          { tab: 'requests', icon: '📑', label: 'Budget Reconciliation' }
+        items.push({ section: 'Audit Queue', items: [
+          { tab: 'expenses', icon: '🔍', label: 'Expense Claims Audit', badge: this.pendingExpensesCount },
+          { tab: 'requests', icon: '📑', label: 'Approved Budget Reconciliations' }
         ]});
         break;
 
       case 'RISK_OFFICER':
-        items.push({ section: 'Safety & Security', items: [
+        items.push({ section: 'Traveler Safety', items: [
           { tab: 'risk', icon: '🛡️', label: 'Duty of Care Map' },
-          { tab: 'notifications', icon: '🚨', label: 'Threat Alerts', badge: this.unreadNotifications }
+          { tab: 'notifications', icon: '🚨', label: 'Disruption & Threat Feeds', badge: this.unreadNotifications }
         ]});
         break;
 
       case 'LOGISTICS_COORDINATOR':
-        items.push({ section: 'Cargo & Transport', items: [
-          { tab: 'shipments', icon: '📦', label: 'Active Shipments' },
-          { tab: 'requests', icon: '🔗', label: 'Synced Travelers' }
+        items.push({ section: 'Cargo Management', items: [
+          { tab: 'shipments', icon: '📦', label: 'Active Shipments Board' },
+          { tab: 'requests', icon: '🔗', label: 'Synced Personnel Trips' }
         ]});
         break;
 
@@ -524,6 +587,23 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  // ===== My Data (For Employee Role) =====
+  get myTravelRequests(): TravelRequest[] {
+    const currentEmpId = this.auth.currentUserValue?.id;
+    if (!currentEmpId) return this.travelRequests;
+    return this.travelRequests.filter(r => r.employee.id === currentEmpId);
+  }
+
+  get myExpenseClaims(): ExpenseClaim[] {
+    const currentEmpId = this.auth.currentUserValue?.id;
+    if (!currentEmpId) return this.expenses;
+    return this.expenses.filter(e => e.employee.id === currentEmpId);
+  }
+
+  get myRequestsCount(): number { return this.myTravelRequests.length; }
+  get myExpensesCount(): number { return this.myExpenseClaims.length; }
+  get policyViolationsCount(): number { return this.travelRequests.filter(r => r.status === 'POLICY_VIOLATION').length; }
+
   // ===== Charts (Pure Canvas) =====
   drawCharts() {
     setTimeout(() => {
@@ -538,6 +618,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   getChart1Data(): { label: string; value: number; color: string }[] {
     const role = this.auth.currentRole;
+    if (role === 'EMPLOYEE') {
+      const statusMap: Record<string, number> = {};
+      this.myTravelRequests.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + 1; });
+      const colors: Record<string, string> = { 'APPROVED': '#30D158', 'PENDING_APPROVAL': '#FF9F0A', 'REJECTED': '#FF453A', 'POLICY_VIOLATION': '#BF5AF2' };
+      return Object.entries(statusMap).map(([k, v]) => ({ label: k.replace('_', ' '), value: v, color: colors[k] || '#8e8e93' }));
+    }
     if (role === 'CORPORATE_TRAVEL_MANAGER' || role === 'FINANCE_ADMIN') {
       const cats = this.analytics?.spendByCategory || [];
       const colors = ['#0A84FF', '#BF5AF2', '#30D158', '#FF9F0A', '#FF453A', '#64D2FF'];
@@ -555,7 +641,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       const colors: Record<string, string> = { 'LOW': '#30D158', 'MODERATE': '#FF9F0A', 'HIGH': '#FF453A', 'CRITICAL': '#FF453A' };
       return Object.entries(threatMap).map(([k, v]) => ({ label: k, value: v, color: colors[k] || '#8e8e93' }));
     }
-    // Default: status breakdown of requests
     const statusMap: Record<string, number> = {};
     this.travelRequests.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + 1; });
     const colors: Record<string, string> = { 'APPROVED': '#30D158', 'PENDING_APPROVAL': '#FF9F0A', 'REJECTED': '#FF453A', 'POLICY_VIOLATION': '#BF5AF2' };
@@ -563,13 +648,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getChart2Data(): { label: string; value: number; color: string }[] {
-    if (this.auth.currentRole === 'FINANCE_ADMIN') {
+    const role = this.auth.currentRole;
+    if (role === 'EMPLOYEE') {
+      const catMap: Record<string, number> = {};
+      this.myExpenseClaims.forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amount; });
+      const colors: Record<string, string> = { 'MEALS': '#FF9F0A', 'HOTEL': '#BF5AF2', 'GROUND_TRANSPORT': '#0A84FF', 'FLIGHT': '#30D158', 'MISC': '#64D2FF' };
+      return Object.entries(catMap).map(([k, v]) => ({ label: k, value: v, color: colors[k] || '#8e8e93' }));
+    }
+    if (role === 'FINANCE_ADMIN') {
       const auditMap: Record<string, number> = {};
       this.expenses.forEach(e => { auditMap[e.auditStatus] = (auditMap[e.auditStatus] || 0) + 1; });
       const colors: Record<string, string> = { 'PENDING_AUDIT': '#FF9F0A', 'APPROVED_PAYOUT': '#30D158', 'REJECTED_FLAGGED': '#FF453A' };
       return Object.entries(auditMap).map(([k, v]) => ({ label: k.replace('_', ' '), value: v, color: colors[k] || '#8e8e93' }));
     }
-    // Department spend
     const depts = this.analytics?.spendByDepartment || [];
     const colors = ['#0A84FF', '#30D158', '#BF5AF2', '#FF9F0A', '#FF453A', '#64D2FF'];
     return depts.map((d, i) => ({ label: d.department, value: d.spend, color: colors[i % colors.length] }));
@@ -604,12 +695,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       startAngle += slice;
     });
 
-    // Center text
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#f5f5f7';
-    ctx.font = '700 22px Inter';
+    ctx.font = '700 20px Inter';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(String(total), cx, cy - 6);
+    ctx.fillText(String(Math.round(total)), cx, cy - 6);
     ctx.font = '500 10px Inter';
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-tertiary').trim() || '#888';
     ctx.fillText('TOTAL', cx, cy + 10);
