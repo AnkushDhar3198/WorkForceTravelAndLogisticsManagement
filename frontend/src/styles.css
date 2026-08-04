@@ -1522,6 +1522,31 @@ body.force-mobile {
     box-sizing: border-box;
   }
 
+  /* Landing Navigation Bar */
+  .landing-nav {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .landing-nav-links {
+    display: none !important;
+  }
+
+  .landing-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .landing-nav-actions .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
   .main-content {
     padding: 12px 10px 80px 10px;
     margin-left: 0;
