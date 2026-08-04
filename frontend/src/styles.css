@@ -1578,90 +1578,90 @@ body.force-mobile {
     padding: 5px 12px; font-size: 11px; border-radius: 100px;
   }
 
-  /* Hero Section — clean and breathable */
+  /* Hero Section — spacious and breathable */
   .landing-hero {
-    padding: 64px 20px 28px; text-align: center;
+    padding: 76px 20px 40px; text-align: center;
   }
   .landing-hero::before {
-    width: 200px; height: 200px; opacity: 0.5;
+    width: 220px; height: 220px; opacity: 0.5;
   }
   .hero-badge {
-    font-size: 10px; padding: 5px 12px; margin-bottom: 14px;
+    font-size: 10px; padding: 6px 14px; margin-bottom: 16px;
     border-radius: 100px;
   }
   .hero-title {
     font-size: 28px; letter-spacing: -1px; line-height: 1.12;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
   .hero-subtitle {
-    font-size: 13px; line-height: 1.5; margin-bottom: 24px;
-    max-width: 100%; padding: 0 4px;
+    font-size: 13px; line-height: 1.55; margin-bottom: 28px;
+    max-width: 100%; padding: 0 8px;
     color: var(--text-secondary);
   }
   .hero-actions {
-    flex-direction: row; gap: 10px; width: 100%;
+    flex-direction: row; gap: 12px; width: 100%;
     justify-content: center;
   }
   .hero-actions .btn {
     flex: 1; justify-content: center; max-width: 180px;
   }
   .hero-actions .btn-lg {
-    padding: 12px 16px; font-size: 13px; border-radius: 12px;
+    padding: 13px 18px; font-size: 14px; border-radius: 12px;
   }
 
-  /* Features Grid — compact 2-column layout */
+  /* Features Grid — well-spaced 2-column layout */
   .landing-features {
-    padding: 28px 16px;
+    padding: 40px 16px;
   }
   .section-label {
-    margin-bottom: 16px;
+    margin-bottom: 24px;
   }
   .section-label h2 {
-    font-size: 20px; letter-spacing: -0.5px;
+    font-size: 21px; letter-spacing: -0.5px; margin-bottom: 8px;
   }
   .section-label p {
-    font-size: 12px; line-height: 1.4;
+    font-size: 12px; line-height: 1.5;
   }
   .features-grid {
-    grid-template-columns: repeat(2, 1fr); gap: 10px;
+    grid-template-columns: repeat(2, 1fr); gap: 14px;
   }
   .feature-card {
-    padding: 14px 12px; border-radius: 14px;
+    padding: 18px 14px; border-radius: 14px;
   }
   .feature-card:hover {
     transform: none;
   }
   .feature-icon {
-    width: 32px; height: 32px; font-size: 15px; margin-bottom: 8px;
+    width: 34px; height: 34px; font-size: 15px; margin-bottom: 10px;
     border-radius: 10px;
   }
-  .feature-card h3 { font-size: 12px; margin-bottom: 4px; }
-  .feature-card p { font-size: 11px; line-height: 1.4; }
+  .feature-card h3 { font-size: 13px; margin-bottom: 6px; }
+  .feature-card p { font-size: 11px; line-height: 1.45; }
 
-  /* Roles Grid — compact 2-column */
-  .landing-roles { padding: 28px 16px; }
+  /* Roles Grid — well-spaced 2-column */
+  .landing-roles { padding: 40px 16px; }
   .roles-grid {
-    grid-template-columns: repeat(2, 1fr); gap: 8px;
+    grid-template-columns: repeat(2, 1fr); gap: 12px;
   }
   .role-showcase-card {
-    padding: 12px; border-radius: 12px;
+    padding: 16px; border-radius: 12px;
   }
   .role-showcase-card:hover { transform: none; }
-  .role-showcase-card .role-emoji { font-size: 20px; margin-bottom: 4px; }
-  .role-showcase-card h4 { font-size: 12px; margin-bottom: 3px; }
-  .role-showcase-card p { font-size: 10px; line-height: 1.35; }
+  .role-showcase-card .role-emoji { font-size: 22px; margin-bottom: 6px; }
+  .role-showcase-card h4 { font-size: 13px; margin-bottom: 4px; }
+  .role-showcase-card p { font-size: 11px; line-height: 1.4; }
 
-  /* Footer — tight and clean */
-  .landing-footer { padding: 24px 16px 16px; }
+  /* Footer — clean with proper spacing */
+  .landing-footer { padding: 32px 16px 20px; }
   .footer-grid {
-    grid-template-columns: 1fr 1fr; gap: 16px;
+    grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 20px;
   }
-  .footer-brand { grid-column: 1 / -1; }
-  .footer-brand p { max-width: 100%; font-size: 12px; }
-  .footer-brand h3 { font-size: 15px; }
-  .footer-col h4 { font-size: 9px; margin-bottom: 8px; }
-  .footer-col a { font-size: 11px; margin-bottom: 5px; }
-  .footer-bottom { font-size: 10px; padding-top: 16px; }
+  .footer-brand { grid-column: 1 / -1; margin-bottom: 4px; }
+  .footer-brand p { max-width: 100%; font-size: 12px; line-height: 1.5; margin-top: 6px; }
+  .footer-brand h3 { font-size: 16px; }
+  .footer-col h4 { font-size: 10px; margin-bottom: 10px; }
+  .footer-col a { font-size: 12px; margin-bottom: 8px; }
+  .footer-bottom { font-size: 10px; padding-top: 20px; }
 
   /* === AUTH PAGES (Login / Signup) === */
   .auth-page {
