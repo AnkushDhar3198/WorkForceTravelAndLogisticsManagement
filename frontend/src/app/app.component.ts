@@ -818,7 +818,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   openCreateExpenseModal() {
     this.showCreateExpenseModal = true;
-    this.newExpense = { vendorName: '', category: 'MEALS', expenseDate: new Date().toISOString().split('T')[0], amount: 0, currency: 'USD', receiptFileName: 'scanned_receipt.pdf' };
+    this.newExpense = { vendorName: '', category: 'PASSPORT_BORDER_CLEARANCE', expenseDate: new Date().toISOString().split('T')[0], amount: 0, currency: 'USD', receiptFileName: 'passport_border_receipt.pdf' };
   }
 
   submitExpense() {
@@ -953,10 +953,31 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   getCategoryIcon(category: string): string {
     const map: Record<string, string> = {
+      'PASSPORT_BORDER_CLEARANCE': '🛂',
+      'VISA_PERMITS': '📄',
+      'FLIGHT_TRANSIT': '✈️',
+      'HEALTH_INSURANCE': '🏥',
+      'CUSTOMS_MANIFEST': '📦',
       'FLIGHT': '✈️', 'HOTEL': '🏨', 'GROUND_TRANSPORT': '🚗',
       'MEALS': '🍽️', 'MISC': '📦', 'LOGISTICS': '📦', 'RISK': '🛡️', 'SYSTEM': '⚙️'
     };
     return map[category] || '📋';
+  }
+
+  getCategoryLabel(category: string): string {
+    const map: Record<string, string> = {
+      'PASSPORT_BORDER_CLEARANCE': 'Passport & Border Clearance',
+      'VISA_PERMITS': 'Business Visa & Permits',
+      'FLIGHT_TRANSIT': 'Flight & Transit Tickets',
+      'HEALTH_INSURANCE': 'Corporate Health Insurance',
+      'CUSTOMS_MANIFEST': 'Customs & Logistics Manifest',
+      'FLIGHT': 'Flight Requisition',
+      'HOTEL': 'Hotel & Lodging',
+      'GROUND_TRANSPORT': 'Ground Transport',
+      'MEALS': 'Meals & Per Diem',
+      'MISC': 'Miscellaneous'
+    };
+    return map[category] || category?.replace('_', ' ') || '';
   }
 
   formatCurrency(amount: number): string {

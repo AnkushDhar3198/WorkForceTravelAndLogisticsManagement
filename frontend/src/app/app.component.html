@@ -948,7 +948,7 @@
           <div style="font-size:20px; margin-right:10px;">{{getCategoryIcon(exp.category)}}</div>
           <div style="flex:1;">
             <h4 style="font-size:13px; font-weight:600;">{{exp.vendorName}}</h4>
-            <p style="font-size:11px; color:var(--text-secondary);">{{exp.employee.fullName}} · {{exp.category}} · {{formatDate(exp.expenseDate)}} <span *ngIf="exp.ocrConfidence" style="color:var(--accent-teal);">OCR {{exp.ocrConfidence}}%</span></p>
+            <p style="font-size:11px; color:var(--text-secondary);">{{exp.employee.fullName}} · <strong>{{getCategoryLabel(exp.category)}}</strong> · {{formatDate(exp.expenseDate)}} <span *ngIf="exp.ocrConfidence" style="color:var(--accent-teal);">OCR {{exp.ocrConfidence}}%</span></p>
           </div>
           <div class="expense-amount">{{formatCurrency(exp.amount)}}</div>
           <span class="status-badge" [style.background]="getStatusColor(exp.auditStatus)+'1a'" [style.color]="getStatusColor(exp.auditStatus)" style="margin-right:10px;">{{exp.auditStatus.replace('_',' ')}}</span>
@@ -1064,14 +1064,28 @@
 <!-- CREATE EXPENSE -->
 <div class="modal-overlay" *ngIf="showCreateExpenseModal" (click)="showCreateExpenseModal = false">
   <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header"><h3>Submit Expense Claim</h3><button class="modal-close" (click)="showCreateExpenseModal = false">✕</button></div>
+    <div class="modal-header"><h3>Submit Expense Claim & Document</h3><button class="modal-close" (click)="showCreateExpenseModal = false">✕</button></div>
     <div class="form-grid">
-      <div class="form-group"><label>Vendor</label><input class="form-control" type="text" placeholder="e.g. Tokyo Metro" [(ngModel)]="newExpense.vendorName"></div>
-      <div class="form-group"><label>Category</label><select class="form-control" [(ngModel)]="newExpense.category"><option value="MEALS">Meals</option><option value="GROUND_TRANSPORT">Transport</option><option value="HOTEL">Hotel</option><option value="MISC">Misc</option></select></div>
-      <div class="form-group"><label>Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.expenseDate"></div>
+      <div class="form-group full-width">
+        <label>Expense & Document Category *</label>
+        <select class="form-control" [(ngModel)]="newExpense.category" name="expenseCategory">
+          <option value="PASSPORT_BORDER_CLEARANCE">Passport & Border Clearance</option>
+          <option value="VISA_PERMITS">Business Visa & Permits</option>
+          <option value="FLIGHT_TRANSIT">Flight & Transit Tickets</option>
+          <option value="HEALTH_INSURANCE">Corporate Health Insurance</option>
+          <option value="CUSTOMS_MANIFEST">Customs & Logistics Manifest</option>
+          <option value="HOTEL">Hotel & Lodging</option>
+          <option value="MEALS">Meals & Per Diem</option>
+          <option value="GROUND_TRANSPORT">Ground Transport</option>
+          <option value="MISC">Miscellaneous Expense</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Vendor / Issuer</label><input class="form-control" type="text" placeholder="e.g. Immigration & Customs / Carrier" [(ngModel)]="newExpense.vendorName"></div>
+      <div class="form-group"><label>Expense Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.expenseDate"></div>
       <div class="form-group"><label>Amount ($)</label><input class="form-control" type="number" [(ngModel)]="newExpense.amount"></div>
+      <div class="form-group"><label>Receipt / Document File</label><input class="form-control" type="text" placeholder="document_scan.pdf" [(ngModel)]="newExpense.receiptFileName"></div>
     </div>
-    <div class="modal-actions"><button class="btn btn-ghost" (click)="showCreateExpenseModal = false">Cancel</button><button class="btn btn-primary" (click)="submitExpense()">Submit</button></div>
+    <div class="modal-actions"><button class="btn btn-ghost" (click)="showCreateExpenseModal = false">Cancel</button><button class="btn btn-primary" (click)="submitExpense()">Submit Claim</button></div>
   </div>
 </div>
 

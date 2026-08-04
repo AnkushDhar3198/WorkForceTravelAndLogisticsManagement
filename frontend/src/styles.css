@@ -976,7 +976,17 @@ html, body {
 }
 .form-control:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(10,132,255,0.12); }
 
-select.form-control { appearance: none; -webkit-appearance: none; padding-right: 32px; }
+select.form-control {
+  appearance: none; -webkit-appearance: none; padding-right: 32px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f5f5f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 14px;
+}
+select.form-control option {
+  background-color: #242630; color: #f5f5f7; padding: 12px 16px; font-size: 14px; font-weight: 500;
+}
+select.form-control option:hover, select.form-control option:focus, select.form-control option:checked {
+  background-color: #0A84FF !important; color: #ffffff !important;
+}
 textarea.form-control { min-height: 80px; resize: vertical; }
 
 /* Modal */
