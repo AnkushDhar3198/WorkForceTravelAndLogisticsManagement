@@ -166,6 +166,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Live Weather Tracking State
   currentWeather: LiveDestinationWeather | null = null;
   activeWeatherCity = 'Tokyo';
+  weatherSearchInput = '';
+  isWeatherRefreshing = false;
 
   // Charts
   private chartsDrawn = false;
@@ -184,10 +186,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   fetchLiveDestinationWeather(city?: string) {
     const targetCity = city || (this.travelRequests.length > 0 ? this.travelRequests[0].destination : 'Tokyo');
     this.activeWeatherCity = targetCity;
+    this.weatherSearchInput = targetCity;
+    this.isWeatherRefreshing = true;
     this.weatherService.getLiveWeather(targetCity).subscribe({
-      next: (data) => { this.currentWeather = data; },
-      error: () => {}
+      next: (data) => {
+        this.currentWeather = data;
+        this.isWeatherRefreshing = false;
+      },
+      error: () => { this.isWeatherRefreshing = false; }
     });
+  }
+
+  onSearchWeather() {
+    if (!this.weatherSearchInput.trim()) return;
+    this.fetchLiveDestinationWeather(this.weatherSearchInput.trim());
+  }
+
+  refreshWeather() {
+    this.fetchLiveDestinationWeather(this.activeWeatherCity);
   }
 
   ngOnInit() {

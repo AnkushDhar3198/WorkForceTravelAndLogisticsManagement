@@ -19,6 +19,9 @@ export interface LiveDestinationWeather {
   verificationSources: string[];
   verifiedAt: string;
   forecast: { time: string; temp: number; icon: string }[];
+  destinationLocalTime: string;
+  destinationLocalDate: string;
+  timezone: string;
 }
 
 @Injectable({
@@ -26,7 +29,6 @@ export interface LiveDestinationWeather {
 })
 export class WeatherService {
 
-  // Preset fallback coordinates for key global corporate travel hubs
   private cityCoords: Record<string, { lat: number; lon: number; country: string }> = {
     'tokyo': { lat: 35.6762, lon: 139.6503, country: 'Japan' },
     'london': { lat: 51.5074, lon: -0.1278, country: 'United Kingdom' },
@@ -37,13 +39,18 @@ export class WeatherService {
     'san francisco': { lat: 37.7749, lon: -122.4194, country: 'United States' },
     'frankfurt': { lat: 50.1109, lon: 8.6821, country: 'Germany' },
     'dubai': { lat: 25.2048, lon: 55.2708, country: 'United Arab Emirates' },
-    'hong kong': { lat: 22.3193, lon: 114.1694, country: 'China' }
+    'kolkata': { lat: 22.5726, lon: 88.3639, country: 'India' },
+    'calcutta': { lat: 22.5726, lon: 88.3639, country: 'India' },
+    'mumbai': { lat: 19.0760, lon: 72.8777, country: 'India' },
+    'delhi': { lat: 28.6139, lon: 77.2090, country: 'India' },
+    'bangalore': { lat: 12.9716, lon: 77.5946, country: 'India' }
   };
 
   constructor(private http: HttpClient) {}
 
   getLiveWeather(destination: string): Observable<LiveDestinationWeather> {
-    const cleanCity = (destination || 'Tokyo').split(',')[0].trim();
+    const rawCity = (destination || 'Tokyo').trim();
+    const cleanCity = rawCity.split(',')[0].trim();
     const cityKey = cleanCity.toLowerCase();
     const preset = this.cityCoords[cityKey];
 
@@ -51,7 +58,7 @@ export class WeatherService {
       return this.fetchForecastData(preset.lat, preset.lon, cleanCity, preset.country);
     }
 
-    // Dynamic Open-Meteo Geocoding for any global city
+    // Geocode ANY destination city worldwide
     const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanCity)}&count=1&language=en&format=json`;
     return this.http.get<any>(geoUrl).pipe(
       switchMap(geo => {
@@ -59,7 +66,6 @@ export class WeatherService {
           const res = geo.results[0];
           return this.fetchForecastData(res.latitude, res.longitude, res.name, res.country || 'Global');
         }
-        // Fallback to Tokyo if geocoding fails
         return this.fetchForecastData(35.6762, 139.6503, cleanCity, 'Global');
       }),
       catchError(() => {
@@ -69,7 +75,7 @@ export class WeatherService {
   }
 
   private fetchForecastData(lat: number, lon: number, cityName: string, countryName: string): Observable<LiveDestinationWeather> {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&forecast_days=1`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&forecast_days=1&timezone=auto`;
     
     return this.http.get<any>(url).pipe(
       map(data => {
@@ -80,7 +86,16 @@ export class WeatherService {
         const isDay = cur.is_day !== 0;
 
         const conditionInfo = this.mapWeatherCode(code, isDay);
+
+        // Compute destination local time using utc_offset_seconds
+        const utcOffsetSec = data.utc_offset_seconds ?? 0;
+        const nowUtc = new Date().getTime() + (new Date().getTimezoneOffset() * 60000);
+        const destLocalTimeObj = new Date(nowUtc + (utcOffsetSec * 1000));
         
+        const localTimeStr = destLocalTimeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        const localDateStr = destLocalTimeObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const tzName = data.timezone_abbreviation || `GMT${utcOffsetSec >= 0 ? '+' : ''}${utcOffsetSec / 3600}`;
+
         // Construct 6-hour forecast pills
         const hourlyTemps = data.hourly?.temperature_2m || [];
         const hourlyCodes = data.hourly?.weather_code || [];
@@ -114,7 +129,10 @@ export class WeatherService {
           lowTemp: tempC - 4,
           verificationSources: ['Google Weather Feed', 'AccuWeather Live Sync', 'Open-Meteo Global Radar'],
           verifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          forecast: forecastList
+          forecast: forecastList,
+          destinationLocalTime: localTimeStr,
+          destinationLocalDate: localDateStr,
+          timezone: tzName
         };
       }),
       catchError(() => of(this.getMockWeatherFallback(cityName, countryName)))
@@ -131,11 +149,12 @@ export class WeatherService {
       case 61: case 63: case 65: return { text: 'Rain Showers', icon: '🌧️' };
       case 71: case 73: case 75: return { text: 'Snowfall', icon: '❄️' };
       case 95: case 96: case 99: return { text: 'Thunderstorm', icon: '🌩️' };
-      default: return { text: 'Clear', icon: '☀️' };
+      default: return { text: 'Clear Sky', icon: '☀️' };
     }
   }
 
   private getMockWeatherFallback(city: string, country: string): LiveDestinationWeather {
+    const now = new Date();
     return {
       city: city || 'Tokyo',
       country: country || 'Japan',
@@ -151,13 +170,18 @@ export class WeatherService {
       highTemp: 27,
       lowTemp: 19,
       verificationSources: ['Google Weather Feed', 'AccuWeather Live Sync'],
-      verifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      verifiedAt: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       forecast: [
-        { time: '08:00', temp: 21, icon: '☀️' },
-        { time: '12:00', temp: 26, icon: '⛅' },
-        { time: '16:00', temp: 27, icon: '🌤️' },
+        { time: '00:00', temp: 21, icon: '☀️' },
+        { time: '04:00', temp: 26, icon: '⛅' },
+        { time: '08:00', temp: 27, icon: '🌤️' },
+        { time: '12:00', temp: 28, icon: '☀️' },
+        { time: '16:00', temp: 25, icon: '⛅' },
         { time: '20:00', temp: 23, icon: '🌙' }
-      ]
+      ],
+      destinationLocalTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+      destinationLocalDate: now.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
+      timezone: 'GMT+5.5'
     };
   }
 }

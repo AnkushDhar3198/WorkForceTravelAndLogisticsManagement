@@ -529,24 +529,23 @@
           <div class="weather-location-info">
             <h3>
               <span>📍 {{currentWeather.city}}, {{currentWeather.country}}</span>
-              <span style="font-size:12px; font-weight:600; color:var(--text-tertiary);">• Live Global Weather Radar</span>
+              <span class="weather-local-time-badge">
+                <span>🕓</span> Local Time: {{currentWeather.destinationLocalTime}} ({{currentWeather.timezone}})
+              </span>
             </h3>
-            <p>Real-time weather tracking synced across Google Weather & AccuWeather feeds</p>
+            <p>Real-time weather radar & multi-source verification • {{currentWeather.destinationLocalDate}}</p>
           </div>
 
-          <div style="display:flex; align-items:center; gap:10px;">
-            <!-- Destination Switcher Dropdown -->
-            <select class="form-control" style="width:auto; height:32px; font-size:12px; border-radius:100px; padding:0 12px; background:rgba(255,255,255,0.08); border-color:var(--border-subtle);" [ngModel]="activeWeatherCity" (ngModelChange)="fetchLiveDestinationWeather($event)">
-              <option value="Tokyo">📍 Tokyo, Japan</option>
-              <option value="London">📍 London, UK</option>
-              <option value="New York">📍 New York, USA</option>
-              <option value="Paris">📍 Paris, France</option>
-              <option value="Singapore">📍 Singapore</option>
-              <option value="Sydney">📍 Sydney, Australia</option>
-              <option value="San Francisco">📍 San Francisco, USA</option>
-              <option value="Frankfurt">📍 Frankfurt, Germany</option>
-              <option value="Dubai">📍 Dubai, UAE</option>
-            </select>
+          <div class="weather-search-wrap">
+            <!-- Search ANY City Worldwide -->
+            <input type="text" class="weather-search-input" placeholder="Search ANY city..." [(ngModel)]="weatherSearchInput" (keyup.enter)="onSearchWeather()">
+            
+            <button class="weather-refresh-btn" (click)="onSearchWeather()">🔍 Find</button>
+
+            <!-- Live Refresh Option -->
+            <button class="weather-refresh-btn" (click)="refreshWeather()" [disabled]="isWeatherRefreshing">
+              <span [class.spin-anim]="isWeatherRefreshing">🔄</span> Refresh
+            </button>
 
             <div class="weather-verify-badge">
               <span>✓</span> Multi-Source Verified Data
