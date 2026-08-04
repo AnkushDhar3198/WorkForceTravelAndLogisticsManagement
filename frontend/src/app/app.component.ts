@@ -6,7 +6,9 @@ import {
   TravelRequest, Employee, Vendor, Shipment,
   Notification, TravelerLocation, ExpenseClaim, DashboardAnalytics
 } from './services/api.service';
-import { Subscription, interval, startWith, switchMap, forkJoin } from 'rxjs';
+import { AuthService } from './services/auth.service';
+import { ThemeService, ThemeMode } from './services/theme.service';
+import { Subscription, interval, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +19,7 @@ import { Subscription, interval, startWith, switchMap, forkJoin } from 'rxjs';
 })
 export class AppComponent implements OnInit, OnDestroy {
   activeTab = 'dashboard';
-  sidebarOpen = true;
+  sidebarOpen = false;
 
   // Data
   analytics: DashboardAnalytics | null = null;
@@ -28,6 +30,16 @@ export class AppComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
   travelerLocations: TravelerLocation[] = [];
   expenses: ExpenseClaim[] = [];
+
+  // Search & Filter
+  searchTerm = '';
+  statusFilter = 'ALL';
+
+  // Login form
+  loginEmail = 'david.chen@company.com';
+  loginPassword = 'password';
+  loginError = '';
+  isAuthenticating = false;
 
   // Modals
   showCreateRequestModal = false;
@@ -54,11 +66,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private pollSub?: Subscription;
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    public auth: AuthService,
+    public themeService: ThemeService
+  ) {}
 
   ngOnInit() {
     this.loadAllData();
-    // Poll every 30 seconds for real-time updates
     this.pollSub = interval(30000).subscribe(() => this.loadAllData());
   }
 
@@ -95,17 +110,131 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Login handlers
+  onLoginSubmit() {
+    if (!this.loginEmail) return;
+    this.isAuthenticating = true;
+    this.loginError = '';
+
+    this.api.getEmployees().subscribe({
+      next: (emps) => {
+        const found = emps.find(e => e.email.toLowerCase() === this.loginEmail.toLowerCase());
+        if (found) {
+          this.auth.loginAsPersona(found);
+          this.isAuthenticating = false;
+          this.loadAllData();
+        } else {
+          this.loginError = 'User email not found in enterprise directory';
+          this.isAuthenticating = false;
+        }
+      },
+      error: () => {
+        this.loginError = 'Server authentication error';
+        this.isAuthenticating = false;
+      }
+    });
+  }
+
+  quickLoginAsRole(roleName: string) {
+    if (!this.employees || this.employees.length === 0) return;
+    const matched = this.employees.find(e => e.role === roleName);
+    if (matched) {
+      this.auth.loginAsPersona(matched);
+      this.loadAllData();
+    }
+  }
+
+  logout() {
+    this.auth.logout();
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  closeSidebar() {
+    this.sidebarOpen = false;
+  }
+
   switchTab(tab: string) {
     this.activeTab = tab;
-    // Scroll to top on mobile
+    this.sidebarOpen = false;
+    this.searchTerm = '';
+    this.statusFilter = 'ALL';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Travel Request CRUD
+  setTheme(theme: ThemeMode) {
+    this.themeService.setTheme(theme);
+  }
+
+  // Filtering
+  get filteredRequests(): TravelRequest[] {
+    return this.travelRequests.filter(req => {
+      const matchesSearch = !this.searchTerm ||
+        req.destination.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        req.employee.fullName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        req.purpose.toLowerCase().includes(this.searchTerm.toLowerCase());
+
+      const matchesStatus = this.statusFilter === 'ALL' || req.status === this.statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }
+
+  get filteredExpenses(): ExpenseClaim[] {
+    return this.expenses.filter(exp => {
+      const matchesSearch = !this.searchTerm ||
+        exp.vendorName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        exp.employee.fullName.toLowerCase().includes(this.searchTerm.toLowerCase());
+
+      const matchesStatus = this.statusFilter === 'ALL' || exp.auditStatus === this.statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }
+
+  get filteredShipments(): Shipment[] {
+    return this.shipments.filter(s => {
+      return !this.searchTerm ||
+        s.assetName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        s.trackingCode.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        s.destinationVenue.toLowerCase().includes(this.searchTerm.toLowerCase());
+    });
+  }
+
+  // Export Data to CSV
+  exportDataCsv() {
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    if (this.activeTab === 'requests') {
+      csvContent += 'ID,Employee,Destination,StartDate,EndDate,Budget,Status,ComplianceScore\n';
+      this.filteredRequests.forEach(r => {
+        csvContent += `"${r.id}","${r.employee.fullName}","${r.destination}","${r.startDate}","${r.endDate}","${r.estimatedBudget}","${r.status}","${r.policyComplianceScore}"\n`;
+      });
+    } else if (this.activeTab === 'expenses') {
+      csvContent += 'ID,Employee,Vendor,Category,ExpenseDate,Amount,Currency,Status\n';
+      this.filteredExpenses.forEach(e => {
+        csvContent += `"${e.id}","${e.employee.fullName}","${e.vendorName}","${e.category}","${e.expenseDate}","${e.amount}","${e.currency}","${e.auditStatus}"\n`;
+      });
+    } else {
+      csvContent += 'ID,Name,Category,CorporateRate,StandardRate,Rating\n';
+      this.vendors.forEach(v => {
+        csvContent += `"${v.id}","${v.name}","${v.category}","${v.corporateRate}","${v.standardRate}","${v.rating}"\n`;
+      });
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `workforce_${this.activeTab}_report.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Modals
   openCreateModal() {
     this.showCreateRequestModal = true;
     this.newRequest = {
-      employeeId: null,
+      employeeId: this.auth.currentUserValue?.id || null,
       destination: '',
       countryCode: '',
       startDate: '',
@@ -164,7 +293,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (!this.selectedRequest) return;
     this.api.updateTravelRequestStatus(this.selectedRequest.id, {
       status: 'APPROVED',
-      approverId: '1',
+      approverId: String(this.auth.currentUserValue?.id || 1),
       remarks: this.approvalRemarks
     }).subscribe(() => {
       this.closeDetailModal();
@@ -176,7 +305,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (!this.selectedRequest) return;
     this.api.updateTravelRequestStatus(this.selectedRequest.id, {
       status: 'REJECTED',
-      approverId: '1',
+      approverId: String(this.auth.currentUserValue?.id || 1),
       remarks: this.approvalRemarks
     }).subscribe(() => {
       this.closeDetailModal();
@@ -184,65 +313,61 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Shipment actions
   updateShipmentStatus(shipment: Shipment, newStatus: string) {
     this.api.updateShipmentStatus(shipment.id, { status: newStatus }).subscribe(() => {
       this.loadAllData();
     });
   }
 
-  // Notification actions
   markRead(notification: Notification) {
     this.api.markNotificationRead(notification.id).subscribe(() => {
       this.loadAllData();
     });
   }
 
-  // Expense actions
   approveExpense(expense: ExpenseClaim) {
     this.api.auditExpense(expense.id, {
       auditStatus: 'APPROVED_PAYOUT',
       auditRemarks: 'Approved for reimbursement',
-      auditorId: '1'
+      auditorId: String(this.auth.currentUserValue?.id || 1)
     }).subscribe(() => this.loadAllData());
   }
 
   flagExpense(expense: ExpenseClaim) {
     this.api.auditExpense(expense.id, {
       auditStatus: 'REJECTED_FLAGGED',
-      auditRemarks: 'Flagged for review',
-      auditorId: '1'
+      auditRemarks: 'Flagged for audit review',
+      auditorId: String(this.auth.currentUserValue?.id || 1)
     }).subscribe(() => this.loadAllData());
   }
 
-  // SOS
   triggerSos(location: TravelerLocation) {
     this.api.triggerSos({ employeeId: location.employee.id }).subscribe(() => {
       this.loadAllData();
     });
   }
 
-  // Helpers
+  // Formatters
   getStatusColor(status: string): string {
     const map: Record<string, string> = {
-      'APPROVED': '#34c759',
-      'COMPLETED': '#34c759',
-      'DELIVERED': '#34c759',
-      'SAFE': '#34c759',
-      'APPROVED_PAYOUT': '#34c759',
-      'PENDING_APPROVAL': '#ff9f0a',
-      'PENDING_AUDIT': '#ff9f0a',
-      'IN_TRANSIT': '#007aff',
-      'CUSTOMS_CLEARANCE': '#5856d6',
-      'POLICY_VIOLATION': '#ff3b30',
-      'REJECTED': '#ff3b30',
-      'REJECTED_FLAGGED': '#ff3b30',
-      'ALERT': '#ff9f0a',
-      'ASSISTANCE_REQUESTED': '#ff3b30',
-      'MODERATE': '#ff9f0a',
-      'HIGH': '#ff3b30',
-      'CRITICAL': '#ff3b30',
-      'LOW': '#34c759',
+      'APPROVED': '#30D158',
+      'COMPLETED': '#30D158',
+      'DELIVERED': '#30D158',
+      'SAFE': '#30D158',
+      'APPROVED_PAYOUT': '#30D158',
+      'PENDING_APPROVAL': '#FF9F0A',
+      'PENDING_AUDIT': '#FF9F0A',
+      'IN_TRANSIT': '#0A84FF',
+      'CUSTOMS_CLEARANCE': '#BF5AF2',
+      'POLICY_VIOLATION': '#FF453A',
+      'REJECTED': '#FF453A',
+      'REJECTED_FLAGGED': '#FF453A',
+      'ALERT': '#FF9F0A',
+      'ASSISTANCE_REQUESTED': '#FF453A',
+      'MODERATE': '#FF9F0A',
+      'HIGH': '#FF453A',
+      'CRITICAL': '#FF453A',
+      'LOW': '#30D158',
       'DRAFT': '#8e8e93'
     };
     return map[status] || '#8e8e93';
@@ -250,24 +375,16 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getThreatIcon(level: string): string {
     const map: Record<string, string> = {
-      'LOW': '🟢',
-      'MODERATE': '🟡',
-      'HIGH': '🔴',
-      'CRITICAL': '⚠️'
+      'LOW': '🟢', 'MODERATE': '🟡', 'HIGH': '🔴', 'CRITICAL': '⚠️'
     };
     return map[level] || '⚪';
   }
 
   getCategoryIcon(category: string): string {
     const map: Record<string, string> = {
-      'FLIGHT': '✈️',
-      'HOTEL': '🏨',
-      'GROUND_TRANSPORT': '🚗',
-      'MEALS': '🍽️',
-      'MISC': '📦',
-      'LOGISTICS': '📦',
-      'RISK': '🛡️',
-      'SYSTEM': '⚙️'
+      'FLIGHT': '✈️', 'HOTEL': '🏨', 'GROUND_TRANSPORT': '🚗',
+      'MEALS': '🍽️', 'MISC': '📦', 'LOGISTICS': '📦',
+      'RISK': '🛡️', 'SYSTEM': '⚙️'
     };
     return map[category] || '📋';
   }

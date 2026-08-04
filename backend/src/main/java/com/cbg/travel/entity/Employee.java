@@ -24,6 +24,8 @@ public class Employee {
     @Column(nullable = false, unique = true)
     private String email;
 
+    private String password; // Plain text / hashed password for authentication
+
     @Column(nullable = false)
     private String phone;
 
@@ -54,7 +56,6 @@ public class Employee {
 
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    // Constructors
     public Employee() {}
 
     @PreUpdate
@@ -62,7 +63,6 @@ public class Employee {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Full name helper
     public String getFullName() {
         return firstName + " " + lastName;
     }
@@ -82,6 +82,9 @@ public class Employee {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }

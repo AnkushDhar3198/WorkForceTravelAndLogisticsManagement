@@ -1,15 +1,126 @@
 <!-- Loading Screen -->
 <div class="loading-container" *ngIf="isLoading">
   <div class="loading-spinner"></div>
-  <p class="loading-text">Connecting to platform...</p>
+  <p class="loading-text">Connecting to enterprise platform...</p>
 </div>
 
-<!-- App Shell -->
-<div class="app-shell" *ngIf="!isLoading">
+<!-- ===== LOGIN SCREEN (Unauthenticated) ===== -->
+<div class="login-screen" *ngIf="!isLoading && !auth.isAuthenticated">
+  <div class="login-glow"></div>
+  <div class="login-card animate-in">
+    <div class="login-header">
+      <div class="logo">✈</div>
+      <h2>TravelOps Portal</h2>
+      <p>Workforce Travel & Logistics Security</p>
+    </div>
+
+    <form (ngSubmit)="onLoginSubmit()">
+      <div class="form-group">
+        <label>Enterprise Email</label>
+        <input class="form-control" type="email" placeholder="e.g. david.chen@company.com" [(ngModel)]="loginEmail" name="email">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input class="form-control" type="password" placeholder="••••••••" [(ngModel)]="loginPassword" name="password">
+      </div>
+
+      <div *ngIf="loginError" style="color: var(--accent-red); font-size: 13px; margin-bottom: 16px; text-align: center;">
+        ⚠️ {{loginError}}
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" [disabled]="isAuthenticating">
+        {{isAuthenticating ? 'Authenticating...' : 'Sign In with SSO'}}
+      </button>
+    </form>
+
+    <!-- Quick Persona Switcher for Testing -->
+    <div class="persona-picker">
+      <div class="persona-title">Or 1-Click Test Persona</div>
+      <div class="persona-grid">
+        <button class="persona-btn" (click)="quickLoginAsRole('MANAGER')">
+          <div>
+            👨‍💼 David Chen
+            <span class="role">VP Engineering (Manager)</span>
+          </div>
+        </button>
+
+        <button class="persona-btn" (click)="quickLoginAsRole('EMPLOYEE')">
+          <div>
+            👩‍💻 Sarah Jenkins
+            <span class="role">Sr. Engineer (Employee)</span>
+          </div>
+        </button>
+
+        <button class="persona-btn" (click)="quickLoginAsRole('LOGISTICS_COORDINATOR')">
+          <div>
+            📦 Raj Patel
+            <span class="role">Logistics Coordinator</span>
+          </div>
+        </button>
+
+        <button class="persona-btn" (click)="quickLoginAsRole('RISK_OFFICER')">
+          <div>
+            🛡️ Elena Rostova
+            <span class="role">Security Director (Risk)</span>
+          </div>
+        </button>
+
+        <button class="persona-btn" (click)="quickLoginAsRole('FINANCE_ADMIN')" style="grid-column: 1 / -1;">
+          <div>
+            💼 Lisa Park
+            <span class="role">Finance Director (Admin)</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP (Authenticated) ===== -->
+<div class="app-shell" *ngIf="!isLoading && auth.isAuthenticated">
+
+  <!-- ===== Top Header ===== -->
+  <header class="top-header" style="position: fixed; top:0; left:0; right:0; height: 60px;">
+    <div class="top-header-left">
+      <button class="hamburger-btn" (click)="toggleSidebar()">☰</button>
+      <div style="font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">✈</span> TravelOps Platform
+      </div>
+    </div>
+
+    <div class="top-header-right">
+      <!-- Theme Switcher -->
+      <div class="theme-switcher">
+        <button class="theme-pill" [class.active]="themeService.theme === 'midnight'" (click)="setTheme('midnight')">
+          🌙 Midnight
+        </button>
+        <button class="theme-pill" [class.active]="themeService.theme === 'daylight'" (click)="setTheme('daylight')">
+          ☀️ Daylight
+        </button>
+        <button class="theme-pill" [class.active]="themeService.theme === 'cosmic'" (click)="setTheme('cosmic')">
+          🪐 Cosmic
+        </button>
+      </div>
+
+      <!-- Export CSV -->
+      <button class="btn btn-sm btn-ghost" (click)="exportDataCsv()" title="Export Report CSV">
+        📥 Export CSV
+      </button>
+
+      <!-- Logout -->
+      <button class="btn btn-sm btn-ghost" (click)="logout()" title="Sign Out">
+        🚪 Sign Out
+      </button>
+    </div>
+  </header>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="modal-overlay" *ngIf="sidebarOpen" (click)="closeSidebar()" style="z-index: 99; background: rgba(0,0,0,0.5);"></div>
 
   <!-- ===== Sidebar Navigation ===== -->
-  <aside class="sidebar" [class.open]="sidebarOpen">
-    <div class="sidebar-brand">
+  <aside class="sidebar" [class.open]="sidebarOpen" style="top: 60px;">
+    <div class="sidebar-brand" style="margin-top: 10px;">
       <div class="brand-icon">✈</div>
       <h1>TravelOps<span>Workforce Platform</span></h1>
     </div>
@@ -17,43 +128,39 @@
     <div class="nav-section">
       <div class="nav-section-label">Overview</div>
       <div class="nav-item" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')">
-        <span class="nav-icon">📊</span> Dashboard
+        <span class="nav-icon">📊</span> Command Center
       </div>
     </div>
 
     <div class="nav-section">
       <div class="nav-section-label">Travel</div>
       <div class="nav-item" [class.active]="activeTab === 'requests'" (click)="switchTab('requests')">
-        <span class="nav-icon">🗂️</span> Travel Requests
+        <span class="nav-icon">🗂️</span> Requests
         <span class="nav-badge" *ngIf="pendingRequestsCount > 0">{{pendingRequestsCount}}</span>
       </div>
       <div class="nav-item" [class.active]="activeTab === 'vendors'" (click)="switchTab('vendors')">
-        <span class="nav-icon">🤝</span> Vendors
+        <span class="nav-icon">🤝</span> Preferred Vendors
       </div>
     </div>
 
     <div class="nav-section">
-      <div class="nav-section-label">Logistics</div>
+      <div class="nav-section-label">Operations</div>
       <div class="nav-item" [class.active]="activeTab === 'shipments'" (click)="switchTab('shipments')">
-        <span class="nav-icon">📦</span> Shipments
+        <span class="nav-icon">📦</span> Logistics & Cargo
       </div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-section-label">Finance</div>
       <div class="nav-item" [class.active]="activeTab === 'expenses'" (click)="switchTab('expenses')">
-        <span class="nav-icon">💰</span> Expenses
+        <span class="nav-icon">💰</span> Expenses & Audit
         <span class="nav-badge" *ngIf="pendingExpensesCount > 0">{{pendingExpensesCount}}</span>
       </div>
     </div>
 
     <div class="nav-section">
-      <div class="nav-section-label">Safety</div>
+      <div class="nav-section-label">Safety & Risk</div>
       <div class="nav-item" [class.active]="activeTab === 'risk'" (click)="switchTab('risk')">
         <span class="nav-icon">🛡️</span> Duty of Care
       </div>
       <div class="nav-item" [class.active]="activeTab === 'notifications'" (click)="switchTab('notifications')">
-        <span class="nav-icon">🔔</span> Notifications
+        <span class="nav-icon">🔔</span> Live Alerts
         <span class="nav-badge" *ngIf="unreadNotifications > 0">{{unreadNotifications}}</span>
       </div>
     </div>
@@ -61,54 +168,81 @@
     <div class="nav-section">
       <div class="nav-section-label">Organization</div>
       <div class="nav-item" [class.active]="activeTab === 'employees'" (click)="switchTab('employees')">
-        <span class="nav-icon">👥</span> Employees
+        <span class="nav-icon">👥</span> Workforce Directory
+      </div>
+    </div>
+
+    <!-- Active User Footer Profile -->
+    <div class="user-profile-card" *ngIf="auth.currentUserValue">
+      <div class="avatar blue" style="width:36px; height:36px;">
+        {{auth.currentUserValue.firstName.charAt(0)}}
+      </div>
+      <div class="info">
+        <div class="name">{{auth.currentUserValue.fullName}}</div>
+        <div class="role-tag">{{auth.currentUserValue.role.replace('_', ' ')}}</div>
       </div>
     </div>
   </aside>
 
-  <!-- ===== Main Content ===== -->
-  <main class="main-content">
+  <!-- ===== Main Content Area ===== -->
+  <main class="main-content" style="margin-top: 60px;">
 
-    <!-- ============== DASHBOARD ============== -->
+    <!-- Toolbar with Live Search & Filters -->
+    <div class="toolbar-bar" *ngIf="['requests', 'expenses', 'shipments', 'vendors'].includes(activeTab)">
+      <div class="search-input">
+        <input type="text" placeholder="Search {{activeTab}}..." [(ngModel)]="searchTerm">
+      </div>
+
+      <select class="form-control" style="width: auto;" [(ngModel)]="statusFilter" *ngIf="activeTab === 'requests'">
+        <option value="ALL">All Statuses</option>
+        <option value="PENDING_APPROVAL">Pending Approval</option>
+        <option value="APPROVED">Approved</option>
+        <option value="POLICY_VIOLATION">Policy Violation</option>
+        <option value="REJECTED">Rejected</option>
+      </select>
+
+      <select class="form-control" style="width: auto;" [(ngModel)]="statusFilter" *ngIf="activeTab === 'expenses'">
+        <option value="ALL">All Claims</option>
+        <option value="PENDING_AUDIT">Pending Audit</option>
+        <option value="APPROVED_PAYOUT">Approved Payout</option>
+        <option value="REJECTED_FLAGGED">Flagged</option>
+      </select>
+    </div>
+
+    <!-- ============== DASHBOARD TAB ============== -->
     <section *ngIf="activeTab === 'dashboard'">
       <div class="page-header">
         <h2>Command Center</h2>
-        <p>Real-time workforce travel intelligence</p>
+        <p>Enterprise workforce travel & logistics overview</p>
       </div>
 
-      <!-- KPI Row -->
+      <!-- KPI Grid -->
       <div class="kpi-grid" *ngIf="analytics">
-        <div class="kpi-card animate-in">
-          <div class="kpi-label">Approved Travel Spend</div>
+        <div class="kpi-card">
+          <div class="kpi-label">Approved Spend</div>
           <div class="kpi-value blue">{{formatCurrency(analytics.totalApprovedSpend)}}</div>
-          <div class="kpi-sub">Across all approved trips</div>
+          <div class="kpi-sub">Across active trips</div>
         </div>
-        <div class="kpi-card animate-in">
-          <div class="kpi-label">Active Trips</div>
+        <div class="kpi-card">
+          <div class="kpi-label">Active Travelers</div>
           <div class="kpi-value green">{{analytics.activeTripsCount}}</div>
-          <div class="kpi-sub">Travelers currently in transit</div>
+          <div class="kpi-sub">Currently in transit</div>
         </div>
-        <div class="kpi-card animate-in">
-          <div class="kpi-label">Policy Compliance</div>
-          <div class="kpi-value" [class.green]="analytics.policyComplianceRate >= 80" [class.orange]="analytics.policyComplianceRate < 80 && analytics.policyComplianceRate >= 60" [class.red]="analytics.policyComplianceRate < 60">{{analytics.policyComplianceRate}}%</div>
-          <div class="kpi-sub">Automated policy engine score</div>
+        <div class="kpi-card">
+          <div class="kpi-label">Policy Score</div>
+          <div class="kpi-value" [class.green]="analytics.policyComplianceRate >= 80" [class.orange]="analytics.policyComplianceRate < 80">{{analytics.policyComplianceRate}}%</div>
+          <div class="kpi-sub">Automated rule score</div>
         </div>
-        <div class="kpi-card animate-in">
+        <div class="kpi-card">
           <div class="kpi-label">Corporate Savings</div>
           <div class="kpi-value purple">{{formatCurrency(analytics.estimatedCorporateSavings)}}</div>
-          <div class="kpi-sub">Via preferred vendor rates</div>
-        </div>
-        <div class="kpi-card animate-in">
-          <div class="kpi-label">Total Reimbursed</div>
-          <div class="kpi-value teal">{{formatCurrency(analytics.totalReimbursed)}}</div>
-          <div class="kpi-sub">Approved expense payouts</div>
+          <div class="kpi-sub">Negotiated rates</div>
         </div>
       </div>
 
-      <!-- Charts Row -->
       <div class="section-grid" *ngIf="analytics">
         <!-- Department Spend -->
-        <div class="card animate-in">
+        <div class="card">
           <div class="card-header">
             <h3>Spend by Department</h3>
           </div>
@@ -121,22 +255,18 @@
               <div class="dept-amount">{{formatCurrency(dept.spend)}}</div>
             </div>
           </div>
-          <div class="empty-state" *ngIf="!analytics.spendByDepartment || analytics.spendByDepartment.length === 0">
-            <p>No department spend data yet</p>
-          </div>
         </div>
 
-        <!-- Recent Notifications -->
-        <div class="card animate-in">
+        <!-- Live Alerts -->
+        <div class="card">
           <div class="card-header">
             <h3>Live Alerts</h3>
             <span class="status-badge" style="background: rgba(255, 69, 58, 0.12); color: var(--accent-red);">
-              <span class="status-dot" style="background: var(--accent-red);"></span>
               {{unreadNotifications}} Unread
             </span>
           </div>
-          <div *ngFor="let n of notifications.slice(0, 5)" class="notification-item">
-            <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : n.severity === 'MEDIUM' ? 'rgba(255,159,10,0.12)' : 'rgba(10,132,255,0.12)'">
+          <div *ngFor="let n of notifications.slice(0, 4)" class="notification-item">
+            <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : 'rgba(10,132,255,0.12)'">
               {{getCategoryIcon(n.category)}}
             </div>
             <div class="notification-body">
@@ -145,284 +275,194 @@
               <div class="notification-time">{{formatDateTime(n.createdAt)}}</div>
             </div>
           </div>
-          <div class="empty-state" *ngIf="notifications.length === 0">
-            <div class="empty-icon">🔔</div>
-            <h4>No notifications</h4>
-          </div>
         </div>
-      </div>
-
-      <!-- Traveler Safety Overview -->
-      <div class="card animate-in" *ngIf="travelerLocations.length > 0" style="margin-top: 4px;">
-        <div class="card-header">
-          <h3>Traveler Safety Overview</h3>
-        </div>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Traveler</th>
-              <th>Location</th>
-              <th>Threat Level</th>
-              <th>Status</th>
-              <th>Last Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let loc of travelerLocations">
-              <td>
-                <div class="employee-cell">
-                  <div class="avatar blue">{{loc.employee.firstName.charAt(0)}}</div>
-                  <div>
-                    <div style="font-weight: 600;">{{loc.employee.fullName}}</div>
-                    <div style="font-size: 12px; color: var(--text-tertiary);">{{loc.employee.designation}}</div>
-                  </div>
-                </div>
-              </td>
-              <td>{{loc.city}}, {{loc.country}}</td>
-              <td>
-                <span class="status-badge" [style.background]="loc.threatLevel === 'LOW' ? 'rgba(48,209,88,0.12)' : loc.threatLevel === 'MODERATE' ? 'rgba(255,159,10,0.12)' : 'rgba(255,69,58,0.12)'" [style.color]="getStatusColor(loc.threatLevel)">
-                  {{getThreatIcon(loc.threatLevel)}} {{loc.threatLevel}}
-                </span>
-              </td>
-              <td>
-                <span class="status-badge" [style.background]="'rgba(255,255,255,0.06)'" [style.color]="getStatusColor(loc.status)">
-                  <span class="status-dot" [style.background]="getStatusColor(loc.status)"></span>
-                  {{loc.status.replace('_', ' ')}}
-                </span>
-              </td>
-              <td style="color: var(--text-secondary); font-size: 13px;">{{formatDateTime(loc.lastUpdated)}}</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </section>
 
-    <!-- ============== TRAVEL REQUESTS ============== -->
+    <!-- ============== TRAVEL REQUESTS TAB ============== -->
     <section *ngIf="activeTab === 'requests'">
       <div class="page-header">
         <div class="page-header-actions">
           <div>
             <h2>Travel Requests</h2>
-            <p>Submit, track, and approve workforce travel</p>
+            <p>Manage, review, and approve workforce travel</p>
           </div>
           <button class="btn btn-primary" (click)="openCreateModal()">
-            ✚ New Request
+            ✚ New Travel Request
           </button>
         </div>
       </div>
 
-      <div class="card" *ngIf="travelRequests.length > 0">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Traveler</th>
-              <th>Destination</th>
-              <th>Dates</th>
-              <th>Budget</th>
-              <th>Compliance</th>
-              <th>ROI</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let req of travelRequests" (click)="viewRequestDetail(req)">
-              <td style="color: var(--text-tertiary);">#{{req.id}}</td>
-              <td>
-                <div class="employee-cell">
-                  <div class="avatar" [ngClass]="['blue', 'green', 'orange', 'purple', 'teal'][req.id % 5]">
-                    {{req.employee.firstName.charAt(0)}}
+      <div class="card" *ngIf="filteredRequests.length > 0">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Traveler</th>
+                <th>Destination</th>
+                <th>Dates</th>
+                <th>Budget</th>
+                <th>Compliance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let req of filteredRequests" (click)="viewRequestDetail(req)">
+                <td style="color: var(--text-tertiary);">#{{req.id}}</td>
+                <td>
+                  <div class="employee-cell">
+                    <div class="avatar blue">{{req.employee.firstName.charAt(0)}}</div>
+                    <div>
+                      <div style="font-weight: 600;">{{req.employee.fullName}}</div>
+                      <div style="font-size: 12px; color: var(--text-tertiary);">{{req.employee.department}}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style="font-weight: 600;">{{req.employee.fullName}}</div>
-                    <div style="font-size: 12px; color: var(--text-tertiary);">{{req.employee.department}}</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <div style="font-weight: 500;">{{req.destination}}</div>
-              </td>
-              <td style="font-size: 13px; color: var(--text-secondary);">
-                {{formatDate(req.startDate)}} → {{formatDate(req.endDate)}}
-              </td>
-              <td style="font-weight: 600;">{{formatCurrency(req.estimatedBudget)}}</td>
-              <td>
-                <div class="compliance-ring" [style.background]="req.policyComplianceScore >= 80 ? 'rgba(48,209,88,0.12)' : req.policyComplianceScore >= 50 ? 'rgba(255,159,10,0.12)' : 'rgba(255,69,58,0.12)'" [style.color]="req.policyComplianceScore >= 80 ? 'var(--accent-green)' : req.policyComplianceScore >= 50 ? 'var(--accent-orange)' : 'var(--accent-red)'" style="width:42px;height:42px;font-size:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">
-                  {{req.policyComplianceScore}}
-                </div>
-              </td>
-              <td>
-                <span *ngIf="req.roiScore" style="font-weight: 600; color: var(--accent-teal);">{{req.roiScore}}</span>
-              </td>
-              <td>
-                <span class="status-badge" [style.background]="getStatusColor(req.status) + '1a'" [style.color]="getStatusColor(req.status)">
-                  <span class="status-dot" [style.background]="getStatusColor(req.status)"></span>
-                  {{req.status.replace('_', ' ')}}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+                <td>{{req.destination}}</td>
+                <td style="font-size: 13px; color: var(--text-secondary);">
+                  {{formatDate(req.startDate)}} → {{formatDate(req.endDate)}}
+                </td>
+                <td style="font-weight: 600;">{{formatCurrency(req.estimatedBudget)}}</td>
+                <td>
+                  <span style="font-weight: 700;" [style.color]="req.policyComplianceScore >= 80 ? 'var(--accent-green)' : 'var(--accent-orange)'">
+                    {{req.policyComplianceScore}} pts
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [style.background]="getStatusColor(req.status) + '1a'" [style.color]="getStatusColor(req.status)">
+                    <span class="status-dot" [style.background]="getStatusColor(req.status)"></span>
+                    {{req.status.replace('_', ' ')}}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="card empty-state" *ngIf="travelRequests.length === 0">
+      <div class="card empty-state" *ngIf="filteredRequests.length === 0">
         <div class="empty-icon">🗂️</div>
-        <h4>No travel requests yet</h4>
-        <p>Create your first travel request to get started</p>
+        <h4>No travel requests matching filters</h4>
       </div>
     </section>
 
-    <!-- ============== VENDORS ============== -->
+    <!-- ============== VENDORS TAB ============== -->
     <section *ngIf="activeTab === 'vendors'">
       <div class="page-header">
         <h2>Preferred Vendors</h2>
-        <p>Corporate-negotiated travel partners</p>
+        <p>Corporate travel discounts & partner agreements</p>
       </div>
 
       <div class="vendor-grid">
-        <div class="vendor-card animate-in" *ngFor="let vendor of vendors">
+        <div class="vendor-card" *ngFor="let vendor of vendors">
           <div class="vendor-header">
             <h4>{{getCategoryIcon(vendor.category)}} {{vendor.name}}</h4>
-            <span class="vendor-discount" *ngIf="vendor.discountPercentage > 0">-{{vendor.discountPercentage}}%</span>
+            <span class="status-badge" style="background: rgba(48,209,88,0.12); color: var(--accent-green);" *ngIf="vendor.discountPercentage > 0">
+              -{{vendor.discountPercentage}}% Rate
+            </span>
           </div>
           <div class="vendor-meta">
-            <div class="vendor-meta-item">
-              Corporate: <strong>{{formatCurrency(vendor.corporateRate)}}</strong>
-            </div>
-            <div class="vendor-meta-item">
-              Standard: <strong style="text-decoration: line-through; color: var(--text-tertiary);">{{formatCurrency(vendor.standardRate)}}</strong>
-            </div>
-            <div class="vendor-meta-item">
-              <span class="vendor-rating">★ {{vendor.rating}}</span>
-            </div>
-          </div>
-          <div class="vendor-meta" style="margin-bottom:8px;">
-            <div class="vendor-meta-item">Category: <strong>{{vendor.category}}</strong></div>
-            <div class="vendor-meta-item">Region: <strong>{{vendor.region}}</strong></div>
+            <div>Corp Rate: <strong>{{formatCurrency(vendor.corporateRate)}}</strong></div>
+            <div>Standard: <strong style="text-decoration: line-through; color: var(--text-tertiary);">{{formatCurrency(vendor.standardRate)}}</strong></div>
+            <div>★ {{vendor.rating}}</div>
           </div>
           <div class="vendor-badges" *ngIf="vendor.badges">
             <span class="vendor-badge" *ngFor="let badge of getVendorBadges(vendor.badges)">{{badge}}</span>
           </div>
         </div>
       </div>
-
-      <div class="card empty-state" *ngIf="vendors.length === 0">
-        <div class="empty-icon">🤝</div>
-        <h4>No vendors configured</h4>
-      </div>
     </section>
 
-    <!-- ============== SHIPMENTS ============== -->
+    <!-- ============== SHIPMENTS TAB ============== -->
     <section *ngIf="activeTab === 'shipments'">
       <div class="page-header">
-        <h2>Logistics Tracking</h2>
-        <p>Real-time asset and equipment shipment tracking</p>
+        <h2>Logistics & Cargo</h2>
+        <p>Asset shipment pipeline & equipment dispatch</p>
       </div>
 
-      <div *ngFor="let shipment of shipments" class="shipment-card animate-in">
-        <div class="shipment-header">
+      <div *ngFor="let s of filteredShipments" class="shipment-card">
+        <div class="card-header">
           <div>
-            <h4 style="font-size: 16px; font-weight: 700;">📦 {{shipment.assetName}}</h4>
-            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Serial: {{shipment.serialNumber}}</p>
+            <h4>📦 {{s.assetName}}</h4>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Serial: {{s.serialNumber}}</div>
           </div>
-          <span class="status-badge" [style.background]="getStatusColor(shipment.status) + '1a'" [style.color]="getStatusColor(shipment.status)">
-            <span class="status-dot" [style.background]="getStatusColor(shipment.status)"></span>
-            {{shipment.status.replace('_', ' ')}}
+          <span class="status-badge" [style.background]="getStatusColor(s.status) + '1a'" [style.color]="getStatusColor(s.status)">
+            {{s.status.replace('_', ' ')}}
           </span>
         </div>
         <div class="shipment-details">
           <div class="shipment-detail">
             <div class="label">Destination</div>
-            <div class="value">{{shipment.destinationVenue}}</div>
+            <div class="value">{{s.destinationVenue}}</div>
           </div>
           <div class="shipment-detail">
             <div class="label">Tracking Code</div>
-            <div class="value" style="font-family: monospace; color: var(--accent-blue);">{{shipment.trackingCode}}</div>
+            <div class="value" style="font-family: monospace; color: var(--accent-blue);">{{s.trackingCode}}</div>
           </div>
           <div class="shipment-detail">
             <div class="label">Carrier</div>
-            <div class="value">{{shipment.shippingCarrier}}</div>
+            <div class="value">{{s.shippingCarrier}}</div>
           </div>
           <div class="shipment-detail">
             <div class="label">Target Delivery</div>
-            <div class="value">{{formatDate(shipment.targetDeliveryDate)}}</div>
-          </div>
-          <div class="shipment-detail">
-            <div class="label">Weight</div>
-            <div class="value">{{shipment.weightKg}} kg</div>
-          </div>
-          <div class="shipment-detail" *ngIf="shipment.syncedEmployee">
-            <div class="label">Synced Traveler</div>
-            <div class="value">{{shipment.syncedEmployee.fullName}}</div>
+            <div class="value">{{formatDate(s.targetDeliveryDate)}}</div>
           </div>
         </div>
-        <div style="margin-top: 16px; display: flex; gap: 8px;">
-          <button class="btn btn-sm btn-ghost" *ngIf="shipment.status === 'IN_TRANSIT'" (click)="updateShipmentStatus(shipment, 'DELIVERED')">✓ Mark Delivered</button>
-          <button class="btn btn-sm btn-ghost" *ngIf="shipment.status === 'CUSTOMS_CLEARANCE'" (click)="updateShipmentStatus(shipment, 'IN_TRANSIT')">↪ Clear Customs</button>
-          <button class="btn btn-sm btn-ghost" *ngIf="shipment.status === 'PREPARING'" (click)="updateShipmentStatus(shipment, 'IN_TRANSIT')">🚚 Ship Now</button>
-        </div>
-      </div>
 
-      <div class="card empty-state" *ngIf="shipments.length === 0">
-        <div class="empty-icon">📦</div>
-        <h4>No shipments tracked</h4>
+        <!-- Role-Gated Logistics Action -->
+        <div style="margin-top: 16px; display: flex; gap: 8px;" *ngIf="auth.canManageLogistics()">
+          <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'IN_TRANSIT'" (click)="updateShipmentStatus(s, 'DELIVERED')">✓ Mark Delivered</button>
+          <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'CUSTOMS_CLEARANCE'" (click)="updateShipmentStatus(s, 'IN_TRANSIT')">↪ Clear Customs</button>
+        </div>
       </div>
     </section>
 
-    <!-- ============== EXPENSES ============== -->
+    <!-- ============== EXPENSES TAB ============== -->
     <section *ngIf="activeTab === 'expenses'">
       <div class="page-header">
-        <h2>Expense Management</h2>
-        <p>Review, audit, and reimburse travel expenses</p>
+        <h2>Expenses & Audit</h2>
+        <p>Expense claims audit workflow and payout approvals</p>
       </div>
 
-      <div class="card" *ngIf="expenses.length > 0">
-        <div class="card-header">
-          <h3>All Claims</h3>
-        </div>
-        <div *ngFor="let exp of expenses" class="expense-card">
-          <div style="font-size: 20px; margin-right: 14px;">{{getCategoryIcon(exp.category)}}</div>
-          <div class="expense-info">
+      <div class="card" *ngIf="filteredExpenses.length > 0">
+        <div *ngFor="let exp of filteredExpenses" class="expense-card">
+          <div style="font-size: 22px; margin-right: 14px;">{{getCategoryIcon(exp.category)}}</div>
+          <div class="expense-info" style="flex:1;">
             <h4>{{exp.vendorName}}</h4>
             <p>
               {{exp.employee.fullName}} · {{exp.category}} · {{formatDate(exp.expenseDate)}}
               <span *ngIf="exp.ocrConfidence" style="margin-left: 8px; color: var(--accent-teal);">OCR {{exp.ocrConfidence}}%</span>
             </p>
           </div>
-          <div class="expense-amount" style="color: var(--text-primary);">{{formatCurrency(exp.amount)}}</div>
+          <div class="expense-amount">{{formatCurrency(exp.amount)}}</div>
           <span class="status-badge" [style.background]="getStatusColor(exp.auditStatus) + '1a'" [style.color]="getStatusColor(exp.auditStatus)" style="margin-right: 12px;">
-            <span class="status-dot" [style.background]="getStatusColor(exp.auditStatus)"></span>
             {{exp.auditStatus.replace('_', ' ')}}
           </span>
-          <div class="expense-actions" *ngIf="exp.auditStatus === 'PENDING_AUDIT'">
+
+          <!-- Role-Gated Audit Controls -->
+          <div style="display:flex; gap:6px;" *ngIf="exp.auditStatus === 'PENDING_AUDIT' && auth.canAuditExpenses()">
             <button class="btn btn-sm btn-success" (click)="approveExpense(exp)">✓ Approve</button>
             <button class="btn btn-sm btn-danger" (click)="flagExpense(exp)">⚑ Flag</button>
           </div>
         </div>
       </div>
-
-      <div class="card empty-state" *ngIf="expenses.length === 0">
-        <div class="empty-icon">💰</div>
-        <h4>No expense claims</h4>
-      </div>
     </section>
 
-    <!-- ============== DUTY OF CARE ============== -->
+    <!-- ============== DUTY OF CARE TAB ============== -->
     <section *ngIf="activeTab === 'risk'">
       <div class="page-header">
         <h2>Duty of Care</h2>
-        <p>Real-time traveler safety monitoring and risk intelligence</p>
+        <p>Real-time traveler security monitoring & emergency dispatch</p>
       </div>
 
       <div class="risk-grid">
-        <div class="risk-card animate-in" *ngFor="let loc of travelerLocations">
-          <div class="risk-header">
+        <div class="risk-card" *ngFor="let loc of travelerLocations">
+          <div class="card-header">
             <div class="employee-cell">
-              <div class="avatar" [ngClass]="loc.threatLevel === 'LOW' ? 'green' : loc.threatLevel === 'MODERATE' ? 'orange' : 'red'">
-                {{loc.employee.firstName.charAt(0)}}
-              </div>
+              <div class="avatar blue">{{loc.employee.firstName.charAt(0)}}</div>
               <div>
-                <div style="font-weight: 700; font-size: 16px;">{{loc.employee.fullName}}</div>
+                <div style="font-weight: 700;">{{loc.employee.fullName}}</div>
                 <div style="font-size: 12px; color: var(--text-tertiary);">{{loc.employee.designation}}</div>
               </div>
             </div>
@@ -430,119 +470,100 @@
               {{getThreatIcon(loc.threatLevel)}} {{loc.threatLevel}}
             </span>
           </div>
-          <div class="risk-location">📍 {{loc.city}}, {{loc.country}}</div>
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-            <span class="status-badge" [style.background]="getStatusColor(loc.status) + '1a'" [style.color]="getStatusColor(loc.status)">
-              <span class="status-dot" [style.background]="getStatusColor(loc.status)"></span>
-              {{loc.status.replace('_', ' ')}}
-            </span>
-            <span style="font-size: 12px; color: var(--text-tertiary);">Updated: {{formatDateTime(loc.lastUpdated)}}</span>
-          </div>
-          <div class="risk-advisory" *ngIf="loc.advisoryNotes">
+          <div style="margin-bottom: 8px; font-size: 14px;">📍 {{loc.city}}, {{loc.country}}</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;" *ngIf="loc.advisoryNotes">
             ⚠️ {{loc.advisoryNotes}}
           </div>
-          <div style="margin-top: 14px; display: flex; gap: 8px;">
-            <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)">🚨 Trigger SOS</button>
-            <button class="btn btn-sm btn-ghost">📞 Contact</button>
-          </div>
+          <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)">🚨 Dispatch Emergency SOS</button>
         </div>
-      </div>
-
-      <div class="card empty-state" *ngIf="travelerLocations.length === 0">
-        <div class="empty-icon">🛡️</div>
-        <h4>No active travelers</h4>
       </div>
     </section>
 
-    <!-- ============== NOTIFICATIONS ============== -->
+    <!-- ============== NOTIFICATIONS TAB ============== -->
     <section *ngIf="activeTab === 'notifications'">
       <div class="page-header">
-        <h2>Notifications</h2>
-        <p>System alerts, flight updates, and risk advisories</p>
+        <h2>Live Alerts</h2>
+        <p>Security advisories and flight updates</p>
       </div>
 
-      <div class="card" *ngIf="notifications.length > 0">
-        <div *ngFor="let n of notifications" class="notification-item" [style.opacity]="n.readStatus ? '0.5' : '1'">
-          <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : n.severity === 'MEDIUM' ? 'rgba(255,159,10,0.12)' : 'rgba(10,132,255,0.12)'">
+      <div class="card">
+        <div *ngFor="let n of notifications" class="notification-item">
+          <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : 'rgba(10,132,255,0.12)'">
             {{getCategoryIcon(n.category)}}
           </div>
-          <div class="notification-body">
+          <div class="notification-body" style="flex:1;">
             <h4>{{n.title}}</h4>
             <p>{{n.message}}</p>
-            <div class="notification-time">
-              {{formatDateTime(n.createdAt)}}
-              <span *ngIf="n.targetEmployee"> · To: {{n.targetEmployee.fullName}}</span>
-            </div>
+            <div class="notification-time">{{formatDateTime(n.createdAt)}}</div>
           </div>
           <button class="btn btn-sm btn-ghost" *ngIf="!n.readStatus" (click)="markRead(n)">Mark Read</button>
         </div>
       </div>
-
-      <div class="card empty-state" *ngIf="notifications.length === 0">
-        <div class="empty-icon">🔔</div>
-        <h4>All clear</h4>
-        <p>No notifications at this time</p>
-      </div>
     </section>
 
-    <!-- ============== EMPLOYEES ============== -->
+    <!-- ============== EMPLOYEES TAB ============== -->
     <section *ngIf="activeTab === 'employees'">
       <div class="page-header">
-        <h2>Employees</h2>
-        <p>Workforce directory and travel profiles</p>
+        <h2>Workforce Directory</h2>
+        <p>Enterprise personnel list & roles</p>
       </div>
 
-      <div class="card" *ngIf="employees.length > 0">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Code</th>
-              <th>Department</th>
-              <th>Designation</th>
-              <th>Role</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let emp of employees">
-              <td>
-                <div class="employee-cell">
-                  <div class="avatar" [ngClass]="['blue', 'green', 'orange', 'purple', 'teal', 'red'][emp.id % 6]">
-                    {{emp.firstName.charAt(0)}}{{emp.lastName.charAt(0)}}
-                  </div>
-                  <div>
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Code</th>
+                <th>Department</th>
+                <th>Role</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let emp of employees">
+                <td>
+                  <div class="employee-cell">
+                    <div class="avatar blue">{{emp.firstName.charAt(0)}}</div>
                     <div style="font-weight: 600;">{{emp.fullName}}</div>
-                    <div style="font-size: 12px; color: var(--text-tertiary);">{{emp.email}}</div>
                   </div>
-                </div>
-              </td>
-              <td style="font-family: monospace; color: var(--text-secondary);">{{emp.employeeCode}}</td>
-              <td>{{emp.department}}</td>
-              <td style="color: var(--text-secondary);">{{emp.designation}}</td>
-              <td>
-                <span class="status-badge" style="background: rgba(10,132,255,0.1); color: var(--accent-blue);">
-                  {{emp.role.replace('_', ' ')}}
-                </span>
-              </td>
-              <td>
-                <span class="status-badge" [style.background]="emp.active ? 'rgba(48,209,88,0.12)' : 'rgba(142,142,147,0.12)'" [style.color]="emp.active ? 'var(--accent-green)' : '#8e8e93'">
-                  <span class="status-dot" [style.background]="emp.active ? 'var(--accent-green)' : '#8e8e93'"></span>
-                  {{emp.active ? 'Active' : 'Inactive'}}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card empty-state" *ngIf="employees.length === 0">
-        <div class="empty-icon">👥</div>
-        <h4>No employees found</h4>
+                </td>
+                <td style="font-family: monospace;">{{emp.employeeCode}}</td>
+                <td>{{emp.department}}</td>
+                <td>
+                  <span class="status-badge" style="background: rgba(10,132,255,0.1); color: var(--accent-blue);">
+                    {{emp.role.replace('_', ' ')}}
+                  </span>
+                </td>
+                <td style="color: var(--text-secondary);">{{emp.email}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
-
   </main>
+
+  <!-- ===== Mobile Bottom Navigation Bar (Android & iPhone) ===== -->
+  <nav class="mobile-bottom-bar">
+    <button class="mobile-nav-item" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')">
+      <span class="icon">📊</span>
+      <span>Center</span>
+    </button>
+    <button class="mobile-nav-item" [class.active]="activeTab === 'requests'" (click)="switchTab('requests')">
+      <span class="icon">🗂️</span>
+      <span>Trips</span>
+    </button>
+    <button class="mobile-nav-item" [class.active]="activeTab === 'expenses'" (click)="switchTab('expenses')">
+      <span class="icon">💰</span>
+      <span>Audit</span>
+    </button>
+    <button class="mobile-nav-item" [class.active]="activeTab === 'risk'" (click)="switchTab('risk')">
+      <span class="icon">🛡️</span>
+      <span>Safety</span>
+    </button>
+  </nav>
+
 </div>
 
 <!-- ============== CREATE REQUEST MODAL ============== -->
@@ -579,7 +600,7 @@
 
       <div class="form-group full-width">
         <label>Purpose</label>
-        <textarea class="form-control" placeholder="Describe the business purpose for this trip..." [(ngModel)]="newRequest.purpose"></textarea>
+        <textarea class="form-control" placeholder="Describe business purpose..." [(ngModel)]="newRequest.purpose"></textarea>
       </div>
 
       <div class="form-group">
@@ -594,27 +615,7 @@
 
       <div class="form-group">
         <label>Estimated Budget ($)</label>
-        <input class="form-control" type="number" placeholder="0.00" [(ngModel)]="newRequest.estimatedBudget">
-      </div>
-
-      <div class="form-group">
-        <label>Hotel Daily Rate ($)</label>
-        <input class="form-control" type="number" placeholder="0.00" [(ngModel)]="newRequest.hotelDailyRate">
-      </div>
-
-      <div class="form-group">
-        <label>Meal Allowance ($)</label>
-        <input class="form-control" type="number" [(ngModel)]="newRequest.mealAllowance">
-      </div>
-
-      <div class="form-group">
-        <label>Ground Transport ($)</label>
-        <input class="form-control" type="number" [(ngModel)]="newRequest.groundTransportBudget">
-      </div>
-
-      <div class="form-group">
-        <label>Country Code</label>
-        <input class="form-control" type="text" placeholder="e.g. JP" [(ngModel)]="newRequest.countryCode" maxlength="2" style="text-transform: uppercase;">
+        <input class="form-control" type="number" [(ngModel)]="newRequest.estimatedBudget">
       </div>
     </div>
 
@@ -633,67 +634,28 @@
       <button class="modal-close" (click)="closeDetailModal()">✕</button>
     </div>
 
-    <div class="detail-row">
-      <span class="label">Traveler</span>
-      <span class="value">{{selectedRequest.employee.fullName}}</span>
+    <div style="font-size: 14px; margin-bottom: 12px;">
+      <strong>Traveler:</strong> {{selectedRequest.employee.fullName}} ({{selectedRequest.employee.department}})
     </div>
-    <div class="detail-row">
-      <span class="label">Department</span>
-      <span class="value">{{selectedRequest.employee.department}}</span>
+    <div style="font-size: 14px; margin-bottom: 12px;">
+      <strong>Dates:</strong> {{formatDate(selectedRequest.startDate)}} → {{formatDate(selectedRequest.endDate)}}
     </div>
-    <div class="detail-row">
-      <span class="label">Destination</span>
-      <span class="value">{{selectedRequest.destination}}</span>
+    <div style="font-size: 14px; margin-bottom: 12px;">
+      <strong>Purpose:</strong> {{selectedRequest.purpose}}
     </div>
-    <div class="detail-row">
-      <span class="label">Travel Dates</span>
-      <span class="value">{{formatDate(selectedRequest.startDate)}} → {{formatDate(selectedRequest.endDate)}} ({{selectedRequest.tripDurationDays}} days)</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Purpose</span>
-      <span class="value" style="max-width: 400px; text-align: right;">{{selectedRequest.purpose}}</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Flight Class</span>
-      <span class="value">{{selectedRequest.flightClass}}</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Estimated Budget</span>
-      <span class="value" style="color: var(--accent-blue); font-size: 18px;">{{formatCurrency(selectedRequest.estimatedBudget)}}</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Hotel Daily Rate</span>
-      <span class="value">{{formatCurrency(selectedRequest.hotelDailyRate)}}</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Policy Compliance</span>
-      <span class="value" [style.color]="selectedRequest.policyComplianceScore >= 80 ? 'var(--accent-green)' : selectedRequest.policyComplianceScore >= 50 ? 'var(--accent-orange)' : 'var(--accent-red)'">
-        {{selectedRequest.policyComplianceScore}}/100
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="label">ROI Score</span>
-      <span class="value" style="color: var(--accent-teal);">{{selectedRequest.roiScore}}/100</span>
-    </div>
-    <div class="detail-row">
-      <span class="label">Status</span>
-      <span class="status-badge" [style.background]="getStatusColor(selectedRequest.status) + '1a'" [style.color]="getStatusColor(selectedRequest.status)">
-        <span class="status-dot" [style.background]="getStatusColor(selectedRequest.status)"></span>
-        {{selectedRequest.status.replace('_', ' ')}}
-      </span>
+    <div style="font-size: 14px; margin-bottom: 12px;">
+      <strong>Budget:</strong> {{formatCurrency(selectedRequest.estimatedBudget)}}
     </div>
 
-    <!-- Violations -->
-    <div class="violations-box" *ngIf="selectedRequest.policyViolations">
-      <h4>⚠ Policy Violations Detected</h4>
-      <p>{{selectedRequest.policyViolations}}</p>
+    <div *ngIf="selectedRequest.policyViolations" style="padding: 12px; background: rgba(255,69,58,0.12); color: var(--accent-red); border-radius: 12px; margin-bottom: 16px;">
+      ⚠️ {{selectedRequest.policyViolations}}
     </div>
 
-    <!-- Approval Actions -->
-    <div *ngIf="selectedRequest.status === 'PENDING_APPROVAL' || selectedRequest.status === 'POLICY_VIOLATION'">
-      <div class="form-group" style="margin-top: 20px;">
+    <!-- Role-Gated Manager Approval Buttons -->
+    <div *ngIf="(selectedRequest.status === 'PENDING_APPROVAL' || selectedRequest.status === 'POLICY_VIOLATION') && auth.canApprove()">
+      <div class="form-group">
         <label>Manager Remarks</label>
-        <textarea class="form-control" placeholder="Add approval/rejection remarks..." [(ngModel)]="approvalRemarks"></textarea>
+        <textarea class="form-control" placeholder="Add approval remarks..." [(ngModel)]="approvalRemarks"></textarea>
       </div>
       <div class="modal-actions">
         <button class="btn btn-danger" (click)="rejectRequest()">Reject</button>
@@ -701,23 +663,7 @@
       </div>
     </div>
 
-    <!-- Already decided -->
-    <div *ngIf="selectedRequest.approvedBy" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
-      <div class="detail-row">
-        <span class="label">Decided By</span>
-        <span class="value">{{selectedRequest.approvedBy.fullName}}</span>
-      </div>
-      <div class="detail-row" *ngIf="selectedRequest.approvedAt">
-        <span class="label">Decision Date</span>
-        <span class="value">{{formatDateTime(selectedRequest.approvedAt)}}</span>
-      </div>
-      <div class="detail-row" *ngIf="selectedRequest.managerRemarks">
-        <span class="label">Remarks</span>
-        <span class="value">{{selectedRequest.managerRemarks}}</span>
-      </div>
-    </div>
-
-    <div class="modal-actions" *ngIf="selectedRequest.status !== 'PENDING_APPROVAL' && selectedRequest.status !== 'POLICY_VIOLATION'">
+    <div class="modal-actions" *ngIf="!auth.canApprove() || (selectedRequest.status !== 'PENDING_APPROVAL' && selectedRequest.status !== 'POLICY_VIOLATION')">
       <button class="btn btn-ghost" (click)="closeDetailModal()">Close</button>
     </div>
   </div>

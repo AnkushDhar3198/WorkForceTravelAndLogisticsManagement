@@ -44,6 +44,7 @@ public class DataSeeder implements CommandLineRunner {
         manager.setFirstName("David");
         manager.setLastName("Chen");
         manager.setEmail("david.chen@company.com");
+        manager.setPassword("password");
         manager.setPhone("+1-415-555-0101");
         manager.setRole(UserRole.MANAGER);
         manager.setDepartment("Engineering");
@@ -56,6 +57,7 @@ public class DataSeeder implements CommandLineRunner {
         emp1.setFirstName("Sarah");
         emp1.setLastName("Jenkins");
         emp1.setEmail("sarah.jenkins@company.com");
+        emp1.setPassword("password");
         emp1.setPhone("+1-415-555-0201");
         emp1.setRole(UserRole.EMPLOYEE);
         emp1.setDepartment("Engineering");
@@ -73,6 +75,7 @@ public class DataSeeder implements CommandLineRunner {
         emp2.setFirstName("Marcus");
         emp2.setLastName("Vance");
         emp2.setEmail("marcus.vance@company.com");
+        emp2.setPassword("password");
         emp2.setPhone("+1-212-555-0102");
         emp2.setRole(UserRole.EMPLOYEE);
         emp2.setDepartment("Supply Chain");
@@ -88,6 +91,7 @@ public class DataSeeder implements CommandLineRunner {
         emp3.setFirstName("Elena");
         emp3.setLastName("Rostova");
         emp3.setEmail("elena.rostova@company.com");
+        emp3.setPassword("password");
         emp3.setPhone("+44-20-5555-0103");
         emp3.setRole(UserRole.RISK_OFFICER);
         emp3.setDepartment("Security");
@@ -101,6 +105,7 @@ public class DataSeeder implements CommandLineRunner {
         finAdmin.setFirstName("Lisa");
         finAdmin.setLastName("Park");
         finAdmin.setEmail("lisa.park@company.com");
+        finAdmin.setPassword("password");
         finAdmin.setPhone("+1-415-555-0401");
         finAdmin.setRole(UserRole.FINANCE_ADMIN);
         finAdmin.setDepartment("Finance");
@@ -113,6 +118,7 @@ public class DataSeeder implements CommandLineRunner {
         logistics.setFirstName("Raj");
         logistics.setLastName("Patel");
         logistics.setEmail("raj.patel@company.com");
+        logistics.setPassword("password");
         logistics.setPhone("+91-98765-43210");
         logistics.setRole(UserRole.LOGISTICS_COORDINATOR);
         logistics.setDepartment("Operations");
