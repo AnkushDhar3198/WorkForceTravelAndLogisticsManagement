@@ -1,0 +1,13 @@
+# Built binaries
+backend/target/
+frontend/dist/
+frontend/node_modules/
+.mvn/
+*.log
+
+# IDE & OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

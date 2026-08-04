@@ -1,0 +1,566 @@
+<!-- Toast Notification -->
+<div *ngIf="toastMessage" class="fixed bottom-6 right-6 z-50 animate-fade-in-up bg-blue-600/90 backdrop-blur-xl text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-blue-400/30 flex items-center space-x-3">
+  <div class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></div>
+  <span class="text-sm font-medium tracking-wide">{{ toastMessage }}</span>
+</div>
+
+<!-- Apple Floating Navbar -->
+<header class="sticky top-0 z-40 apple-glass border-b border-white/10 px-4 lg:px-12 py-3 transition-all duration-300">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    
+    <div class="flex items-center space-x-3 cursor-pointer">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-sky-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+        </svg>
+      </div>
+      <div>
+        <span class="text-lg font-bold tracking-tight text-white">Apple Enterprise</span>
+        <span class="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Logistics OS</span>
+      </div>
+    </div>
+
+    <!-- Active View Role Toggle -->
+    <div class="hidden md:flex items-center bg-white/5 border border-white/10 rounded-full p-1">
+      <button 
+        (click)="switchRole('EMPLOYEE')"
+        [class]="activeRole === 'EMPLOYEE' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
+        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
+        Traveler
+      </button>
+      <button 
+        (click)="switchRole('MANAGER')"
+        [class]="activeRole === 'MANAGER' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
+        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
+        Approving Manager
+      </button>
+      <button 
+        (click)="switchRole('LOGISTICS')"
+        [class]="activeRole === 'LOGISTICS' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
+        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
+        Logistics
+      </button>
+      <button 
+        (click)="switchRole('RISK')"
+        [class]="activeRole === 'RISK' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
+        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
+        Duty of Care
+      </button>
+      <button 
+        (click)="switchRole('FINANCE')"
+        [class]="activeRole === 'FINANCE' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
+        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
+        Finance Audit
+      </button>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="w-2 h-2 mr-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Spring Boot Active
+      </span>
+    </div>
+  </div>
+</header>
+
+<!-- Main Container -->
+<main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-10">
+
+  <!-- Apple Keynote Hero Header -->
+  <section class="relative rounded-3xl p-8 lg:p-12 overflow-hidden apple-glass border border-white/10 animate-fade-in-up">
+    <div class="absolute -top-32 -right-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse-glow"></div>
+    <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-pulse-glow"></div>
+
+    <div class="relative z-10 max-w-3xl space-y-4">
+      <div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-300">
+        <span>Workforce Travel & Logistics Engine</span>
+      </div>
+      <h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight apple-text-gradient leading-tight">
+        Precision Logistics. Intelligent Travel.
+      </h1>
+      <p class="text-lg text-zinc-400 leading-relaxed font-normal">
+        Automated pre-trip policy validation, managerial approval routing, preferred corporate rates, prototype asset delivery, duty of care traveler tracking, and instant OCR expense reconciliation.
+      </p>
+    </div>
+
+    <!-- Live Executive Metrics Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/10">
+      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Total Managed Spend</span>
+        <div class="text-2xl font-bold apple-text-gradient mt-1">$148,500</div>
+        <span class="text-xs text-emerald-400">↑ 14% vs Q2</span>
+      </div>
+      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Policy Compliance</span>
+        <div class="text-2xl font-bold text-blue-400 mt-1">94.2%</div>
+        <span class="text-xs text-zinc-400">Automated check</span>
+      </div>
+      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Corporate Savings</span>
+        <div class="text-2xl font-bold apple-text-gradient-gold mt-1">$42,300</div>
+        <span class="text-xs text-amber-400">Preferred Rates</span>
+      </div>
+      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Active Global Trips</span>
+        <div class="text-2xl font-bold text-purple-400 mt-1">18 Travelers</div>
+        <span class="text-xs text-purple-300">Live GPS Radar</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation Tabs bar -->
+  <nav class="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-white/10">
+    <button 
+      (click)="activeTab = 'pre-trip'"
+      [class]="activeTab === 'pre-trip' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      1 & 2. Pre-Trip Request & Policy Engine
+    </button>
+    <button 
+      (click)="activeTab = 'approvals'"
+      [class]="activeTab === 'approvals' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      3. Manager Approval Workflow
+    </button>
+    <button 
+      (click)="activeTab = 'vendors'"
+      [class]="activeTab === 'vendors' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      4. Preferred Vendors
+    </button>
+    <button 
+      (click)="activeTab = 'logistics'"
+      [class]="activeTab === 'logistics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      5. Asset Shipment Sync
+    </button>
+    <button 
+      (click)="activeTab = 'disruptions'"
+      [class]="activeTab === 'disruptions' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      6. Disruption Notifications
+    </button>
+    <button 
+      (click)="activeTab = 'risk'"
+      [class]="activeTab === 'risk' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      7. Duty of Care Risk Map
+    </button>
+    <button 
+      (click)="activeTab = 'ocr'"
+      [class]="activeTab === 'ocr' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      8. OCR Receipt Scanner
+    </button>
+    <button 
+      (click)="activeTab = 'finance'"
+      [class]="activeTab === 'finance' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      9. Finance Auditing
+    </button>
+    <button 
+      (click)="activeTab = 'analytics'"
+      [class]="activeTab === 'analytics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
+      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
+      10. Travel ROI Analytics
+    </button>
+  </nav>
+
+  <!-- USER STORY 1 & 2: Pre-Trip Creation & Policy Engine -->
+  <section *ngIf="activeTab === 'pre-trip'" class="space-y-8 animate-fade-in-up">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- New Request Form -->
+      <div class="lg:col-span-1 apple-glass-card rounded-3xl p-6 space-y-5">
+        <h2 class="text-xl font-bold text-white flex items-center justify-between">
+          <span>Create Travel Request</span>
+          <span class="text-xs bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-full border border-blue-500/30">User Story 1 & 2</span>
+        </h2>
+        <form (ngSubmit)="submitTravelRequest()" class="space-y-4">
+          <div>
+            <label class="text-xs text-zinc-400 font-medium">Traveling Employee</label>
+            <input [(ngModel)]="newTrip.employeeName" name="employeeName" type="text" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="text-xs text-zinc-400 font-medium">Destination</label>
+            <input [(ngModel)]="newTrip.destination" name="destination" type="text" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-zinc-400 font-medium">Start Date</label>
+              <input [(ngModel)]="newTrip.startDate" name="startDate" type="date" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-zinc-400 font-medium">End Date</label>
+              <input [(ngModel)]="newTrip.endDate" name="endDate" type="date" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-zinc-400 font-medium">Flight Cabin Class</label>
+              <select [(ngModel)]="newTrip.flightClass" name="flightClass" class="w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
+                <option value="Economy">Economy</option>
+                <option value="Economy Premium">Economy Premium</option>
+                <option value="Business">Business (VP Approval)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-zinc-400 font-medium">Hotel Daily Rate ($)</label>
+              <input [(ngModel)]="newTrip.hotelDailyRate" name="hotelDailyRate" type="number" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-zinc-400 font-medium">Business Purpose</label>
+            <textarea [(ngModel)]="newTrip.purpose" name="purpose" rows="2" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none"></textarea>
+          </div>
+          
+          <!-- Live Automated Policy Engine Indicator -->
+          <div class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-1">
+            <span class="text-xs font-semibold text-blue-300">Automated Policy Check Preview:</span>
+            <p *ngIf="newTrip.hotelDailyRate > 350" class="text-xs text-amber-400">⚠️ Hotel rate (${{newTrip.hotelDailyRate}}) exceeds regional policy cap ($350/night)</p>
+            <p *ngIf="newTrip.flightClass === 'Business'" class="text-xs text-amber-400">⚠️ Business Class requires VP sign-off</p>
+            <p *ngIf="newTrip.hotelDailyRate <= 350 && newTrip.flightClass !== 'Business'" class="text-xs text-emerald-400">✓ Fully compliant with regional corporate policies</p>
+          </div>
+
+          <button type="submit" class="w-full py-3 apple-button-primary text-sm font-semibold">
+            Submit Request with Policy Validation
+          </button>
+        </form>
+      </div>
+
+      <!-- Active Travel Requests List -->
+      <div class="lg:col-span-2 space-y-4">
+        <h2 class="text-xl font-bold text-white flex items-center justify-between">
+          <span>Active Travel Requests</span>
+          <span class="text-xs text-zinc-400">{{ travelRequests.length }} requests logged</span>
+        </h2>
+        <div *ngFor="let req of travelRequests" class="apple-glass-card rounded-3xl p-6 space-y-3">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-xs text-blue-400 font-semibold uppercase tracking-wider">REQ-#{{ req.id }}</span>
+              <h3 class="text-lg font-bold text-white">{{ req.destination }}</h3>
+              <p class="text-xs text-zinc-400">{{ req.employeeName }} ({{ req.employeeRole }}) • {{ req.startDate }} to {{ req.endDate }}</p>
+            </div>
+            <div [ngSwitch]="req.status">
+              <span *ngSwitchCase="'APPROVED'" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">APPROVED</span>
+              <span *ngSwitchCase="'POLICY_VIOLATION'" class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">POLICY FLAG</span>
+              <span *ngSwitchDefault class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">PENDING APPROVAL</span>
+            </div>
+          </div>
+          <p class="text-xs text-zinc-300 bg-white/5 p-3 rounded-xl border border-white/10">{{ req.purpose }}</p>
+          <div class="flex items-center justify-between text-xs text-zinc-400 pt-2 border-t border-white/10">
+            <span>Est. Cost: <strong class="text-white">${{ req.estimatedCost }}</strong></span>
+            <span>Flight: <strong class="text-zinc-200">{{ req.flightClass }}</strong></span>
+            <span>Hotel: <strong class="text-zinc-200">${{ req.hotelDailyRate }}/night</strong></span>
+            <span>ROI Score: <strong class="text-emerald-400">{{ req.roiScore }}/100</strong></span>
+          </div>
+          <div *ngIf="req.policyViolations" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+            <strong>Policy Violations Detected:</strong> {{ req.policyViolations }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- USER STORY 3: Managerial Approval Workflow -->
+  <section *ngIf="activeTab === 'approvals'" class="space-y-6 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Approving Manager Dashboard</h2>
+        <p class="text-xs text-zinc-400">Review routed travel requests, evaluate out-of-policy exceptions & trip ROI.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-semibold border border-purple-500/30">User Story 3</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div *ngFor="let req of travelRequests" class="apple-glass-card rounded-3xl p-6 space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-white">{{ req.destination }}</h3>
+            <span class="text-xs text-zinc-400">Submitted by <strong>{{ req.employeeName }}</strong></span>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-white/10 text-white">ROI: {{ req.roiScore }}%</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-xs bg-white/5 p-3 rounded-xl">
+          <div><span class="text-zinc-400">Est. Total Cost:</span> <div class="text-sm font-bold text-white">${{ req.estimatedCost }}</div></div>
+          <div><span class="text-zinc-400">Flight Cabin:</span> <div class="text-sm font-bold text-white">{{ req.flightClass }}</div></div>
+        </div>
+
+        <div *ngIf="req.policyViolations" class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+          ⚠️ <strong>Flagged Policy Exception:</strong> {{ req.policyViolations }}
+        </div>
+
+        <div class="flex items-center space-x-3 pt-2">
+          <button (click)="updateRequestStatus(req.id!, 'APPROVED')" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all">
+            Approve Request
+          </button>
+          <button (click)="updateRequestStatus(req.id!, 'REJECTED')" class="flex-1 py-2.5 bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all">
+            Reject Request
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER STORY 4: Preferred Vendors -->
+  <section *ngIf="activeTab === 'vendors'" class="space-y-6 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Preferred Vendor Selection Catalog</h2>
+        <p class="text-xs text-zinc-400">Corporate negotiated rates for flights, luxury hotel chains, and executive ground transit.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">User Story 4</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div *ngFor="let v of vendors" class="apple-glass-card rounded-3xl p-6 space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">{{ v.category }}</span>
+            <h3 class="text-lg font-bold text-white mt-1">{{ v.name }}</h3>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">Save {{ v.discountPercentage }}%</span>
+        </div>
+
+        <div class="flex items-baseline space-x-2">
+          <span class="text-2xl font-extrabold text-white">${{ v.corporateRate }}</span>
+          <span class="text-xs text-zinc-500 line-through">${{ v.standardRate }}</span>
+          <span class="text-xs text-zinc-400">/ rate</span>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 pt-2">
+          <span *ngFor="let badge of v.badges" class="px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 text-xs">
+            ✓ {{ badge }}
+          </span>
+        </div>
+
+        <button (click)="showToast('Booked with corporate rate ' + v.name)" class="w-full py-2.5 apple-button-primary text-xs font-bold">
+          Book at Corporate Rate
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER STORY 5: Asset Shipment Sync -->
+  <section *ngIf="activeTab === 'logistics'" class="space-y-6 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Logistics: Physical Asset Synchronization</h2>
+        <p class="text-xs text-zinc-400">Coordinate & track delivery of hardware prototypes & materials synced with traveler arrival dates.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-500/30">User Story 5</span>
+    </div>
+
+    <div class="space-y-4">
+      <div *ngFor="let asset of logisticsAssets" class="apple-glass-card rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{{ asset.trackingCode }}</span>
+            <span class="text-xs text-emerald-400 font-semibold">Synced with {{ asset.syncedEmployee }}</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">{{ asset.assetName }}</h3>
+          <p class="text-xs text-zinc-400">Serial #: {{ asset.serialNumber }} • Destination: {{ asset.destinationVenue }}</p>
+        </div>
+
+        <div class="flex items-center space-x-6">
+          <div class="text-right">
+            <span class="text-xs text-zinc-400">Target Delivery</span>
+            <div class="text-sm font-bold text-white">{{ asset.targetDeliveryDate }}</div>
+          </div>
+          <span class="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            {{ asset.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER STORY 6: Real-Time Disruption Hub -->
+  <section *ngIf="activeTab === 'disruptions'" class="space-y-6 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Real-Time Disruption Notification Hub</h2>
+        <p class="text-xs text-zinc-400">Live alerts regarding flight delays, hotel status changes, and logistics dispatches.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">User Story 6</span>
+    </div>
+
+    <div class="space-y-4">
+      <div *ngFor="let d of disruptions" class="apple-glass-card rounded-3xl p-6 flex items-start space-x-4">
+        <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+          ⚡
+        </div>
+        <div class="flex-1 space-y-1">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-white">{{ d.title }}</h3>
+            <span class="text-xs text-zinc-400">{{ d.timestamp }}</span>
+          </div>
+          <p class="text-xs text-zinc-300">{{ d.message }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER STORY 7: Duty of Care Risk Map -->
+  <section *ngIf="activeTab === 'risk'" class="space-y-6 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Duty of Care: Traveler Risk Radar Map</h2>
+        <p class="text-xs text-zinc-400">Security & risk management dashboard monitoring global feeds & active employee coordinates.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold border border-red-500/30">User Story 7</span>
+    </div>
+
+    <!-- Simulated Global Map Radar -->
+    <div class="relative h-80 rounded-3xl bg-zinc-950 border border-white/10 p-6 overflow-hidden flex items-center justify-center">
+      <div class="absolute inset-0 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px] opacity-20"></div>
+      
+      <div class="relative z-10 text-center space-y-4">
+        <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold animate-pulse">
+          <span>● Live Global Intelligence Feed Active</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+          <div *ngFor="let risk of riskLocations" class="p-4 rounded-2xl apple-glass border border-white/10 text-left space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white">{{ risk.employeeName }}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/30 text-red-300">{{ risk.threatLevel }} RISK</span>
+            </div>
+            <p class="text-xs text-zinc-400">📍 {{ risk.city }}, {{ risk.country }}</p>
+            <button (click)="triggerSosAlert(risk)" class="w-full py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-all">
+              Dispatch Emergency Support
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER STORY 8: Expense Reporting via OCR -->
+  <section *ngIf="activeTab === 'ocr'" class="space-y-6 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Post-Trip Expense Reporting via OCR</h2>
+        <p class="text-xs text-zinc-400">Optical Character Recognition scanning receipts & matching itinerary data automatically.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-semibold border border-sky-500/30">User Story 8</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- OCR Scanner Upload Card -->
+      <div class="apple-glass-card rounded-3xl p-8 text-center space-y-6 border-2 border-dashed border-white/20">
+        <div class="w-16 h-16 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mx-auto text-2xl font-bold">
+          📷
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">Upload Receipt Image</h3>
+          <p class="text-xs text-zinc-400 mt-1">Drag & drop receipt photo or scan with camera for instant AI data extraction.</p>
+        </div>
+
+        <button (click)="triggerOcrScan()" [disabled]="ocrScanning" class="py-3 px-8 apple-button-primary text-xs font-bold">
+          {{ ocrScanning ? 'Scanning Receipt with OCR...' : 'Run OCR Receipt Scan' }}
+        </button>
+
+        <div *ngIf="ocrScanning" class="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 animate-pulse space-y-2">
+          <div class="h-2 bg-blue-400/40 rounded"></div>
+          <span class="text-xs text-blue-300">Extracting Vendor, Date, Tax, Total Amount & Line Items...</span>
+        </div>
+      </div>
+
+      <!-- Extracted OCR Result -->
+      <div *ngIf="ocrExtractedClaim" class="apple-glass-card rounded-3xl p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+          <span class="text-xs font-bold text-emerald-400">✓ OCR Scan Verified ({{ ocrExtractedClaim.ocrConfidence }}% Confidence)</span>
+          <span class="text-xs text-zinc-400">Itinerary Matched: REQ-#{{ ocrExtractedClaim.matchedItineraryId }}</span>
+        </div>
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs"><span class="text-zinc-400">Vendor:</span> <strong class="text-white">{{ ocrExtractedClaim.vendorName }}</strong></div>
+          <div class="flex justify-between text-xs"><span class="text-zinc-400">Category:</span> <strong class="text-white">{{ ocrExtractedClaim.category }}</strong></div>
+          <div class="flex justify-between text-xs"><span class="text-zinc-400">Date:</span> <strong class="text-white">{{ ocrExtractedClaim.date }}</strong></div>
+          <div class="flex justify-between text-xs"><span class="text-zinc-400">Tax Included:</span> <strong class="text-white">${{ ocrExtractedClaim.taxAmount }}</strong></div>
+          <div class="flex justify-between text-sm pt-2 border-t border-white/10"><span class="text-zinc-400">Total Claim:</span> <strong class="text-lg text-emerald-400">${{ ocrExtractedClaim.amount }}</strong></div>
+        </div>
+        <button (click)="showToast('Submitted expense claim for audit!')" class="w-full py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl">
+          Submit Claim for Reimbursement
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER STORY 9: Finance Auditing & Reimbursements -->
+  <section *ngIf="activeTab === 'finance'" class="space-y-6 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Finance & Procurement Reimbursement Workspace</h2>
+        <p class="text-xs text-zinc-400">Audit submitted claims, prevent fraud, and process 1-click payouts directly to bank accounts.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">User Story 9</span>
+    </div>
+
+    <div class="space-y-4">
+      <div *ngFor="let claim of expenses" class="apple-glass-card rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-bold text-zinc-300">{{ claim.employeeName }}</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-white/10 text-zinc-400">{{ claim.category }}</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">{{ claim.vendorName }} — ${{ claim.amount }}</h3>
+          <p class="text-xs text-zinc-400">OCR Confidence: {{ claim.ocrConfidence }}% • Date: {{ claim.date }}</p>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <span [ngClass]="claim.auditStatus === 'APPROVED_PAYOUT' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'"
+                class="px-3 py-1.5 rounded-full text-xs font-bold border">
+            {{ claim.auditStatus }}
+          </span>
+
+          <button *ngIf="claim.auditStatus !== 'APPROVED_PAYOUT'" (click)="approveReimbursement(claim.id)" class="py-2 px-5 apple-button-primary text-xs font-bold">
+            1-Click Bank Reimbursement
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER STORY 10: Travel ROI & Analytics Reporting -->
+  <section *ngIf="activeTab === 'analytics'" class="space-y-8 animate-fade-in-up">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Executive Analytics: Travel ROI & Spend Reporting</h2>
+        <p class="text-xs text-zinc-400">Consolidated analytics reports on vendor spend, monthly travel costs, and policy compliance.</p>
+      </div>
+      <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-semibold border border-purple-500/30">User Story 10</span>
+    </div>
+
+    <div *ngIf="analytics" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Department Spend breakdown -->
+      <div class="apple-glass-card rounded-3xl p-6 space-y-4">
+        <h3 class="text-base font-bold text-white">Quarterly Spend by Department</h3>
+        <div class="space-y-3">
+          <div *ngFor="let dep of analytics.spendByDepartment" class="space-y-1">
+            <div class="flex justify-between text-xs text-zinc-300">
+              <span>{{ dep.department }}</span>
+              <strong class="text-white">${{ dep.spend }}</strong>
+            </div>
+            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+              <div class="h-full bg-blue-500 rounded-full" [style.width.%]="(dep.spend / 62000) * 100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Policy Violation Breakdown -->
+      <div class="apple-glass-card rounded-3xl p-6 space-y-4">
+        <h3 class="text-base font-bold text-white">Policy Violation Breakdown</h3>
+        <div class="space-y-3">
+          <div *ngFor="let v of analytics.policyViolationBreakdown" class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+            <span class="text-xs text-zinc-300">{{ v.reason }}</span>
+            <span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold">{{ v.count }} Occurrences</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
