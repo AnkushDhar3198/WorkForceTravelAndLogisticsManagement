@@ -121,7 +121,43 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     flightClass: 'ECONOMY', hotelDailyRate: 0, mealAllowance: 50, groundTransportBudget: 100
   };
   newVendor = { name: '', category: 'FLIGHT', corporateRate: 0, standardRate: 0, rating: 4.8, preferred: true, badges: 'Corporate Partner', region: 'GLOBAL' };
-  newExpense = { vendorName: '', category: 'MEALS', expenseDate: '', amount: 0, currency: 'USD', receiptFileName: 'receipt_scan.pdf' };
+  newExpense: any = {
+    vendorName: '',
+    category: 'PASSPORT_BORDER_CLEARANCE',
+    expenseDate: new Date().toISOString().split('T')[0],
+    amount: 0,
+    currency: 'USD',
+    receiptFileName: 'document_scan.pdf',
+    passportNumber: '',
+    issuingCountry: 'United States',
+    clearanceExpiry: '',
+    borderAgency: 'Customs & Border Protection',
+    visaNumber: '',
+    visaType: 'Business Visa (B1/B2)',
+    targetJurisdiction: 'Schengen / EU',
+    validUntilDate: '',
+    pnrNumber: '',
+    airlineCarrier: 'Delta Air Lines',
+    originAirport: 'JFK',
+    destinationAirport: 'LHR',
+    cabinClass: 'BUSINESS',
+    policyNumber: 'POL-CBG-881920',
+    insuranceProvider: 'Cigna Global Executive',
+    coverageScope: 'Worldwide Emergency Medevac',
+    policyExpiry: '',
+    carnetNumber: 'ATA-CARNET-9941',
+    cargoAssetSerial: '',
+    customsVenue: 'Tokyo Port Customs',
+    declaredValue: 15000,
+    hotelName: 'Grand Hyatt',
+    checkInDate: '',
+    checkOutDate: '',
+    roomRatePerNight: 220,
+    mealType: 'Client Executive Dinner',
+    attendeesCount: 3,
+    transportMode: 'Corporate Black Car / Rail',
+    tripRoute: 'Airport -> City Center'
+  };
   newShipment = { assetName: '', serialNumber: '', destinationVenue: '', targetDeliveryDate: '', trackingCode: '', shippingCarrier: 'FedEx Express', weightKg: 5.0 };
   approvalRemarks = '';
   isLoading = true;
@@ -818,22 +854,72 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   openCreateExpenseModal() {
     this.showCreateExpenseModal = true;
-    this.newExpense = { vendorName: '', category: 'PASSPORT_BORDER_CLEARANCE', expenseDate: new Date().toISOString().split('T')[0], amount: 0, currency: 'USD', receiptFileName: 'passport_border_receipt.pdf' };
+    this.newExpense = {
+      vendorName: '',
+      category: 'PASSPORT_BORDER_CLEARANCE',
+      expenseDate: new Date().toISOString().split('T')[0],
+      amount: 0,
+      currency: 'USD',
+      receiptFileName: 'document_scan.pdf',
+      passportNumber: '',
+      issuingCountry: 'United States',
+      clearanceExpiry: '',
+      borderAgency: 'Customs & Border Protection',
+      visaNumber: '',
+      visaType: 'Business Visa (B1/B2)',
+      targetJurisdiction: 'Schengen / EU',
+      validUntilDate: '',
+      pnrNumber: '',
+      airlineCarrier: 'Delta Air Lines',
+      originAirport: 'JFK',
+      destinationAirport: 'LHR',
+      cabinClass: 'BUSINESS',
+      policyNumber: 'POL-CBG-' + Math.floor(100000 + Math.random() * 900000),
+      insuranceProvider: 'Cigna Global Executive',
+      coverageScope: 'Worldwide Emergency Medevac',
+      policyExpiry: '',
+      carnetNumber: 'ATA-CARNET-' + Math.floor(10000 + Math.random() * 90000),
+      cargoAssetSerial: '',
+      customsVenue: 'Tokyo Port Customs',
+      declaredValue: 15000,
+      hotelName: 'Grand Hyatt',
+      checkInDate: '',
+      checkOutDate: '',
+      roomRatePerNight: 220,
+      mealType: 'Client Executive Dinner',
+      attendeesCount: 3,
+      transportMode: 'Corporate Black Car / Rail',
+      tripRoute: 'Airport -> City Center'
+    };
   }
 
   submitExpense() {
-    if (!this.newExpense.vendorName || !this.newExpense.amount) return;
+    let vendor = this.newExpense.vendorName;
+    if (!vendor) {
+      switch (this.newExpense.category) {
+        case 'PASSPORT_BORDER_CLEARANCE': vendor = `${this.newExpense.borderAgency || 'Border Agency'} (${this.newExpense.issuingCountry || 'Global'})`; break;
+        case 'VISA_PERMITS': vendor = `${this.newExpense.visaType || 'Business Visa'} - ${this.newExpense.targetJurisdiction || 'Consulate'}`; break;
+        case 'FLIGHT_TRANSIT': vendor = `${this.newExpense.airlineCarrier || 'Transit Airline'} (PNR: ${this.newExpense.pnrNumber || 'N/A'})`; break;
+        case 'HEALTH_INSURANCE': vendor = `${this.newExpense.insuranceProvider || 'Global Health Provider'}`; break;
+        case 'CUSTOMS_MANIFEST': vendor = `Customs Carnet - ${this.newExpense.customsVenue || 'Customs Port'}`; break;
+        case 'HOTEL': vendor = `${this.newExpense.hotelName || 'Corporate Hotel Lodging'}`; break;
+        case 'MEALS': vendor = `${this.newExpense.mealType || 'Business Dining'}`; break;
+        case 'GROUND_TRANSPORT': vendor = `${this.newExpense.transportMode || 'Ground Transit'}`; break;
+        default: vendor = 'Corporate Expense';
+      }
+    }
+    const amt = Number(this.newExpense.amount) || 150;
     const payload = {
       employee: { id: this.auth.currentUserValue?.id || 1 },
-      vendorName: this.newExpense.vendorName, category: this.newExpense.category,
-      expenseDate: this.newExpense.expenseDate, amount: this.newExpense.amount,
-      currency: this.newExpense.currency, ocrConfidence: 97.5,
-      auditStatus: 'PENDING_AUDIT', receiptFileName: this.newExpense.receiptFileName
+      vendorName: vendor, category: this.newExpense.category,
+      expenseDate: this.newExpense.expenseDate, amount: amt,
+      currency: this.newExpense.currency, ocrConfidence: 98.2,
+      auditStatus: 'PENDING_AUDIT', receiptFileName: this.newExpense.receiptFileName || 'category_document.pdf'
     };
     this.api.createExpense(payload).subscribe(() => {
       this.showCreateExpenseModal = false;
       this.loadAllData();
-      this.showPopup('success', 'Expense Submitted', 'Your expense claim has been submitted for audit review');
+      this.showPopup('success', 'Claim Submitted', `${this.getCategoryLabel(this.newExpense.category)} claim submitted for audit review`);
     });
   }
 

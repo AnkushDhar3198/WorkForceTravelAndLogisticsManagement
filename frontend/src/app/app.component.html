@@ -1063,29 +1063,101 @@
 
 <!-- CREATE EXPENSE -->
 <div class="modal-overlay" *ngIf="showCreateExpenseModal" (click)="showCreateExpenseModal = false">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header"><h3>Submit Expense Claim & Document</h3><button class="modal-close" (click)="showCreateExpenseModal = false">✕</button></div>
+  <div class="modal-content" style="max-width:680px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Submit {{getCategoryLabel(newExpense.category)}} Claim</h3>
+      <button class="modal-close" (click)="showCreateExpenseModal = false">✕</button>
+    </div>
+
     <div class="form-grid">
+      <!-- Category Selector -->
       <div class="form-group full-width">
         <label>Expense & Document Category *</label>
         <select class="form-control" [(ngModel)]="newExpense.category" name="expenseCategory">
-          <option value="PASSPORT_BORDER_CLEARANCE">Passport & Border Clearance</option>
-          <option value="VISA_PERMITS">Business Visa & Permits</option>
-          <option value="FLIGHT_TRANSIT">Flight & Transit Tickets</option>
-          <option value="HEALTH_INSURANCE">Corporate Health Insurance</option>
-          <option value="CUSTOMS_MANIFEST">Customs & Logistics Manifest</option>
-          <option value="HOTEL">Hotel & Lodging</option>
-          <option value="MEALS">Meals & Per Diem</option>
-          <option value="GROUND_TRANSPORT">Ground Transport</option>
-          <option value="MISC">Miscellaneous Expense</option>
+          <option value="PASSPORT_BORDER_CLEARANCE">🛂 Passport & Border Clearance</option>
+          <option value="VISA_PERMITS">📄 Business Visa & Permits</option>
+          <option value="FLIGHT_TRANSIT">✈️ Flight & Transit Tickets</option>
+          <option value="HEALTH_INSURANCE">🏥 Corporate Health Insurance</option>
+          <option value="CUSTOMS_MANIFEST">📦 Customs & Logistics Manifest</option>
+          <option value="HOTEL">🏨 Hotel & Lodging</option>
+          <option value="MEALS">🍽️ Meals & Per Diem</option>
+          <option value="GROUND_TRANSPORT">🚗 Ground Transport</option>
+          <option value="MISC">📋 Miscellaneous Expense</option>
         </select>
       </div>
-      <div class="form-group"><label>Vendor / Issuer</label><input class="form-control" type="text" placeholder="e.g. Immigration & Customs / Carrier" [(ngModel)]="newExpense.vendorName"></div>
-      <div class="form-group"><label>Expense Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.expenseDate"></div>
-      <div class="form-group"><label>Amount ($)</label><input class="form-control" type="number" [(ngModel)]="newExpense.amount"></div>
-      <div class="form-group"><label>Receipt / Document File</label><input class="form-control" type="text" placeholder="document_scan.pdf" [(ngModel)]="newExpense.receiptFileName"></div>
+
+      <!-- DYNAMIC FORM 1: PASSPORT & BORDER CLEARANCE -->
+      <ng-container *ngIf="newExpense.category === 'PASSPORT_BORDER_CLEARANCE'">
+        <div class="form-group"><label>Passport / Clearance No. *</label><input class="form-control" type="text" placeholder="e.g. N9847192" [(ngModel)]="newExpense.passportNumber"></div>
+        <div class="form-group"><label>Issuing Country *</label><input class="form-control" type="text" placeholder="e.g. United States" [(ngModel)]="newExpense.issuingCountry"></div>
+        <div class="form-group"><label>Border Agency / Authority</label><input class="form-control" type="text" placeholder="e.g. US Customs & Border Protection" [(ngModel)]="newExpense.borderAgency"></div>
+        <div class="form-group"><label>Clearance Expiry Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.clearanceExpiry"></div>
+      </ng-container>
+
+      <!-- DYNAMIC FORM 2: BUSINESS VISA & PERMITS -->
+      <ng-container *ngIf="newExpense.category === 'VISA_PERMITS'">
+        <div class="form-group"><label>Visa / Permit No. *</label><input class="form-control" type="text" placeholder="e.g. V-889410" [(ngModel)]="newExpense.visaNumber"></div>
+        <div class="form-group"><label>Visa Type / Class</label><input class="form-control" type="text" placeholder="e.g. B1/B2 Executive Business Visa" [(ngModel)]="newExpense.visaType"></div>
+        <div class="form-group"><label>Target Jurisdiction / Country</label><input class="form-control" type="text" placeholder="e.g. Schengen Zone / Japan" [(ngModel)]="newExpense.targetJurisdiction"></div>
+        <div class="form-group"><label>Visa Validity End Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.validUntilDate"></div>
+      </ng-container>
+
+      <!-- DYNAMIC FORM 3: FLIGHT & TRANSIT TICKETS -->
+      <ng-container *ngIf="newExpense.category === 'FLIGHT_TRANSIT'">
+        <div class="form-group"><label>Booking PNR Code *</label><input class="form-control" type="text" placeholder="e.g. PNR-77291" [(ngModel)]="newExpense.pnrNumber"></div>
+        <div class="form-group"><label>Airline / Transit Carrier</label><input class="form-control" type="text" placeholder="e.g. Singapore Airlines" [(ngModel)]="newExpense.airlineCarrier"></div>
+        <div class="form-group"><label>Origin Airport Code</label><input class="form-control" type="text" placeholder="e.g. JFK" [(ngModel)]="newExpense.originAirport"></div>
+        <div class="form-group"><label>Destination Airport Code</label><input class="form-control" type="text" placeholder="e.g. HND / NRT" [(ngModel)]="newExpense.destinationAirport"></div>
+        <div class="form-group"><label>Cabin Class</label><select class="form-control" [(ngModel)]="newExpense.cabinClass"><option value="ECONOMY">Economy</option><option value="PREMIUM_ECONOMY">Premium Economy</option><option value="BUSINESS">Business Class</option><option value="FIRST">First Class</option></select></div>
+      </ng-container>
+
+      <!-- DYNAMIC FORM 4: CORPORATE HEALTH INSURANCE -->
+      <ng-container *ngIf="newExpense.category === 'HEALTH_INSURANCE'">
+        <div class="form-group"><label>Insurance Policy No. *</label><input class="form-control" type="text" placeholder="e.g. POL-883910" [(ngModel)]="newExpense.policyNumber"></div>
+        <div class="form-group"><label>Insurance Provider / Carrier</label><input class="form-control" type="text" placeholder="e.g. Cigna Global Executive" [(ngModel)]="newExpense.insuranceProvider"></div>
+        <div class="form-group full-width"><label>Coverage Scope & Benefits</label><input class="form-control" type="text" placeholder="e.g. Worldwide Medical, Repatriation & Medevac" [(ngModel)]="newExpense.coverageScope"></div>
+        <div class="form-group"><label>Policy Expiry Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.policyExpiry"></div>
+      </ng-container>
+
+      <!-- DYNAMIC FORM 5: CUSTOMS & LOGISTICS MANIFEST -->
+      <ng-container *ngIf="newExpense.category === 'CUSTOMS_MANIFEST'">
+        <div class="form-group"><label>ATA Carnet / Manifest No. *</label><input class="form-control" type="text" placeholder="e.g. ATA-CARNET-9941" [(ngModel)]="newExpense.carnetNumber"></div>
+        <div class="form-group"><label>Cargo Asset Serial No.</label><input class="form-control" type="text" placeholder="e.g. SN-DEV-88210" [(ngModel)]="newExpense.cargoAssetSerial"></div>
+        <div class="form-group"><label>Customs Port / Declaration Venue</label><input class="form-control" type="text" placeholder="e.g. Tokyo Narita Customs" [(ngModel)]="newExpense.customsVenue"></div>
+        <div class="form-group"><label>Declared Asset Value ($)</label><input class="form-control" type="number" [(ngModel)]="newExpense.declaredValue"></div>
+      </ng-container>
+
+      <!-- DYNAMIC FORM 6: HOTEL & LODGING -->
+      <ng-container *ngIf="newExpense.category === 'HOTEL'">
+        <div class="form-group full-width"><label>Hotel / Property Name *</label><input class="form-control" type="text" placeholder="e.g. Grand Hyatt Tokyo" [(ngModel)]="newExpense.hotelName"></div>
+        <div class="form-group"><label>Check-in Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.checkInDate"></div>
+        <div class="form-group"><label>Check-out Date</label><input class="form-control" type="date" [(ngModel)]="newExpense.checkOutDate"></div>
+        <div class="form-group"><label>Nightly Room Rate ($)</label><input class="form-control" type="number" [(ngModel)]="newExpense.roomRatePerNight"></div>
+      </ng-container>
+
+      <!-- DYNAMIC FORM 7: MEALS & PER DIEM -->
+      <ng-container *ngIf="newExpense.category === 'MEALS'">
+        <div class="form-group full-width"><label>Dining Establishment / Purpose</label><input class="form-control" type="text" placeholder="e.g. Executive Client Hospitality Dinner" [(ngModel)]="newExpense.mealType"></div>
+        <div class="form-group"><label>Number of Attendees / Guests</label><input class="form-control" type="number" [(ngModel)]="newExpense.attendeesCount"></div>
+      </ng-container>
+
+      <!-- DYNAMIC FORM 8: GROUND TRANSPORT -->
+      <ng-container *ngIf="newExpense.category === 'GROUND_TRANSPORT'">
+        <div class="form-group"><label>Transport Mode / Service</label><input class="form-control" type="text" placeholder="e.g. Executive Black Car / Shinkansen Express" [(ngModel)]="newExpense.transportMode"></div>
+        <div class="form-group"><label>Transit Route</label><input class="form-control" type="text" placeholder="e.g. Narita Airport -> Roppongi HQ" [(ngModel)]="newExpense.tripRoute"></div>
+      </ng-container>
+
+      <!-- COMMON REQUIRED FIELDS -->
+      <div class="form-group"><label>Vendor / Payee Name</label><input class="form-control" type="text" placeholder="Auto-filled or specify..." [(ngModel)]="newExpense.vendorName"></div>
+      <div class="form-group"><label>Expense Date *</label><input class="form-control" type="date" [(ngModel)]="newExpense.expenseDate"></div>
+      <div class="form-group"><label>Claim Amount ($) *</label><input class="form-control" type="number" placeholder="0.00" [(ngModel)]="newExpense.amount"></div>
+      <div class="form-group"><label>Scanned Receipt / Document File</label><input class="form-control" type="text" placeholder="digital_receipt.pdf" [(ngModel)]="newExpense.receiptFileName"></div>
     </div>
-    <div class="modal-actions"><button class="btn btn-ghost" (click)="showCreateExpenseModal = false">Cancel</button><button class="btn btn-primary" (click)="submitExpense()">Submit Claim</button></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showCreateExpenseModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitExpense()">Submit {{getCategoryLabel(newExpense.category)}} Claim</button>
+    </div>
   </div>
 </div>
 
