@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Employee } from './api.service';
 
 export interface AuthResponse {
   token: string;
   employee: Employee;
   message: string;
+  requires2FA: boolean;
+  email: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -16,6 +18,10 @@ export class AuthService {
   public currentUser$ = this.currentUserSubject.asObservable();
 
   private tokenSubject = new BehaviorSubject<string | null>(localStorage.getItem('auth_token'));
+
+  // 2FA state
+  public step1Complete = false;
+  public pendingEmail = '';
 
   constructor(private http: HttpClient) {
     const savedUser = localStorage.getItem('current_user');
@@ -40,25 +46,49 @@ export class AuthService {
     return this.currentUserSubject.value?.role || 'GUEST';
   }
 
-  login(email: string, password?: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/login`, { email, password }).pipe(
+  /**
+   * Step 1: Passkey Verification
+   */
+  loginStep1(email: string, passkey: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/login-step1`, { email, passkey }).pipe(
+      tap(res => {
+        if (res && res.requires2FA) {
+          this.step1Complete = true;
+          this.pendingEmail = res.email;
+        }
+      })
+    );
+  }
+
+  /**
+   * Step 2: 2FA Verification Code
+   */
+  verify2FA(email: string, twoFactorCode: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/verify-2fa`, { email, twoFactorCode }).pipe(
       tap(res => {
         if (res && res.token) {
           localStorage.setItem('auth_token', res.token);
           localStorage.setItem('current_user', JSON.stringify(res.employee));
           this.tokenSubject.next(res.token);
           this.currentUserSubject.next(res.employee);
+          this.step1Complete = false;
+          this.pendingEmail = '';
         }
       })
     );
   }
 
-  loginAsPersona(employee: Employee): void {
+  /**
+   * 1-Click Official Login (Pre-fills Step 1 & 2)
+   */
+  loginAsOfficial(employee: Employee): void {
     const syntheticToken = 'Bearer ' + btoa(`${employee.id}:${employee.email}:${Date.now()}`);
     localStorage.setItem('auth_token', syntheticToken);
     localStorage.setItem('current_user', JSON.stringify(employee));
     this.tokenSubject.next(syntheticToken);
     this.currentUserSubject.next(employee);
+    this.step1Complete = false;
+    this.pendingEmail = '';
   }
 
   logout(): void {
@@ -66,26 +96,12 @@ export class AuthService {
     localStorage.removeItem('current_user');
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
+    this.step1Complete = false;
+    this.pendingEmail = '';
   }
 
   hasRole(...roles: string[]): boolean {
     const userRole = this.currentRole;
     return roles.includes(userRole);
-  }
-
-  canApprove(): boolean {
-    return this.hasRole('MANAGER', 'FINANCE_ADMIN');
-  }
-
-  canAuditExpenses(): boolean {
-    return this.hasRole('FINANCE_ADMIN', 'MANAGER');
-  }
-
-  canManageLogistics(): boolean {
-    return this.hasRole('LOGISTICS_COORDINATOR', 'MANAGER');
-  }
-
-  canManageRisk(): boolean {
-    return this.hasRole('RISK_OFFICER', 'MANAGER');
   }
 }

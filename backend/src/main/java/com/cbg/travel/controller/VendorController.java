@@ -53,4 +53,15 @@ public class VendorController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteVendor(@PathVariable Long id) {
+        return vendorRepo.findById(id)
+                .map(existing -> {
+                    existing.setActive(false);
+                    vendorRepo.save(existing);
+                    return ResponseEntity.ok().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

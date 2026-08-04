@@ -35,18 +35,23 @@ export class AppComponent implements OnInit, OnDestroy {
   searchTerm = '';
   statusFilter = 'ALL';
 
-  // Login form
-  loginEmail = 'david.chen@company.com';
-  loginPassword = 'password';
-  loginError = '';
+  // 2-Step Login Form
+  loginEmail = '';
+  loginPasskey = '';
+  twoFactorCodeInput = '';
+  step1Error = '';
+  step2Error = '';
   isAuthenticating = false;
 
   // Modals
   showCreateRequestModal = false;
+  showCreateVendorModal = false;
+  showCreateExpenseModal = false;
+  showCreateShipmentModal = false;
   showDetailModal = false;
   selectedRequest: TravelRequest | null = null;
 
-  // Form
+  // Form State
   newRequest = {
     employeeId: null as number | null,
     destination: '',
@@ -59,6 +64,36 @@ export class AppComponent implements OnInit, OnDestroy {
     hotelDailyRate: 0,
     mealAllowance: 50,
     groundTransportBudget: 100
+  };
+
+  newVendor = {
+    name: '',
+    category: 'FLIGHT',
+    corporateRate: 0,
+    standardRate: 0,
+    rating: 4.8,
+    preferred: true,
+    badges: 'Corporate Partner',
+    region: 'GLOBAL'
+  };
+
+  newExpense = {
+    vendorName: '',
+    category: 'MEALS',
+    expenseDate: '',
+    amount: 0,
+    currency: 'USD',
+    receiptFileName: 'receipt_scan.pdf'
+  };
+
+  newShipment = {
+    assetName: '',
+    serialNumber: '',
+    destinationVenue: '',
+    targetDeliveryDate: '',
+    trackingCode: '',
+    shippingCarrier: 'FedEx Express',
+    weightKg: 5.0
   };
 
   approvalRemarks = '';
@@ -110,42 +145,63 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Login handlers
-  onLoginSubmit() {
-    if (!this.loginEmail) return;
+  // 2-Step Login Handlers
+  onStep1Submit() {
+    if (!this.loginEmail || !this.loginPasskey) return;
     this.isAuthenticating = true;
-    this.loginError = '';
+    this.step1Error = '';
 
-    this.api.getEmployees().subscribe({
-      next: (emps) => {
-        const found = emps.find(e => e.email.toLowerCase() === this.loginEmail.toLowerCase());
-        if (found) {
-          this.auth.loginAsPersona(found);
-          this.isAuthenticating = false;
-          this.loadAllData();
-        } else {
-          this.loginError = 'User email not found in enterprise directory';
-          this.isAuthenticating = false;
-        }
+    this.auth.loginStep1(this.loginEmail, this.loginPasskey).subscribe({
+      next: () => {
+        this.isAuthenticating = false;
       },
-      error: () => {
-        this.loginError = 'Server authentication error';
+      error: (err) => {
+        this.step1Error = err.error?.message || 'Step 1 Passkey authentication failed';
         this.isAuthenticating = false;
       }
     });
   }
 
-  quickLoginAsRole(roleName: string) {
+  onStep2Submit() {
+    if (!this.twoFactorCodeInput) return;
+    this.isAuthenticating = true;
+    this.step2Error = '';
+
+    this.auth.verify2FA(this.auth.pendingEmail, this.twoFactorCodeInput).subscribe({
+      next: () => {
+        this.isAuthenticating = false;
+        this.loginEmail = '';
+        this.loginPasskey = '';
+        this.twoFactorCodeInput = '';
+        this.loadAllData();
+      },
+      error: (err) => {
+        this.step2Error = err.error?.message || 'Invalid 2FA Verification Code';
+        this.isAuthenticating = false;
+      }
+    });
+  }
+
+  // 1-Click Official Login (Pre-fills Step 1 Passkey + Step 2 2FA Code)
+  quickLoginAsOfficial(officialEmail: string) {
     if (!this.employees || this.employees.length === 0) return;
-    const matched = this.employees.find(e => e.role === roleName);
-    if (matched) {
-      this.auth.loginAsPersona(matched);
+    const found = this.employees.find(e => e.email.toLowerCase() === officialEmail.toLowerCase());
+    if (found) {
+      this.loginEmail = found.email;
+      this.loginPasskey = found.passkey || 'password';
+      this.twoFactorCodeInput = found.twoFactorCode || '123456';
+
+      // Auto-trigger 1-click authentication
+      this.auth.loginAsOfficial(found);
       this.loadAllData();
     }
   }
 
   logout() {
     this.auth.logout();
+    this.loginEmail = '';
+    this.loginPasskey = '';
+    this.twoFactorCodeInput = '';
   }
 
   toggleSidebar() {
@@ -168,7 +224,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.themeService.setTheme(theme);
   }
 
-  // Filtering
+  // Filtered Datasets
   get filteredRequests(): TravelRequest[] {
     return this.travelRequests.filter(req => {
       const matchesSearch = !this.searchTerm ||
@@ -224,13 +280,42 @@ export class AppComponent implements OnInit, OnDestroy {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `workforce_${this.activeTab}_report.csv`);
+    link.setAttribute('download', `cbg_official_${this.activeTab}_report.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
 
-  // Modals
+  // Vendor Management (Corporate Travel Manager)
+  openCreateVendorModal() {
+    this.showCreateVendorModal = true;
+    this.newVendor = {
+      name: '',
+      category: 'FLIGHT',
+      corporateRate: 0,
+      standardRate: 0,
+      rating: 4.8,
+      preferred: true,
+      badges: 'Corporate Partner',
+      region: 'GLOBAL'
+    };
+  }
+
+  submitVendor() {
+    if (!this.newVendor.name || !this.newVendor.corporateRate) return;
+    this.api.createVendor(this.newVendor).subscribe(() => {
+      this.showCreateVendorModal = false;
+      this.loadAllData();
+    });
+  }
+
+  deleteVendor(vendorId: number) {
+    if (confirm('Are you sure you want to remove this preferred vendor?')) {
+      this.api.deleteVendor(vendorId).subscribe(() => this.loadAllData());
+    }
+  }
+
+  // Travel Request Modals
   openCreateModal() {
     this.showCreateRequestModal = true;
     this.newRequest = {
@@ -313,14 +398,35 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  updateShipmentStatus(shipment: Shipment, newStatus: string) {
-    this.api.updateShipmentStatus(shipment.id, { status: newStatus }).subscribe(() => {
-      this.loadAllData();
-    });
+  // Expense Creation (Employee)
+  openCreateExpenseModal() {
+    this.showCreateExpenseModal = true;
+    this.newExpense = {
+      vendorName: '',
+      category: 'MEALS',
+      expenseDate: new Date().toISOString().split('T')[0],
+      amount: 0,
+      currency: 'USD',
+      receiptFileName: 'scanned_receipt.pdf'
+    };
   }
 
-  markRead(notification: Notification) {
-    this.api.markNotificationRead(notification.id).subscribe(() => {
+  submitExpense() {
+    if (!this.newExpense.vendorName || !this.newExpense.amount) return;
+    const payload = {
+      employee: { id: this.auth.currentUserValue?.id || 1 },
+      vendorName: this.newExpense.vendorName,
+      category: this.newExpense.category,
+      expenseDate: this.newExpense.expenseDate,
+      amount: this.newExpense.amount,
+      currency: this.newExpense.currency,
+      ocrConfidence: 97.5,
+      auditStatus: 'PENDING_AUDIT',
+      receiptFileName: this.newExpense.receiptFileName
+    };
+
+    this.api.createExpense(payload).subscribe(() => {
+      this.showCreateExpenseModal = false;
       this.loadAllData();
     });
   }
@@ -328,7 +434,7 @@ export class AppComponent implements OnInit, OnDestroy {
   approveExpense(expense: ExpenseClaim) {
     this.api.auditExpense(expense.id, {
       auditStatus: 'APPROVED_PAYOUT',
-      auditRemarks: 'Approved for reimbursement',
+      auditRemarks: 'Approved by Finance Director for payout',
       auditorId: String(this.auth.currentUserValue?.id || 1)
     }).subscribe(() => this.loadAllData());
   }
@@ -341,13 +447,59 @@ export class AppComponent implements OnInit, OnDestroy {
     }).subscribe(() => this.loadAllData());
   }
 
+  // Shipment Creation (Logistics Coordinator)
+  openCreateShipmentModal() {
+    this.showCreateShipmentModal = true;
+    this.newShipment = {
+      assetName: '',
+      serialNumber: 'SN-' + Math.floor(100000 + Math.random() * 900000),
+      destinationVenue: '',
+      targetDeliveryDate: new Date().toISOString().split('T')[0],
+      trackingCode: 'LOG-CBG-' + Math.floor(100000 + Math.random() * 900000),
+      shippingCarrier: 'FedEx Express',
+      weightKg: 8.5
+    };
+  }
+
+  submitShipment() {
+    if (!this.newShipment.assetName || !this.newShipment.destinationVenue) return;
+    const payload = {
+      assetName: this.newShipment.assetName,
+      serialNumber: this.newShipment.serialNumber,
+      destinationVenue: this.newShipment.destinationVenue,
+      syncedEmployee: { id: this.auth.currentUserValue?.id || 1 },
+      targetDeliveryDate: this.newShipment.targetDeliveryDate,
+      trackingCode: this.newShipment.trackingCode,
+      status: 'IN_TRANSIT',
+      weightKg: this.newShipment.weightKg,
+      shippingCarrier: this.newShipment.shippingCarrier
+    };
+
+    this.api.createShipment(payload).subscribe(() => {
+      this.showCreateShipmentModal = false;
+      this.loadAllData();
+    });
+  }
+
+  updateShipmentStatus(shipment: Shipment, newStatus: string) {
+    this.api.updateShipmentStatus(shipment.id, { status: newStatus }).subscribe(() => {
+      this.loadAllData();
+    });
+  }
+
+  markRead(notification: Notification) {
+    this.api.markNotificationRead(notification.id).subscribe(() => {
+      this.loadAllData();
+    });
+  }
+
   triggerSos(location: TravelerLocation) {
     this.api.triggerSos({ employeeId: location.employee.id }).subscribe(() => {
       this.loadAllData();
     });
   }
 
-  // Formatters
+  // Formatters & Helpers
   getStatusColor(status: string): string {
     const map: Record<string, string> = {
       'APPROVED': '#30D158',

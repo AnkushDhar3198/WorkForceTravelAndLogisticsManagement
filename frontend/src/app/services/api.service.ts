@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, interval, switchMap, startWith } from 'rxjs';
+import { Observable, interval, switchMap, startWith } from 'rxjs';
 
 export interface Employee {
   id: number;
@@ -13,9 +13,8 @@ export interface Employee {
   role: string;
   department: string;
   designation: string;
-  nationality: string;
-  passportNumber: string;
-  passportExpiry: string;
+  passkey?: string;
+  twoFactorCode?: string;
   active: boolean;
 }
 
@@ -135,10 +134,6 @@ export class ApiService {
     return this.http.get<Employee[]>(`${this.baseUrl}/employees`);
   }
 
-  getEmployee(id: number): Observable<Employee> {
-    return this.http.get<Employee>(`${this.baseUrl}/employees/${id}`);
-  }
-
   // Travel Requests
   getTravelRequests(): Observable<TravelRequest[]> {
     return this.http.get<TravelRequest[]>(`${this.baseUrl}/travel-requests`);
@@ -152,22 +147,26 @@ export class ApiService {
     return this.http.put<TravelRequest>(`${this.baseUrl}/travel-requests/${id}/status`, payload);
   }
 
-  getPendingRequests(): Observable<TravelRequest[]> {
-    return this.http.get<TravelRequest[]>(`${this.baseUrl}/travel-requests/pending`);
-  }
-
-  // Vendors
+  // Vendors (BRD FR14)
   getVendors(): Observable<Vendor[]> {
     return this.http.get<Vendor[]>(`${this.baseUrl}/vendors`);
   }
 
-  getPreferredVendors(): Observable<Vendor[]> {
-    return this.http.get<Vendor[]>(`${this.baseUrl}/vendors/preferred`);
+  createVendor(vendor: any): Observable<Vendor> {
+    return this.http.post<Vendor>(`${this.baseUrl}/vendors`, vendor);
   }
 
-  // Shipments
+  deleteVendor(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/vendors/${id}`);
+  }
+
+  // Shipments (BRD FR6)
   getShipments(): Observable<Shipment[]> {
     return this.http.get<Shipment[]>(`${this.baseUrl}/shipments`);
+  }
+
+  createShipment(shipment: any): Observable<Shipment> {
+    return this.http.post<Shipment>(`${this.baseUrl}/shipments`, shipment);
   }
 
   updateShipmentStatus(id: number, payload: any): Observable<Shipment> {
@@ -183,7 +182,7 @@ export class ApiService {
     return this.http.put<Notification>(`${this.baseUrl}/notifications/${id}/read`, {});
   }
 
-  // Risk / Traveler Locations
+  // Risk / Traveler Locations (BRD FR12)
   getTravelerLocations(): Observable<TravelerLocation[]> {
     return this.http.get<TravelerLocation[]>(`${this.baseUrl}/risk/travelers`);
   }
@@ -192,24 +191,16 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/risk/sos`, payload);
   }
 
-  // Expenses
+  // Expenses (BRD FR8 & FR9)
   getExpenses(): Observable<ExpenseClaim[]> {
     return this.http.get<ExpenseClaim[]>(`${this.baseUrl}/expenses`);
   }
 
+  createExpense(expense: any): Observable<ExpenseClaim> {
+    return this.http.post<ExpenseClaim>(`${this.baseUrl}/expenses`, expense);
+  }
+
   auditExpense(id: number, payload: any): Observable<ExpenseClaim> {
     return this.http.put<ExpenseClaim>(`${this.baseUrl}/expenses/${id}/audit`, payload);
-  }
-
-  reimburseExpense(id: number): Observable<ExpenseClaim> {
-    return this.http.post<ExpenseClaim>(`${this.baseUrl}/expenses/${id}/reimburse`, {});
-  }
-
-  // Polling helper for real-time data
-  pollData<T>(endpoint: string, intervalMs: number = 30000): Observable<T> {
-    return interval(intervalMs).pipe(
-      startWith(0),
-      switchMap(() => this.http.get<T>(`${this.baseUrl}/${endpoint}`))
-    );
   }
 }

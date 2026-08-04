@@ -24,7 +24,11 @@ public class Employee {
     @Column(nullable = false, unique = true)
     private String email;
 
-    private String password; // Plain text / hashed password for authentication
+    private String password;
+
+    private String passkey; // Official unique passkey
+
+    private String twoFactorCode; // 6-digit 2FA verification code
 
     @Column(nullable = false)
     private String phone;
@@ -85,6 +89,12 @@ public class Employee {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getPasskey() { return passkey; }
+    public void setPasskey(String passkey) { this.passkey = passkey; }
+
+    public String getTwoFactorCode() { return twoFactorCode; }
+    public void setTwoFactorCode(String twoFactorCode) { this.twoFactorCode = twoFactorCode; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }

@@ -1,134 +1,87 @@
-# TravelOps — Workforce Travel & Logistics Management
+# TravelOps — Workforce Travel & Logistics Management Platform
 
-An industry-grade, full-stack workforce travel and logistics management platform built with **Angular 18** + **Spring Boot 3** + **PostgreSQL**.
-
----
-
-## Tech Stack
-
-| Layer     | Technology                       |
-| --------- | -------------------------------- |
-| Frontend  | Angular 18, TypeScript, RxJS     |
-| Backend   | Java 17+, Spring Boot 3, JPA    |
-| Database  | PostgreSQL 15+                   |
-| Design    | Apple-inspired dark glassmorphism|
+An industry-grade, full-stack workforce travel and logistics management platform built for the **Consumer Business Group (CBG)** using **Angular 18**, **Spring Boot 3**, and **PostgreSQL**.
 
 ---
 
-## Features
+## 🔑 Official Passkeys & 2-Step Verification Credentials
 
-### Core Modules
-- **Dashboard** — Real-time KPI command center with spend analytics, policy compliance, and traveler safety overview
-- **Travel Requests** — Full CRUD with automated policy engine validation, ROI scoring, and approval workflow
-- **Vendors** — Preferred corporate vendor catalog with negotiated rate comparisons and badges
-- **Shipments** — Asset/equipment logistics tracking with status management
-- **Expenses** — OCR-ready expense claim submission with audit trail and reimbursement workflow
-- **Duty of Care** — Real-time traveler location monitoring, threat level tracking, and SOS dispatch
-- **Notifications** — System-generated alerts for flight delays, policy violations, risk advisories
-
-### Business Logic
-- **Automated Policy Engine** — Rules-based compliance checking (hotel caps, flight class restrictions, advance booking requirements, budget thresholds)
-- **ROI Scoring** — Purpose-based trip valuation with cost-efficiency factors
-- **Real-time Polling** — Frontend polls backend every 30 seconds for live data
-- **Seed Data** — Auto-populates enterprise data on first run
+| Role | Official Name | Official Email | Passkey (Step 1) | 2FA Code (Step 2) |
+|------|---------------|----------------|------------------|-------------------|
+| **Corporate Travel Manager** | Victoria Vance | `travel.manager@cbg-enterprise.com` | `CTM-9948-ALPHA` | `774892` |
+| **Approving Manager** | David Chen | `manager.david@cbg-enterprise.com` | `MGR-3381-BETA` | `882194` |
+| **Finance & Procurement** | Lisa Park | `finance.lisa@cbg-enterprise.com` | `FIN-5510-GAMMA` | `551930` |
+| **Security / Risk Officer** | Elena Rostova | `security.elena@cbg-enterprise.com` | `SEC-7742-DELTA` | `993418` |
+| **Logistics Coordinator** | Raj Patel | `logistics.raj@cbg-enterprise.com` | `LOG-1193-EPSILON` | `448201` |
+| **Traveling Employee** | Sarah Jenkins | `employee.sarah@cbg-enterprise.com` | `EMP-4421-ZETA` | `123984` |
 
 ---
 
-## Prerequisites
+## 👥 Role-Based Systems & PDF BRD Mapping
 
-1. **Java 17+** (JDK)
-2. **Maven 3.8+**
-3. **Node.js 18+** and **npm**
-4. **PostgreSQL 15+**
+1. **Corporate Travel Manager (Program Owner)**
+   - Negotiates corporate vendor contracts (Airlines, Hotels, Ground Transport).
+   - Manages Preferred Vendor Catalog (Add, Edit, Remove vendors).
+   - Configures T&E Automated Policy Engine rules (Hotel caps, flight class restrictions).
+
+2. **Approving Manager (Department Leader)**
+   - Pending Travel Requisitions Inbox.
+   - Evaluates requests against ROI score & departmental budget limits.
+   - Approves or rejects requisitions with manager remarks.
+
+3. **Finance & Procurement Team**
+   - Expense Audit Queue with OCR confidence checks.
+   - Fraud prevention and out-of-policy spend flagging.
+   - Payout reimbursement approvals and department expense reporting.
+
+4. **Security / Risk Officer**
+   - Duty of Care global tracking map & active traveler PNR whereabouts.
+   - Real-time disruption alerts & geopolitical threat advisories.
+   - 1-Click Emergency SOS dispatch center.
+
+5. **Logistics Coordinator**
+   - Synchronized transport of physical consumer products, prototypes, and event booths.
+   - Customs carnets compliance tracking.
+   - 3PL carrier dispatch (FedEx, DHL, Sixt) & last-mile delivery schedule tracking.
+
+6. **Traveling Employee (Road Warrior / End User)**
+   - Pre-trip travel requisition submission with estimated cost planner.
+   - Travel itinerary viewer (flight, hotel, transport details).
+   - Digital receipt upload & expense claim submission.
+   - Track personal synchronized device shipments.
 
 ---
 
-## Setup
+## 🎨 Dynamic Themes
+
+- 🌙 **Midnight**: Apple OLED dark mode with deep black glassmorphism.
+- ☀️ **Daylight**: Apple Studio Light mode with high contrast.
+- 🪐 **Cosmic**: Cyberpunk dark mode with purple/indigo neon glow.
+
+---
+
+## 📱 Mobile Support (Android & iPhone)
+
+- Full responsive design with **iOS safe area insets** (`env(safe-area-inset-top)` / `env(safe-area-inset-bottom)`).
+- Touch-friendly mobile drawer menu and bottom navigation bar.
+
+---
+
+## 🚀 How to Run
 
 ### 1. PostgreSQL Database
-
 ```sql
 CREATE DATABASE workforce_travel;
 ```
 
-The application uses `hibernate.ddl-auto=update` which auto-creates all tables on startup.
-
-### 2. Backend
-
-```bash
-cd backend
-
-# Set environment variables (optional - defaults to localhost:5432/workforce_travel)
-set SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/workforce_travel
-set SPRING_DATASOURCE_USERNAME=postgres
-set SPRING_DATASOURCE_PASSWORD=postgres
-
-mvn spring-boot:run
-```
-
-Backend starts at: **http://localhost:8080**
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-Frontend starts at: **http://localhost:4200**
-
-### Quick Start (Windows)
-
-```bash
-# Terminal 1
+### 2. Launch Backend (Port 8080)
+```cmd
 start-backend.bat
+```
 
-# Terminal 2
+### 3. Launch Frontend (Port 4200)
+```cmd
 start-frontend.bat
 ```
 
----
-
-## API Endpoints
-
-| Method | Endpoint                          | Description                    |
-| ------ | --------------------------------- | ------------------------------ |
-| GET    | `/api/analytics/dashboard`        | Real-time dashboard KPIs       |
-| GET    | `/api/employees`                  | List active employees          |
-| GET    | `/api/travel-requests`            | List all travel requests       |
-| POST   | `/api/travel-requests`            | Create with policy validation  |
-| PUT    | `/api/travel-requests/{id}/status`| Approve/reject request         |
-| GET    | `/api/vendors`                    | List active vendors            |
-| GET    | `/api/shipments`                  | List all shipments             |
-| PUT    | `/api/shipments/{id}/status`      | Update shipment status         |
-| GET    | `/api/notifications`              | List all notifications         |
-| PUT    | `/api/notifications/{id}/read`    | Mark notification as read      |
-| GET    | `/api/risk/travelers`             | List traveler locations         |
-| POST   | `/api/risk/sos`                   | Trigger SOS dispatch           |
-| GET    | `/api/expenses`                   | List all expense claims        |
-| PUT    | `/api/expenses/{id}/audit`        | Audit expense claim            |
-
----
-
-## Architecture
-
-```
-backend/
-├── entity/          # JPA entities (Employee, TravelRequest, Vendor, etc.)
-├── repository/      # Spring Data JPA repositories with custom queries
-├── service/         # Business logic (policy engine, analytics, ROI scoring)
-├── controller/      # REST API controllers
-└── config/          # DataSeeder for initial data population
-
-frontend/
-├── services/        # Angular HttpClient API service with typed interfaces
-├── app.component.*  # Single-page app with tab navigation
-└── styles.css       # Apple-inspired dark mode design system
-```
-
----
-
-## License
-
-MIT
+Access the app at **http://localhost:4200**

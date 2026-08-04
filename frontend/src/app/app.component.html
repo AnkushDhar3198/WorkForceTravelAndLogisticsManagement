@@ -1,75 +1,109 @@
 <!-- Loading Screen -->
 <div class="loading-container" *ngIf="isLoading">
   <div class="loading-spinner"></div>
-  <p class="loading-text">Connecting to enterprise platform...</p>
+  <p class="loading-text">Connecting to CBG Enterprise Portal...</p>
 </div>
 
-<!-- ===== LOGIN SCREEN (Unauthenticated) ===== -->
+<!-- ====================================================
+     2-STEP VERIFICATION LOGIN PORTAL (Unauthenticated)
+     ==================================================== -->
 <div class="login-screen" *ngIf="!isLoading && !auth.isAuthenticated">
   <div class="login-glow"></div>
   <div class="login-card animate-in">
     <div class="login-header">
       <div class="logo">✈</div>
-      <h2>TravelOps Portal</h2>
-      <p>Workforce Travel & Logistics Security</p>
+      <h2>CBG Workforce Platform</h2>
+      <p>Official 2-Step Identity & Access Management</p>
     </div>
 
-    <form (ngSubmit)="onLoginSubmit()">
+    <!-- STEP 1: Passkey Verification -->
+    <form *ngIf="!auth.step1Complete" (ngSubmit)="onStep1Submit()">
       <div class="form-group">
-        <label>Enterprise Email</label>
-        <input class="form-control" type="email" placeholder="e.g. david.chen@company.com" [(ngModel)]="loginEmail" name="email">
+        <label>Official Email</label>
+        <input class="form-control" type="email" placeholder="e.g. travel.manager@cbg-enterprise.com" [(ngModel)]="loginEmail" name="email">
       </div>
 
       <div class="form-group">
-        <label>Password</label>
-        <input class="form-control" type="password" placeholder="••••••••" [(ngModel)]="loginPassword" name="password">
+        <label>Official Passkey</label>
+        <input class="form-control" type="password" placeholder="e.g. CTM-9948-ALPHA" [(ngModel)]="loginPasskey" name="passkey">
       </div>
 
-      <div *ngIf="loginError" style="color: var(--accent-red); font-size: 13px; margin-bottom: 16px; text-align: center;">
-        ⚠️ {{loginError}}
+      <div *ngIf="step1Error" style="color: var(--accent-red); font-size: 13px; margin-bottom: 16px; text-align: center;">
+        ⚠️ {{step1Error}}
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" [disabled]="isAuthenticating">
-        {{isAuthenticating ? 'Authenticating...' : 'Sign In with SSO'}}
+        {{isAuthenticating ? 'Validating Passkey...' : 'Step 1: Validate Passkey'}}
       </button>
     </form>
 
-    <!-- Quick Persona Switcher for Testing -->
+    <!-- STEP 2: 2FA Verification Code -->
+    <form *ngIf="auth.step1Complete" (ngSubmit)="onStep2Submit()">
+      <div style="background: rgba(10,132,255,0.1); border: 1px solid rgba(10,132,255,0.2); border-radius: 12px; padding: 12px; margin-bottom: 20px; font-size: 13px; text-align: center;">
+        🔒 Step 1 Verified for <strong>{{auth.pendingEmail}}</strong>.<br>Please enter your 6-digit 2FA Security Code.
+      </div>
+
+      <div class="form-group">
+        <label>2FA Verification Code</label>
+        <input class="form-control" type="text" placeholder="e.g. 774892" [(ngModel)]="twoFactorCodeInput" name="2fa" maxlength="6" style="letter-spacing: 4px; text-align: center; font-weight: 700; font-size: 18px;">
+      </div>
+
+      <div *ngIf="step2Error" style="color: var(--accent-red); font-size: 13px; margin-bottom: 16px; text-align: center;">
+        ⚠️ {{step2Error}}
+      </div>
+
+      <button type="submit" class="btn btn-success" style="width: 100%; justify-content: center; padding: 12px;" [disabled]="isAuthenticating">
+        {{isAuthenticating ? 'Verifying 2FA...' : 'Step 2: Complete 2FA Login'}}
+      </button>
+
+      <button type="button" class="btn btn-ghost" style="width: 100%; justify-content: center; margin-top: 10px;" (click)="auth.step1Complete = false">
+        ← Back to Step 1
+      </button>
+    </form>
+
+    <!-- 1-CLICK OFFICIAL LOGIN (Pre-fills Step 1 Passkey & Step 2 Code) -->
     <div class="persona-picker">
-      <div class="persona-title">Or 1-Click Test Persona</div>
+      <div class="persona-title">1-Click Test Official Access</div>
       <div class="persona-grid">
-        <button class="persona-btn" (click)="quickLoginAsRole('MANAGER')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('travel.manager@cbg-enterprise.com')">
+          <div>
+            ✈️ Victoria Vance
+            <span class="role">Corporate Travel Manager</span>
+          </div>
+        </button>
+
+        <button class="persona-btn" (click)="quickLoginAsOfficial('manager.david@cbg-enterprise.com')">
           <div>
             👨‍💼 David Chen
-            <span class="role">VP Engineering (Manager)</span>
+            <span class="role">Approving Manager</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsRole('EMPLOYEE')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('finance.lisa@cbg-enterprise.com')">
           <div>
-            👩‍💻 Sarah Jenkins
-            <span class="role">Sr. Engineer (Employee)</span>
+            💼 Lisa Park
+            <span class="role">Finance & Procurement</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsRole('LOGISTICS_COORDINATOR')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('security.elena@cbg-enterprise.com')">
+          <div>
+            🛡️ Elena Rostova
+            <span class="role">Security / Risk Officer</span>
+          </div>
+        </button>
+
+        <button class="persona-btn" (click)="quickLoginAsOfficial('logistics.raj@cbg-enterprise.com')">
           <div>
             📦 Raj Patel
             <span class="role">Logistics Coordinator</span>
           </div>
         </button>
 
-        <button class="persona-btn" (click)="quickLoginAsRole('RISK_OFFICER')">
+        <button class="persona-btn" (click)="quickLoginAsOfficial('employee.sarah@cbg-enterprise.com')">
           <div>
-            🛡️ Elena Rostova
-            <span class="role">Security Director (Risk)</span>
-          </div>
-        </button>
-
-        <button class="persona-btn" (click)="quickLoginAsRole('FINANCE_ADMIN')" style="grid-column: 1 / -1;">
-          <div>
-            💼 Lisa Park
-            <span class="role">Finance Director (Admin)</span>
+            👩‍💻 Sarah Jenkins
+            <span class="role">Traveling Employee</span>
           </div>
         </button>
       </div>
@@ -77,7 +111,9 @@
   </div>
 </div>
 
-<!-- ===== MAIN APP (Authenticated) ===== -->
+<!-- ====================================================
+     MAIN AUTHENTICATED APP (Dedicated Role-Based System)
+     ==================================================== -->
 <div class="app-shell" *ngIf="!isLoading && auth.isAuthenticated">
 
   <!-- ===== Top Header ===== -->
@@ -85,12 +121,12 @@
     <div class="top-header-left">
       <button class="hamburger-btn" (click)="toggleSidebar()">☰</button>
       <div style="font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 20px;">✈</span> TravelOps Platform
+        <span style="font-size: 20px;">✈</span> CBG Workforce System
       </div>
     </div>
 
     <div class="top-header-right">
-      <!-- Theme Switcher -->
+      <!-- Dynamic Theme Switcher Pill -->
       <div class="theme-switcher">
         <button class="theme-pill" [class.active]="themeService.theme === 'midnight'" (click)="setTheme('midnight')">
           🌙 Midnight
@@ -104,7 +140,7 @@
       </div>
 
       <!-- Export CSV -->
-      <button class="btn btn-sm btn-ghost" (click)="exportDataCsv()" title="Export Report CSV">
+      <button class="btn btn-sm btn-ghost" (click)="exportDataCsv()" title="Export CSV Report">
         📥 Export CSV
       </button>
 
@@ -118,11 +154,11 @@
   <!-- Sidebar Overlay for Mobile -->
   <div class="modal-overlay" *ngIf="sidebarOpen" (click)="closeSidebar()" style="z-index: 99; background: rgba(0,0,0,0.5);"></div>
 
-  <!-- ===== Sidebar Navigation ===== -->
+  <!-- ===== Sidebar Navigation (Role-Tailored) ===== -->
   <aside class="sidebar" [class.open]="sidebarOpen" style="top: 60px;">
     <div class="sidebar-brand" style="margin-top: 10px;">
       <div class="brand-icon">✈</div>
-      <h1>TravelOps<span>Workforce Platform</span></h1>
+      <h1>CBG Platform<span>Role-Based Portal</span></h1>
     </div>
 
     <div class="nav-section">
@@ -133,9 +169,9 @@
     </div>
 
     <div class="nav-section">
-      <div class="nav-section-label">Travel</div>
+      <div class="nav-section-label">Travel & Requisitions</div>
       <div class="nav-item" [class.active]="activeTab === 'requests'" (click)="switchTab('requests')">
-        <span class="nav-icon">🗂️</span> Requests
+        <span class="nav-icon">🗂️</span> Travel Requisitions
         <span class="nav-badge" *ngIf="pendingRequestsCount > 0">{{pendingRequestsCount}}</span>
       </div>
       <div class="nav-item" [class.active]="activeTab === 'vendors'" (click)="switchTab('vendors')">
@@ -144,9 +180,9 @@
     </div>
 
     <div class="nav-section">
-      <div class="nav-section-label">Operations</div>
+      <div class="nav-section-label">Logistics & Financials</div>
       <div class="nav-item" [class.active]="activeTab === 'shipments'" (click)="switchTab('shipments')">
-        <span class="nav-icon">📦</span> Logistics & Cargo
+        <span class="nav-icon">📦</span> Asset Cargo & Logistics
       </div>
       <div class="nav-item" [class.active]="activeTab === 'expenses'" (click)="switchTab('expenses')">
         <span class="nav-icon">💰</span> Expenses & Audit
@@ -155,12 +191,12 @@
     </div>
 
     <div class="nav-section">
-      <div class="nav-section-label">Safety & Risk</div>
+      <div class="nav-section-label">Safety & Security</div>
       <div class="nav-item" [class.active]="activeTab === 'risk'" (click)="switchTab('risk')">
         <span class="nav-icon">🛡️</span> Duty of Care
       </div>
       <div class="nav-item" [class.active]="activeTab === 'notifications'" (click)="switchTab('notifications')">
-        <span class="nav-icon">🔔</span> Live Alerts
+        <span class="nav-icon">🔔</span> Disruption Alerts
         <span class="nav-badge" *ngIf="unreadNotifications > 0">{{unreadNotifications}}</span>
       </div>
     </div>
@@ -168,11 +204,11 @@
     <div class="nav-section">
       <div class="nav-section-label">Organization</div>
       <div class="nav-item" [class.active]="activeTab === 'employees'" (click)="switchTab('employees')">
-        <span class="nav-icon">👥</span> Workforce Directory
+        <span class="nav-icon">👥</span> Official Directory
       </div>
     </div>
 
-    <!-- Active User Footer Profile -->
+    <!-- Logged In Official Card -->
     <div class="user-profile-card" *ngIf="auth.currentUserValue">
       <div class="avatar blue" style="width:36px; height:36px;">
         {{auth.currentUserValue.firstName.charAt(0)}}
@@ -187,7 +223,7 @@
   <!-- ===== Main Content Area ===== -->
   <main class="main-content" style="margin-top: 60px;">
 
-    <!-- Toolbar with Live Search & Filters -->
+    <!-- Toolbar Bar with Live Search & Filters -->
     <div class="toolbar-bar" *ngIf="['requests', 'expenses', 'shipments', 'vendors'].includes(activeTab)">
       <div class="search-input">
         <input type="text" placeholder="Search {{activeTab}}..." [(ngModel)]="searchTerm">
@@ -209,11 +245,13 @@
       </select>
     </div>
 
-    <!-- ============== DASHBOARD TAB ============== -->
+    <!-- ====================================================
+         DASHBOARD TAB (Tailored to Logged-in Official Role)
+         ==================================================== -->
     <section *ngIf="activeTab === 'dashboard'">
       <div class="page-header">
-        <h2>Command Center</h2>
-        <p>Enterprise workforce travel & logistics overview</p>
+        <h2>{{auth.currentUserValue?.designation}} System</h2>
+        <p>Logged in as <strong>{{auth.currentUserValue?.fullName}}</strong> ({{auth.currentRole.replace('_', ' ')}})</p>
       </div>
 
       <!-- KPI Grid -->
@@ -221,7 +259,7 @@
         <div class="kpi-card">
           <div class="kpi-label">Approved Spend</div>
           <div class="kpi-value blue">{{formatCurrency(analytics.totalApprovedSpend)}}</div>
-          <div class="kpi-sub">Across active trips</div>
+          <div class="kpi-sub">Total approved trip budget</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Active Travelers</div>
@@ -231,64 +269,109 @@
         <div class="kpi-card">
           <div class="kpi-label">Policy Score</div>
           <div class="kpi-value" [class.green]="analytics.policyComplianceRate >= 80" [class.orange]="analytics.policyComplianceRate < 80">{{analytics.policyComplianceRate}}%</div>
-          <div class="kpi-sub">Automated rule score</div>
+          <div class="kpi-sub">Automated policy validation</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Corporate Savings</div>
           <div class="kpi-value purple">{{formatCurrency(analytics.estimatedCorporateSavings)}}</div>
-          <div class="kpi-sub">Negotiated rates</div>
+          <div class="kpi-sub">Negotiated rate savings</div>
         </div>
       </div>
 
-      <div class="section-grid" *ngIf="analytics">
-        <!-- Department Spend -->
-        <div class="card">
-          <div class="card-header">
-            <h3>Spend by Department</h3>
-          </div>
-          <div *ngIf="analytics.spendByDepartment && analytics.spendByDepartment.length > 0">
-            <div class="dept-bar-row" *ngFor="let dept of analytics.spendByDepartment">
-              <div class="dept-label">{{dept.department}}</div>
-              <div class="dept-bar-container">
-                <div class="dept-bar-fill" [style.width.%]="(dept.spend / getDeptSpendMax()) * 100"></div>
-              </div>
-              <div class="dept-amount">{{formatCurrency(dept.spend)}}</div>
-            </div>
-          </div>
+      <!-- ROLE 1: CORPORATE TRAVEL MANAGER SYSTEM -->
+      <div class="card" *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
+        <div class="card-header">
+          <h3>✈️ Corporate Travel Manager Focus (BRD FR14 & FR15)</h3>
+          <button class="btn btn-sm btn-primary" (click)="openCreateVendorModal()">✚ Add Preferred Vendor</button>
         </div>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          As Program Owner, you negotiate preferred vendor contracts (airlines, hotels, car rentals), configure automated T&E policy rules, and optimize program ROI.
+        </p>
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-ghost" (click)="switchTab('vendors')">Manage Vendor Catalog ({{vendors.length}} Active)</button>
+          <button class="btn btn-ghost" (click)="switchTab('requests')">Review Policy Violations</button>
+        </div>
+      </div>
 
-        <!-- Live Alerts -->
-        <div class="card">
-          <div class="card-header">
-            <h3>Live Alerts</h3>
-            <span class="status-badge" style="background: rgba(255, 69, 58, 0.12); color: var(--accent-red);">
-              {{unreadNotifications}} Unread
-            </span>
-          </div>
-          <div *ngFor="let n of notifications.slice(0, 4)" class="notification-item">
-            <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : 'rgba(10,132,255,0.12)'">
-              {{getCategoryIcon(n.category)}}
-            </div>
-            <div class="notification-body">
-              <h4>{{n.title}}</h4>
-              <p>{{n.message}}</p>
-              <div class="notification-time">{{formatDateTime(n.createdAt)}}</div>
-            </div>
-          </div>
+      <!-- ROLE 2: APPROVING MANAGER SYSTEM -->
+      <div class="card" *ngIf="auth.currentRole === 'APPROVING_MANAGER' || auth.currentRole === 'MANAGER'">
+        <div class="card-header">
+          <h3>👨‍💼 Approving Manager Inbox (BRD FR4)</h3>
+          <span class="status-badge" style="background: rgba(255,159,10,0.12); color: var(--accent-orange);">
+            {{pendingRequestsCount}} Pending Approvals
+          </span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Review and approve/reject departmental travel requests against trip ROI scores and departmental budgets.
+        </p>
+        <button class="btn btn-primary" (click)="switchTab('requests')">Open Approval Queue ({{pendingRequestsCount}} Requests)</button>
+      </div>
+
+      <!-- ROLE 3: FINANCE & PROCUREMENT SYSTEM -->
+      <div class="card" *ngIf="auth.currentRole === 'FINANCE_ADMIN'">
+        <div class="card-header">
+          <h3>💼 Finance & Procurement Audit Suite (BRD FR9 & FR15)</h3>
+          <span class="status-badge" style="background: rgba(255,159,10,0.12); color: var(--accent-orange);">
+            {{pendingExpensesCount}} Pending Audits
+          </span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Audit uploaded digital receipt claims, prevent out-of-policy spend, process reimbursement payouts, and reconcile corporate credit card charges.
+        </p>
+        <button class="btn btn-primary" (click)="switchTab('expenses')">Review Expense Claims Queue</button>
+      </div>
+
+      <!-- ROLE 4: SECURITY / RISK OFFICER SYSTEM -->
+      <div class="card" *ngIf="auth.currentRole === 'RISK_OFFICER'">
+        <div class="card-header">
+          <h3>🛡️ Security & Duty of Care Command (BRD FR12 & BRD 7.0)</h3>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Monitor global intelligence feeds, map active traveler PNR locations during emergencies, and dispatch immediate SOS assistance.
+        </p>
+        <button class="btn btn-danger" (click)="switchTab('risk')">Open Duty of Care Map ({{travelerLocations.length}} Travelers)</button>
+      </div>
+
+      <!-- ROLE 5: LOGISTICS COORDINATOR SYSTEM -->
+      <div class="card" *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR'">
+        <div class="card-header">
+          <h3>📦 Synchronized Asset Logistics (BRD FR6 & BRD 2.2)</h3>
+          <button class="btn btn-sm btn-primary" (click)="openCreateShipmentModal()">✚ Dispatch New Shipment</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Coordinate synchronized transport of physical prototypes, trade show exhibition materials, and event kits alongside traveling personnel. Manage customs declarations and carnets.
+        </p>
+        <button class="btn btn-primary" (click)="switchTab('shipments')">Track Cargo Shipments ({{shipments.length}} Active)</button>
+      </div>
+
+      <!-- ROLE 6: TRAVELING EMPLOYEE SYSTEM -->
+      <div class="card" *ngIf="auth.currentRole === 'EMPLOYEE'">
+        <div class="card-header">
+          <h3>👩‍💻 Traveling Employee Portal (BRD FR2 & FR8)</h3>
+          <button class="btn btn-sm btn-primary" (click)="openCreateModal()">✚ Submit Travel Request</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+          Create travel requisitions, view flight/hotel itineraries, upload receipt scans for out-of-pocket expenses, and track synchronized device shipments.
+        </p>
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-primary" (click)="openCreateModal()">Submit New Trip</button>
+          <button class="btn btn-ghost" (click)="openCreateExpenseModal()">Upload Expense Receipt</button>
         </div>
       </div>
     </section>
 
-    <!-- ============== TRAVEL REQUESTS TAB ============== -->
+    <!-- ====================================================
+         TRAVEL REQUESTS TAB
+         ==================================================== -->
     <section *ngIf="activeTab === 'requests'">
       <div class="page-header">
         <div class="page-header-actions">
           <div>
-            <h2>Travel Requests</h2>
-            <p>Manage, review, and approve workforce travel</p>
+            <h2>Travel Requisitions</h2>
+            <p>Pre-trip planning, automated policy engine checks, and approvals</p>
           </div>
           <button class="btn btn-primary" (click)="openCreateModal()">
-            ✚ New Travel Request
+            ✚ Submit Travel Request
           </button>
         </div>
       </div>
@@ -343,15 +426,26 @@
 
       <div class="card empty-state" *ngIf="filteredRequests.length === 0">
         <div class="empty-icon">🗂️</div>
-        <h4>No travel requests matching filters</h4>
+        <h4>No travel requests found</h4>
+        <p *ngIf="auth.currentRole === 'EMPLOYEE'">Submit your first travel request using the button above.</p>
       </div>
     </section>
 
-    <!-- ============== VENDORS TAB ============== -->
+    <!-- ====================================================
+         PREFERRED VENDORS TAB (Corporate Travel Manager)
+         ==================================================== -->
     <section *ngIf="activeTab === 'vendors'">
       <div class="page-header">
-        <h2>Preferred Vendors</h2>
-        <p>Corporate travel discounts & partner agreements</p>
+        <div class="page-header-actions">
+          <div>
+            <h2>Preferred Vendors</h2>
+            <p>Corporate-negotiated travel contracts & rate management (BRD FR14)</p>
+          </div>
+          <!-- Corporate Travel Manager Only Action -->
+          <button class="btn btn-primary" (click)="openCreateVendorModal()" *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
+            ✚ Add Preferred Vendor
+          </button>
+        </div>
       </div>
 
       <div class="vendor-grid">
@@ -359,7 +453,7 @@
           <div class="vendor-header">
             <h4>{{getCategoryIcon(vendor.category)}} {{vendor.name}}</h4>
             <span class="status-badge" style="background: rgba(48,209,88,0.12); color: var(--accent-green);" *ngIf="vendor.discountPercentage > 0">
-              -{{vendor.discountPercentage}}% Rate
+              -{{vendor.discountPercentage}}% Discount
             </span>
           </div>
           <div class="vendor-meta">
@@ -370,15 +464,30 @@
           <div class="vendor-badges" *ngIf="vendor.badges">
             <span class="vendor-badge" *ngFor="let badge of getVendorBadges(vendor.badges)">{{badge}}</span>
           </div>
+
+          <!-- Vendor Deletion for Corporate Travel Manager -->
+          <div style="margin-top: 14px; text-align: right;" *ngIf="auth.currentRole === 'CORPORATE_TRAVEL_MANAGER'">
+            <button class="btn btn-sm btn-danger" (click)="deleteVendor(vendor.id)">🗑 Remove Vendor</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ============== SHIPMENTS TAB ============== -->
+    <!-- ====================================================
+         LOGISTICS & CARGO TAB (Logistics Coordinator)
+         ==================================================== -->
     <section *ngIf="activeTab === 'shipments'">
       <div class="page-header">
-        <h2>Logistics & Cargo</h2>
-        <p>Asset shipment pipeline & equipment dispatch</p>
+        <div class="page-header-actions">
+          <div>
+            <h2>Asset Cargo & Logistics</h2>
+            <p>Synchronized transport of prototypes, trade show booths & equipment (BRD FR6)</p>
+          </div>
+          <!-- Logistics Coordinator Action -->
+          <button class="btn btn-primary" (click)="openCreateShipmentModal()" *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR'">
+            ✚ Dispatch New Shipment
+          </button>
+        </div>
       </div>
 
       <div *ngFor="let s of filteredShipments" class="shipment-card">
@@ -410,19 +519,33 @@
           </div>
         </div>
 
-        <!-- Role-Gated Logistics Action -->
-        <div style="margin-top: 16px; display: flex; gap: 8px;" *ngIf="auth.canManageLogistics()">
+        <div style="margin-top: 16px; display: flex; gap: 8px;" *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR' || auth.currentRole === 'MANAGER'">
           <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'IN_TRANSIT'" (click)="updateShipmentStatus(s, 'DELIVERED')">✓ Mark Delivered</button>
           <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'CUSTOMS_CLEARANCE'" (click)="updateShipmentStatus(s, 'IN_TRANSIT')">↪ Clear Customs</button>
         </div>
       </div>
+
+      <div class="card empty-state" *ngIf="filteredShipments.length === 0">
+        <div class="empty-icon">📦</div>
+        <h4>No active shipments</h4>
+      </div>
     </section>
 
-    <!-- ============== EXPENSES TAB ============== -->
+    <!-- ====================================================
+         EXPENSES & AUDIT TAB (Finance & Procurement)
+         ==================================================== -->
     <section *ngIf="activeTab === 'expenses'">
       <div class="page-header">
-        <h2>Expenses & Audit</h2>
-        <p>Expense claims audit workflow and payout approvals</p>
+        <div class="page-header-actions">
+          <div>
+            <h2>Expenses & Audit</h2>
+            <p>Digital receipt claims, fraud auditing, and payout approvals (BRD FR8 & FR9)</p>
+          </div>
+          <!-- Employee Action -->
+          <button class="btn btn-primary" (click)="openCreateExpenseModal()" *ngIf="auth.currentRole === 'EMPLOYEE'">
+            ✚ Upload Expense Receipt
+          </button>
+        </div>
       </div>
 
       <div class="card" *ngIf="filteredExpenses.length > 0">
@@ -440,20 +563,27 @@
             {{exp.auditStatus.replace('_', ' ')}}
           </span>
 
-          <!-- Role-Gated Audit Controls -->
-          <div style="display:flex; gap:6px;" *ngIf="exp.auditStatus === 'PENDING_AUDIT' && auth.canAuditExpenses()">
-            <button class="btn btn-sm btn-success" (click)="approveExpense(exp)">✓ Approve</button>
+          <!-- Finance Admin Payout Controls -->
+          <div style="display:flex; gap:6px;" *ngIf="exp.auditStatus === 'PENDING_AUDIT' && (auth.currentRole === 'FINANCE_ADMIN' || auth.currentRole === 'MANAGER')">
+            <button class="btn btn-sm btn-success" (click)="approveExpense(exp)">✓ Approve Payout</button>
             <button class="btn btn-sm btn-danger" (click)="flagExpense(exp)">⚑ Flag</button>
           </div>
         </div>
       </div>
+
+      <div class="card empty-state" *ngIf="filteredExpenses.length === 0">
+        <div class="empty-icon">💰</div>
+        <h4>No expense claims</h4>
+      </div>
     </section>
 
-    <!-- ============== DUTY OF CARE TAB ============== -->
+    <!-- ====================================================
+         DUTY OF CARE TAB (Security / Risk Officer)
+         ==================================================== -->
     <section *ngIf="activeTab === 'risk'">
       <div class="page-header">
         <h2>Duty of Care</h2>
-        <p>Real-time traveler security monitoring & emergency dispatch</p>
+        <p>Global traveler location tracking & emergency response (BRD FR12)</p>
       </div>
 
       <div class="risk-grid">
@@ -474,16 +604,21 @@
           <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;" *ngIf="loc.advisoryNotes">
             ⚠️ {{loc.advisoryNotes}}
           </div>
-          <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)">🚨 Dispatch Emergency SOS</button>
+          <!-- Risk Officer SOS Control -->
+          <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)" *ngIf="auth.currentRole === 'RISK_OFFICER' || auth.currentRole === 'MANAGER'">
+            🚨 Dispatch Emergency SOS
+          </button>
         </div>
       </div>
     </section>
 
-    <!-- ============== NOTIFICATIONS TAB ============== -->
+    <!-- ====================================================
+         NOTIFICATIONS TAB
+         ==================================================== -->
     <section *ngIf="activeTab === 'notifications'">
       <div class="page-header">
-        <h2>Live Alerts</h2>
-        <p>Security advisories and flight updates</p>
+        <h2>Disruption Alerts</h2>
+        <p>Flight delays, geopolitical incidents, and shipment notifications</p>
       </div>
 
       <div class="card">
@@ -501,11 +636,13 @@
       </div>
     </section>
 
-    <!-- ============== EMPLOYEES TAB ============== -->
+    <!-- ====================================================
+         OFFICIAL DIRECTORY TAB
+         ==================================================== -->
     <section *ngIf="activeTab === 'employees'">
       <div class="page-header">
-        <h2>Workforce Directory</h2>
-        <p>Enterprise personnel list & roles</p>
+        <h2>Official Directory</h2>
+        <p>CBG enterprise official account roles & passkeys</p>
       </div>
 
       <div class="card">
@@ -513,11 +650,11 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Employee</th>
-                <th>Code</th>
+                <th>Official Name</th>
+                <th>Official Code</th>
                 <th>Department</th>
-                <th>Role</th>
-                <th>Email</th>
+                <th>Official Role</th>
+                <th>Official Email</th>
               </tr>
             </thead>
             <tbody>
@@ -566,11 +703,15 @@
 
 </div>
 
-<!-- ============== CREATE REQUEST MODAL ============== -->
+<!-- ====================================================
+     MODALS
+     ==================================================== -->
+
+<!-- CREATE TRAVEL REQUEST MODAL -->
 <div class="modal-overlay" *ngIf="showCreateRequestModal" (click)="closeCreateModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>New Travel Request</h3>
+      <h3>Submit New Travel Requisition</h3>
       <button class="modal-close" (click)="closeCreateModal()">✕</button>
     </div>
 
@@ -578,7 +719,7 @@
       <div class="form-group">
         <label>Traveler</label>
         <select class="form-control" [(ngModel)]="newRequest.employeeId">
-          <option [ngValue]="null" disabled>Select employee...</option>
+          <option [ngValue]="null" disabled>Select official...</option>
           <option *ngFor="let emp of employees" [ngValue]="emp.id">{{emp.fullName}} — {{emp.department}}</option>
         </select>
       </div>
@@ -599,8 +740,8 @@
       </div>
 
       <div class="form-group full-width">
-        <label>Purpose</label>
-        <textarea class="form-control" placeholder="Describe business purpose..." [(ngModel)]="newRequest.purpose"></textarea>
+        <label>Business Purpose</label>
+        <textarea class="form-control" placeholder="Describe business objective..." [(ngModel)]="newRequest.purpose"></textarea>
       </div>
 
       <div class="form-group">
@@ -621,16 +762,152 @@
 
     <div class="modal-actions">
       <button class="btn btn-ghost" (click)="closeCreateModal()">Cancel</button>
-      <button class="btn btn-primary" (click)="submitTravelRequest()">Submit Request</button>
+      <button class="btn btn-primary" (click)="submitTravelRequest()">Submit Requisition</button>
     </div>
   </div>
 </div>
 
-<!-- ============== DETAIL MODAL ============== -->
+<!-- CREATE VENDOR MODAL (Corporate Travel Manager) -->
+<div class="modal-overlay" *ngIf="showCreateVendorModal" (click)="showCreateVendorModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Add Preferred Corporate Vendor (BRD FR14)</h3>
+      <button class="modal-close" (click)="showCreateVendorModal = false">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Vendor Name</label>
+        <input class="form-control" type="text" placeholder="e.g. Singapore Airlines" [(ngModel)]="newVendor.name">
+      </div>
+
+      <div class="form-group">
+        <label>Category</label>
+        <select class="form-control" [(ngModel)]="newVendor.category">
+          <option value="FLIGHT">Flight</option>
+          <option value="HOTEL">Hotel</option>
+          <option value="GROUND_TRANSPORT">Ground Transport</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Corporate Rate ($)</label>
+        <input class="form-control" type="number" [(ngModel)]="newVendor.corporateRate">
+      </div>
+
+      <div class="form-group">
+        <label>Standard Rate ($)</label>
+        <input class="form-control" type="number" [(ngModel)]="newVendor.standardRate">
+      </div>
+
+      <div class="form-group">
+        <label>Badges (CSV)</label>
+        <input class="form-control" type="text" placeholder="e.g. Preferred Partner, Flex" [(ngModel)]="newVendor.badges">
+      </div>
+
+      <div class="form-group">
+        <label>Region</label>
+        <input class="form-control" type="text" placeholder="e.g. GLOBAL" [(ngModel)]="newVendor.region">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showCreateVendorModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitVendor()">Add Vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE EXPENSE MODAL (Employee) -->
+<div class="modal-overlay" *ngIf="showCreateExpenseModal" (click)="showCreateExpenseModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Submit Expense Claim (BRD FR8)</h3>
+      <button class="modal-close" (click)="showCreateExpenseModal = false">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Vendor Name</label>
+        <input class="form-control" type="text" placeholder="e.g. Tokyo Metro Railway" [(ngModel)]="newExpense.vendorName">
+      </div>
+
+      <div class="form-group">
+        <label>Category</label>
+        <select class="form-control" [(ngModel)]="newExpense.category">
+          <option value="MEALS">Meals</option>
+          <option value="GROUND_TRANSPORT">Ground Transport</option>
+          <option value="HOTEL">Hotel</option>
+          <option value="MISC">Misc / Supplies</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Expense Date</label>
+        <input class="form-control" type="date" [(ngModel)]="newExpense.expenseDate">
+      </div>
+
+      <div class="form-group">
+        <label>Amount ($)</label>
+        <input class="form-control" type="number" [(ngModel)]="newExpense.amount">
+      </div>
+
+      <div class="form-group full-width">
+        <label>Receipt Upload</label>
+        <input class="form-control" type="file">
+        <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">OCR will scan receipt details automatically upon submission.</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showCreateExpenseModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitExpense()">Submit Expense Claim</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE SHIPMENT MODAL (Logistics Coordinator) -->
+<div class="modal-overlay" *ngIf="showCreateShipmentModal" (click)="showCreateShipmentModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Dispatch Asset Shipment (BRD FR6)</h3>
+      <button class="modal-close" (click)="showCreateShipmentModal = false">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Asset / Prototype Name</label>
+        <input class="form-control" type="text" placeholder="e.g. AR Demo Unit #12" [(ngModel)]="newShipment.assetName">
+      </div>
+
+      <div class="form-group">
+        <label>Destination Venue</label>
+        <input class="form-control" type="text" placeholder="e.g. Tokyo Midtown Hall" [(ngModel)]="newShipment.destinationVenue">
+      </div>
+
+      <div class="form-group">
+        <label>Target Delivery Date</label>
+        <input class="form-control" type="date" [(ngModel)]="newShipment.targetDeliveryDate">
+      </div>
+
+      <div class="form-group">
+        <label>Shipping Carrier (3PL)</label>
+        <input class="form-control" type="text" placeholder="e.g. FedEx International" [(ngModel)]="newShipment.shippingCarrier">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showCreateShipmentModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitShipment()">Dispatch Shipment</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
 <div class="modal-overlay" *ngIf="showDetailModal && selectedRequest" (click)="closeDetailModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Request #{{selectedRequest.id}} — {{selectedRequest.destination}}</h3>
+      <h3>Requisition #{{selectedRequest.id}} — {{selectedRequest.destination}}</h3>
       <button class="modal-close" (click)="closeDetailModal()">✕</button>
     </div>
 
@@ -651,19 +928,19 @@
       ⚠️ {{selectedRequest.policyViolations}}
     </div>
 
-    <!-- Role-Gated Manager Approval Buttons -->
-    <div *ngIf="(selectedRequest.status === 'PENDING_APPROVAL' || selectedRequest.status === 'POLICY_VIOLATION') && auth.canApprove()">
+    <!-- Approving Manager Action Controls -->
+    <div *ngIf="(selectedRequest.status === 'PENDING_APPROVAL' || selectedRequest.status === 'POLICY_VIOLATION') && (auth.currentRole === 'APPROVING_MANAGER' || auth.currentRole === 'MANAGER')">
       <div class="form-group">
         <label>Manager Remarks</label>
         <textarea class="form-control" placeholder="Add approval remarks..." [(ngModel)]="approvalRemarks"></textarea>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-danger" (click)="rejectRequest()">Reject</button>
-        <button class="btn btn-success" (click)="approveRequest()">Approve</button>
+        <button class="btn btn-danger" (click)="rejectRequest()">Reject Requisition</button>
+        <button class="btn btn-success" (click)="approveRequest()">Approve Requisition</button>
       </div>
     </div>
 
-    <div class="modal-actions" *ngIf="!auth.canApprove() || (selectedRequest.status !== 'PENDING_APPROVAL' && selectedRequest.status !== 'POLICY_VIOLATION')">
+    <div class="modal-actions" *ngIf="!(selectedRequest.status === 'PENDING_APPROVAL' || selectedRequest.status === 'POLICY_VIOLATION') || !(auth.currentRole === 'APPROVING_MANAGER' || auth.currentRole === 'MANAGER')">
       <button class="btn btn-ghost" (click)="closeDetailModal()">Close</button>
     </div>
   </div>
