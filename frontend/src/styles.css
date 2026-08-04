@@ -1541,19 +1541,29 @@ body.force-mobile {
 
   /* === LANDING PAGE === */
 
-  /* Nav Bar */
+  /* Hide ambient glow on mobile for a clean, crisp background */
+  .ambient-glow-wrap {
+    display: none;
+  }
+
+  /* Landing page container */
+  .landing-page {
+    padding: 0;
+  }
+
+  /* Nav Bar — minimal and tight */
   .landing-nav {
     position: fixed; top: 0; left: 0; right: 0;
-    padding: 10px 16px;
-    height: auto; min-height: 48px;
+    padding: 8px 16px;
+    height: 44px;
     display: flex; align-items: center; justify-content: space-between;
     width: 100%; z-index: 200;
   }
   .landing-nav-logo {
-    font-size: 14px; gap: 8px;
+    font-size: 13px; gap: 7px;
   }
   .landing-nav-logo .logo-icon {
-    width: 24px; height: 24px; font-size: 12px; border-radius: 6px;
+    width: 22px; height: 22px; font-size: 11px; border-radius: 6px;
   }
   .landing-nav-links {
     display: none !important;
@@ -1562,90 +1572,96 @@ body.force-mobile {
     display: flex; align-items: center; gap: 6px;
   }
   .landing-nav-actions .btn {
-    padding: 5px 10px; font-size: 11px;
+    padding: 5px 12px; font-size: 11px;
   }
   .landing-nav-actions .btn-lg {
-    padding: 5px 10px; font-size: 11px; border-radius: 100px;
+    padding: 5px 12px; font-size: 11px; border-radius: 100px;
   }
 
-  /* Hero Section */
+  /* Hero Section — clean and breathable */
   .landing-hero {
-    padding: 70px 16px 32px; text-align: center;
+    padding: 64px 20px 28px; text-align: center;
   }
   .landing-hero::before {
-    width: 250px; height: 250px;
+    width: 200px; height: 200px; opacity: 0.5;
   }
   .hero-badge {
-    font-size: 10px; padding: 4px 10px; margin-bottom: 12px;
+    font-size: 10px; padding: 5px 12px; margin-bottom: 14px;
+    border-radius: 100px;
   }
   .hero-title {
-    font-size: 26px; letter-spacing: -0.8px; line-height: 1.15; margin-bottom: 10px;
+    font-size: 28px; letter-spacing: -1px; line-height: 1.12;
+    margin-bottom: 12px;
   }
   .hero-subtitle {
-    font-size: 13px; line-height: 1.45; margin-bottom: 20px;
-    max-width: 100%;
+    font-size: 13px; line-height: 1.5; margin-bottom: 24px;
+    max-width: 100%; padding: 0 4px;
+    color: var(--text-secondary);
   }
   .hero-actions {
-    flex-direction: column; gap: 8px; width: 100%;
+    flex-direction: row; gap: 10px; width: 100%;
+    justify-content: center;
   }
   .hero-actions .btn {
-    width: 100%; justify-content: center;
+    flex: 1; justify-content: center; max-width: 180px;
   }
   .hero-actions .btn-lg {
-    padding: 12px 20px; font-size: 14px; border-radius: 12px;
+    padding: 12px 16px; font-size: 13px; border-radius: 12px;
   }
 
-  /* Features Grid */
+  /* Features Grid — compact 2-column layout */
   .landing-features {
-    padding: 32px 16px;
+    padding: 28px 16px;
   }
   .section-label {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
   .section-label h2 {
-    font-size: 22px; letter-spacing: -0.5px;
+    font-size: 20px; letter-spacing: -0.5px;
   }
   .section-label p {
-    font-size: 12px;
+    font-size: 12px; line-height: 1.4;
   }
   .features-grid {
-    grid-template-columns: 1fr; gap: 10px;
+    grid-template-columns: repeat(2, 1fr); gap: 10px;
   }
   .feature-card {
-    padding: 16px; border-radius: 14px;
+    padding: 14px 12px; border-radius: 14px;
   }
   .feature-card:hover {
     transform: none;
   }
   .feature-icon {
-    width: 36px; height: 36px; font-size: 16px; margin-bottom: 10px;
+    width: 32px; height: 32px; font-size: 15px; margin-bottom: 8px;
+    border-radius: 10px;
   }
-  .feature-card h3 { font-size: 14px; }
-  .feature-card p { font-size: 12px; }
+  .feature-card h3 { font-size: 12px; margin-bottom: 4px; }
+  .feature-card p { font-size: 11px; line-height: 1.4; }
 
-  /* Roles Grid */
-  .landing-roles { padding: 32px 16px; }
+  /* Roles Grid — compact 2-column */
+  .landing-roles { padding: 28px 16px; }
   .roles-grid {
-    grid-template-columns: 1fr; gap: 8px;
+    grid-template-columns: repeat(2, 1fr); gap: 8px;
   }
   .role-showcase-card {
-    padding: 14px; border-radius: 12px;
+    padding: 12px; border-radius: 12px;
   }
   .role-showcase-card:hover { transform: none; }
-  .role-showcase-card .role-emoji { font-size: 22px; margin-bottom: 6px; }
-  .role-showcase-card h4 { font-size: 13px; }
-  .role-showcase-card p { font-size: 11px; }
+  .role-showcase-card .role-emoji { font-size: 20px; margin-bottom: 4px; }
+  .role-showcase-card h4 { font-size: 12px; margin-bottom: 3px; }
+  .role-showcase-card p { font-size: 10px; line-height: 1.35; }
 
-  /* Footer */
-  .landing-footer { padding: 24px 16px 20px; }
+  /* Footer — tight and clean */
+  .landing-footer { padding: 24px 16px 16px; }
   .footer-grid {
-    grid-template-columns: 1fr; gap: 16px;
+    grid-template-columns: 1fr 1fr; gap: 16px;
   }
+  .footer-brand { grid-column: 1 / -1; }
   .footer-brand p { max-width: 100%; font-size: 12px; }
-  .footer-brand h3 { font-size: 16px; }
-  .footer-col h4 { font-size: 10px; }
-  .footer-col a { font-size: 12px; margin-bottom: 6px; }
-  .footer-bottom { font-size: 10px; }
+  .footer-brand h3 { font-size: 15px; }
+  .footer-col h4 { font-size: 9px; margin-bottom: 8px; }
+  .footer-col a { font-size: 11px; margin-bottom: 5px; }
+  .footer-bottom { font-size: 10px; padding-top: 16px; }
 
   /* === AUTH PAGES (Login / Signup) === */
   .auth-page {
@@ -1994,11 +2010,6 @@ body.force-mobile {
   .notification-body h4 { font-size: 12px; }
   .notification-body p { font-size: 11px; }
 
-  /* === AMBIENT GLOW (reduce on mobile for perf) === */
-  .ambient-orb { opacity: 0.15; }
-  .ambient-orb-1 { width: 200px; height: 200px; }
-  .ambient-orb-2 { width: 220px; height: 220px; }
-  .ambient-orb-3 { width: 200px; height: 200px; }
 }
 
 /* ---- Extra Small Phones (≤ 400px) ---- */
