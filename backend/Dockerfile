@@ -1,9 +1,10 @@
 # Multi-stage Dockerfile for Spring Boot Backend on Render
+# Build Cache Key: 202608050258
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY backend/pom.xml ./backend/
 COPY backend/src ./backend/src
-RUN mvn -f backend/pom.xml clean package -DskipTests
+RUN mvn -f backend/pom.xml clean package -DskipTests --no-transfer-progress
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
