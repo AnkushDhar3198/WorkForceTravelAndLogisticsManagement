@@ -27,7 +27,20 @@ export interface SignupRequest {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private baseUrl = 'http://localhost:8080/api/auth';
+  private get baseUrl(): string {
+    if (typeof window !== 'undefined') {
+      const globalEnvUrl = (window as any)['ENV_API_URL'];
+      if (globalEnvUrl) return `${globalEnvUrl}/api/auth`;
+      const host = window.location.hostname;
+      if (host !== 'localhost' && host !== '127.0.0.1') {
+        if (host.endsWith('.onrender.com')) {
+          return 'https://workforce-travel-backend.onrender.com/api/auth';
+        }
+        return `http://${host}:8080/api/auth`;
+      }
+    }
+    return 'http://localhost:8080/api/auth';
+  }
   private currentUserSubject = new BehaviorSubject<Employee | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 

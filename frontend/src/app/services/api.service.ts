@@ -124,8 +124,12 @@ export class ApiService {
     if (typeof window !== 'undefined') {
       const globalEnvUrl = (window as any)['ENV_API_URL'];
       if (globalEnvUrl) return `${globalEnvUrl}/api`;
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        return 'https://workforce-travel-backend.onrender.com/api';
+      const host = window.location.hostname;
+      if (host !== 'localhost' && host !== '127.0.0.1') {
+        if (host.endsWith('.onrender.com')) {
+          return 'https://workforce-travel-backend.onrender.com/api';
+        }
+        return `http://${host}:8080/api`;
       }
     }
     return 'http://localhost:8080/api';
