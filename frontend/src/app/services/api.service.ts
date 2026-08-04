@@ -120,7 +120,16 @@ export interface DashboardAnalytics {
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = 'http://localhost:8080/api';
+  private get baseUrl(): string {
+    if (typeof window !== 'undefined') {
+      const globalEnvUrl = (window as any)['ENV_API_URL'];
+      if (globalEnvUrl) return `${globalEnvUrl}/api`;
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        return 'https://workforce-travel-backend.onrender.com/api';
+      }
+    }
+    return 'http://localhost:8080/api';
+  }
 
   constructor(private http: HttpClient) {}
 

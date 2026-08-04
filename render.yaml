@@ -1,0 +1,38 @@
+# Render Blueprint Configuration for WorkForce Travel & Logistics System
+# Deploys Spring Boot Backend, Angular Frontend, and PostgreSQL Database
+
+services:
+  # 1. Backend Spring Boot Web Service
+  - type: web
+    name: workforce-travel-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: singapore
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: workforce-travel-db
+          property: connectionString
+      - key: SPRING_JPA_DIALECT
+        value: org.hibernate.dialect.PostgreSQLDialect
+
+  # 2. Frontend Angular Web Application
+  - type: static
+    name: workforce-travel-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist/frontend/browser
+    envVars:
+      - key: ENV_API_URL
+        value: https://workforce-travel-backend.onrender.com
+
+# 3. Managed PostgreSQL Database
+databases:
+  - name: workforce-travel-db
+    databaseName: workforce_travel
+    user: postgres
+    plan: free
+    region: singapore

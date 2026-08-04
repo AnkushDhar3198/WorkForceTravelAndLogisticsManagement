@@ -41,6 +41,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- H2 Database Fallback -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Jackson Java 8 Date/Time -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
