@@ -1,1 +1,4 @@
-/* App Component CSS */
+/* Component-specific overrides */
+:host {
+  display: block;
+}

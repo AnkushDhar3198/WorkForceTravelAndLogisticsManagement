@@ -1,566 +1,724 @@
-<!-- Toast Notification -->
-<div *ngIf="toastMessage" class="fixed bottom-6 right-6 z-50 animate-fade-in-up bg-blue-600/90 backdrop-blur-xl text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-blue-400/30 flex items-center space-x-3">
-  <div class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></div>
-  <span class="text-sm font-medium tracking-wide">{{ toastMessage }}</span>
+<!-- Loading Screen -->
+<div class="loading-container" *ngIf="isLoading">
+  <div class="loading-spinner"></div>
+  <p class="loading-text">Connecting to platform...</p>
 </div>
 
-<!-- Apple Floating Navbar -->
-<header class="sticky top-0 z-40 apple-glass border-b border-white/10 px-4 lg:px-12 py-3 transition-all duration-300">
-  <div class="max-w-7xl mx-auto flex items-center justify-between">
-    
-    <div class="flex items-center space-x-3 cursor-pointer">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-sky-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
-        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-        </svg>
-      </div>
-      <div>
-        <span class="text-lg font-bold tracking-tight text-white">Apple Enterprise</span>
-        <span class="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Logistics OS</span>
+<!-- App Shell -->
+<div class="app-shell" *ngIf="!isLoading">
+
+  <!-- ===== Sidebar Navigation ===== -->
+  <aside class="sidebar" [class.open]="sidebarOpen">
+    <div class="sidebar-brand">
+      <div class="brand-icon">✈</div>
+      <h1>TravelOps<span>Workforce Platform</span></h1>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item" [class.active]="activeTab === 'dashboard'" (click)="switchTab('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
       </div>
     </div>
 
-    <!-- Active View Role Toggle -->
-    <div class="hidden md:flex items-center bg-white/5 border border-white/10 rounded-full p-1">
-      <button 
-        (click)="switchRole('EMPLOYEE')"
-        [class]="activeRole === 'EMPLOYEE' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
-        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
-        Traveler
-      </button>
-      <button 
-        (click)="switchRole('MANAGER')"
-        [class]="activeRole === 'MANAGER' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
-        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
-        Approving Manager
-      </button>
-      <button 
-        (click)="switchRole('LOGISTICS')"
-        [class]="activeRole === 'LOGISTICS' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
-        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
-        Logistics
-      </button>
-      <button 
-        (click)="switchRole('RISK')"
-        [class]="activeRole === 'RISK' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
-        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
-        Duty of Care
-      </button>
-      <button 
-        (click)="switchRole('FINANCE')"
-        [class]="activeRole === 'FINANCE' ? 'bg-blue-600 text-white shadow' : 'text-zinc-400 hover:text-white'"
-        class="px-3.5 py-1.5 text-xs font-medium rounded-full transition-all">
-        Finance Audit
-      </button>
+    <div class="nav-section">
+      <div class="nav-section-label">Travel</div>
+      <div class="nav-item" [class.active]="activeTab === 'requests'" (click)="switchTab('requests')">
+        <span class="nav-icon">🗂️</span> Travel Requests
+        <span class="nav-badge" *ngIf="pendingRequestsCount > 0">{{pendingRequestsCount}}</span>
+      </div>
+      <div class="nav-item" [class.active]="activeTab === 'vendors'" (click)="switchTab('vendors')">
+        <span class="nav-icon">🤝</span> Vendors
+      </div>
     </div>
 
-    <div class="flex items-center space-x-3">
-      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <span class="w-2 h-2 mr-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        Spring Boot Active
-      </span>
+    <div class="nav-section">
+      <div class="nav-section-label">Logistics</div>
+      <div class="nav-item" [class.active]="activeTab === 'shipments'" (click)="switchTab('shipments')">
+        <span class="nav-icon">📦</span> Shipments
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Finance</div>
+      <div class="nav-item" [class.active]="activeTab === 'expenses'" (click)="switchTab('expenses')">
+        <span class="nav-icon">💰</span> Expenses
+        <span class="nav-badge" *ngIf="pendingExpensesCount > 0">{{pendingExpensesCount}}</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Safety</div>
+      <div class="nav-item" [class.active]="activeTab === 'risk'" (click)="switchTab('risk')">
+        <span class="nav-icon">🛡️</span> Duty of Care
+      </div>
+      <div class="nav-item" [class.active]="activeTab === 'notifications'" (click)="switchTab('notifications')">
+        <span class="nav-icon">🔔</span> Notifications
+        <span class="nav-badge" *ngIf="unreadNotifications > 0">{{unreadNotifications}}</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Organization</div>
+      <div class="nav-item" [class.active]="activeTab === 'employees'" (click)="switchTab('employees')">
+        <span class="nav-icon">👥</span> Employees
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== Main Content ===== -->
+  <main class="main-content">
+
+    <!-- ============== DASHBOARD ============== -->
+    <section *ngIf="activeTab === 'dashboard'">
+      <div class="page-header">
+        <h2>Command Center</h2>
+        <p>Real-time workforce travel intelligence</p>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-grid" *ngIf="analytics">
+        <div class="kpi-card animate-in">
+          <div class="kpi-label">Approved Travel Spend</div>
+          <div class="kpi-value blue">{{formatCurrency(analytics.totalApprovedSpend)}}</div>
+          <div class="kpi-sub">Across all approved trips</div>
+        </div>
+        <div class="kpi-card animate-in">
+          <div class="kpi-label">Active Trips</div>
+          <div class="kpi-value green">{{analytics.activeTripsCount}}</div>
+          <div class="kpi-sub">Travelers currently in transit</div>
+        </div>
+        <div class="kpi-card animate-in">
+          <div class="kpi-label">Policy Compliance</div>
+          <div class="kpi-value" [class.green]="analytics.policyComplianceRate >= 80" [class.orange]="analytics.policyComplianceRate < 80 && analytics.policyComplianceRate >= 60" [class.red]="analytics.policyComplianceRate < 60">{{analytics.policyComplianceRate}}%</div>
+          <div class="kpi-sub">Automated policy engine score</div>
+        </div>
+        <div class="kpi-card animate-in">
+          <div class="kpi-label">Corporate Savings</div>
+          <div class="kpi-value purple">{{formatCurrency(analytics.estimatedCorporateSavings)}}</div>
+          <div class="kpi-sub">Via preferred vendor rates</div>
+        </div>
+        <div class="kpi-card animate-in">
+          <div class="kpi-label">Total Reimbursed</div>
+          <div class="kpi-value teal">{{formatCurrency(analytics.totalReimbursed)}}</div>
+          <div class="kpi-sub">Approved expense payouts</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="section-grid" *ngIf="analytics">
+        <!-- Department Spend -->
+        <div class="card animate-in">
+          <div class="card-header">
+            <h3>Spend by Department</h3>
+          </div>
+          <div *ngIf="analytics.spendByDepartment && analytics.spendByDepartment.length > 0">
+            <div class="dept-bar-row" *ngFor="let dept of analytics.spendByDepartment">
+              <div class="dept-label">{{dept.department}}</div>
+              <div class="dept-bar-container">
+                <div class="dept-bar-fill" [style.width.%]="(dept.spend / getDeptSpendMax()) * 100"></div>
+              </div>
+              <div class="dept-amount">{{formatCurrency(dept.spend)}}</div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!analytics.spendByDepartment || analytics.spendByDepartment.length === 0">
+            <p>No department spend data yet</p>
+          </div>
+        </div>
+
+        <!-- Recent Notifications -->
+        <div class="card animate-in">
+          <div class="card-header">
+            <h3>Live Alerts</h3>
+            <span class="status-badge" style="background: rgba(255, 69, 58, 0.12); color: var(--accent-red);">
+              <span class="status-dot" style="background: var(--accent-red);"></span>
+              {{unreadNotifications}} Unread
+            </span>
+          </div>
+          <div *ngFor="let n of notifications.slice(0, 5)" class="notification-item">
+            <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : n.severity === 'MEDIUM' ? 'rgba(255,159,10,0.12)' : 'rgba(10,132,255,0.12)'">
+              {{getCategoryIcon(n.category)}}
+            </div>
+            <div class="notification-body">
+              <h4>{{n.title}}</h4>
+              <p>{{n.message}}</p>
+              <div class="notification-time">{{formatDateTime(n.createdAt)}}</div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="notifications.length === 0">
+            <div class="empty-icon">🔔</div>
+            <h4>No notifications</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Traveler Safety Overview -->
+      <div class="card animate-in" *ngIf="travelerLocations.length > 0" style="margin-top: 4px;">
+        <div class="card-header">
+          <h3>Traveler Safety Overview</h3>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Traveler</th>
+              <th>Location</th>
+              <th>Threat Level</th>
+              <th>Status</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let loc of travelerLocations">
+              <td>
+                <div class="employee-cell">
+                  <div class="avatar blue">{{loc.employee.firstName.charAt(0)}}</div>
+                  <div>
+                    <div style="font-weight: 600;">{{loc.employee.fullName}}</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">{{loc.employee.designation}}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{{loc.city}}, {{loc.country}}</td>
+              <td>
+                <span class="status-badge" [style.background]="loc.threatLevel === 'LOW' ? 'rgba(48,209,88,0.12)' : loc.threatLevel === 'MODERATE' ? 'rgba(255,159,10,0.12)' : 'rgba(255,69,58,0.12)'" [style.color]="getStatusColor(loc.threatLevel)">
+                  {{getThreatIcon(loc.threatLevel)}} {{loc.threatLevel}}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [style.background]="'rgba(255,255,255,0.06)'" [style.color]="getStatusColor(loc.status)">
+                  <span class="status-dot" [style.background]="getStatusColor(loc.status)"></span>
+                  {{loc.status.replace('_', ' ')}}
+                </span>
+              </td>
+              <td style="color: var(--text-secondary); font-size: 13px;">{{formatDateTime(loc.lastUpdated)}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============== TRAVEL REQUESTS ============== -->
+    <section *ngIf="activeTab === 'requests'">
+      <div class="page-header">
+        <div class="page-header-actions">
+          <div>
+            <h2>Travel Requests</h2>
+            <p>Submit, track, and approve workforce travel</p>
+          </div>
+          <button class="btn btn-primary" (click)="openCreateModal()">
+            ✚ New Request
+          </button>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="travelRequests.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Traveler</th>
+              <th>Destination</th>
+              <th>Dates</th>
+              <th>Budget</th>
+              <th>Compliance</th>
+              <th>ROI</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let req of travelRequests" (click)="viewRequestDetail(req)">
+              <td style="color: var(--text-tertiary);">#{{req.id}}</td>
+              <td>
+                <div class="employee-cell">
+                  <div class="avatar" [ngClass]="['blue', 'green', 'orange', 'purple', 'teal'][req.id % 5]">
+                    {{req.employee.firstName.charAt(0)}}
+                  </div>
+                  <div>
+                    <div style="font-weight: 600;">{{req.employee.fullName}}</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">{{req.employee.department}}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="font-weight: 500;">{{req.destination}}</div>
+              </td>
+              <td style="font-size: 13px; color: var(--text-secondary);">
+                {{formatDate(req.startDate)}} → {{formatDate(req.endDate)}}
+              </td>
+              <td style="font-weight: 600;">{{formatCurrency(req.estimatedBudget)}}</td>
+              <td>
+                <div class="compliance-ring" [style.background]="req.policyComplianceScore >= 80 ? 'rgba(48,209,88,0.12)' : req.policyComplianceScore >= 50 ? 'rgba(255,159,10,0.12)' : 'rgba(255,69,58,0.12)'" [style.color]="req.policyComplianceScore >= 80 ? 'var(--accent-green)' : req.policyComplianceScore >= 50 ? 'var(--accent-orange)' : 'var(--accent-red)'" style="width:42px;height:42px;font-size:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">
+                  {{req.policyComplianceScore}}
+                </div>
+              </td>
+              <td>
+                <span *ngIf="req.roiScore" style="font-weight: 600; color: var(--accent-teal);">{{req.roiScore}}</span>
+              </td>
+              <td>
+                <span class="status-badge" [style.background]="getStatusColor(req.status) + '1a'" [style.color]="getStatusColor(req.status)">
+                  <span class="status-dot" [style.background]="getStatusColor(req.status)"></span>
+                  {{req.status.replace('_', ' ')}}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card empty-state" *ngIf="travelRequests.length === 0">
+        <div class="empty-icon">🗂️</div>
+        <h4>No travel requests yet</h4>
+        <p>Create your first travel request to get started</p>
+      </div>
+    </section>
+
+    <!-- ============== VENDORS ============== -->
+    <section *ngIf="activeTab === 'vendors'">
+      <div class="page-header">
+        <h2>Preferred Vendors</h2>
+        <p>Corporate-negotiated travel partners</p>
+      </div>
+
+      <div class="vendor-grid">
+        <div class="vendor-card animate-in" *ngFor="let vendor of vendors">
+          <div class="vendor-header">
+            <h4>{{getCategoryIcon(vendor.category)}} {{vendor.name}}</h4>
+            <span class="vendor-discount" *ngIf="vendor.discountPercentage > 0">-{{vendor.discountPercentage}}%</span>
+          </div>
+          <div class="vendor-meta">
+            <div class="vendor-meta-item">
+              Corporate: <strong>{{formatCurrency(vendor.corporateRate)}}</strong>
+            </div>
+            <div class="vendor-meta-item">
+              Standard: <strong style="text-decoration: line-through; color: var(--text-tertiary);">{{formatCurrency(vendor.standardRate)}}</strong>
+            </div>
+            <div class="vendor-meta-item">
+              <span class="vendor-rating">★ {{vendor.rating}}</span>
+            </div>
+          </div>
+          <div class="vendor-meta" style="margin-bottom:8px;">
+            <div class="vendor-meta-item">Category: <strong>{{vendor.category}}</strong></div>
+            <div class="vendor-meta-item">Region: <strong>{{vendor.region}}</strong></div>
+          </div>
+          <div class="vendor-badges" *ngIf="vendor.badges">
+            <span class="vendor-badge" *ngFor="let badge of getVendorBadges(vendor.badges)">{{badge}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card empty-state" *ngIf="vendors.length === 0">
+        <div class="empty-icon">🤝</div>
+        <h4>No vendors configured</h4>
+      </div>
+    </section>
+
+    <!-- ============== SHIPMENTS ============== -->
+    <section *ngIf="activeTab === 'shipments'">
+      <div class="page-header">
+        <h2>Logistics Tracking</h2>
+        <p>Real-time asset and equipment shipment tracking</p>
+      </div>
+
+      <div *ngFor="let shipment of shipments" class="shipment-card animate-in">
+        <div class="shipment-header">
+          <div>
+            <h4 style="font-size: 16px; font-weight: 700;">📦 {{shipment.assetName}}</h4>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Serial: {{shipment.serialNumber}}</p>
+          </div>
+          <span class="status-badge" [style.background]="getStatusColor(shipment.status) + '1a'" [style.color]="getStatusColor(shipment.status)">
+            <span class="status-dot" [style.background]="getStatusColor(shipment.status)"></span>
+            {{shipment.status.replace('_', ' ')}}
+          </span>
+        </div>
+        <div class="shipment-details">
+          <div class="shipment-detail">
+            <div class="label">Destination</div>
+            <div class="value">{{shipment.destinationVenue}}</div>
+          </div>
+          <div class="shipment-detail">
+            <div class="label">Tracking Code</div>
+            <div class="value" style="font-family: monospace; color: var(--accent-blue);">{{shipment.trackingCode}}</div>
+          </div>
+          <div class="shipment-detail">
+            <div class="label">Carrier</div>
+            <div class="value">{{shipment.shippingCarrier}}</div>
+          </div>
+          <div class="shipment-detail">
+            <div class="label">Target Delivery</div>
+            <div class="value">{{formatDate(shipment.targetDeliveryDate)}}</div>
+          </div>
+          <div class="shipment-detail">
+            <div class="label">Weight</div>
+            <div class="value">{{shipment.weightKg}} kg</div>
+          </div>
+          <div class="shipment-detail" *ngIf="shipment.syncedEmployee">
+            <div class="label">Synced Traveler</div>
+            <div class="value">{{shipment.syncedEmployee.fullName}}</div>
+          </div>
+        </div>
+        <div style="margin-top: 16px; display: flex; gap: 8px;">
+          <button class="btn btn-sm btn-ghost" *ngIf="shipment.status === 'IN_TRANSIT'" (click)="updateShipmentStatus(shipment, 'DELIVERED')">✓ Mark Delivered</button>
+          <button class="btn btn-sm btn-ghost" *ngIf="shipment.status === 'CUSTOMS_CLEARANCE'" (click)="updateShipmentStatus(shipment, 'IN_TRANSIT')">↪ Clear Customs</button>
+          <button class="btn btn-sm btn-ghost" *ngIf="shipment.status === 'PREPARING'" (click)="updateShipmentStatus(shipment, 'IN_TRANSIT')">🚚 Ship Now</button>
+        </div>
+      </div>
+
+      <div class="card empty-state" *ngIf="shipments.length === 0">
+        <div class="empty-icon">📦</div>
+        <h4>No shipments tracked</h4>
+      </div>
+    </section>
+
+    <!-- ============== EXPENSES ============== -->
+    <section *ngIf="activeTab === 'expenses'">
+      <div class="page-header">
+        <h2>Expense Management</h2>
+        <p>Review, audit, and reimburse travel expenses</p>
+      </div>
+
+      <div class="card" *ngIf="expenses.length > 0">
+        <div class="card-header">
+          <h3>All Claims</h3>
+        </div>
+        <div *ngFor="let exp of expenses" class="expense-card">
+          <div style="font-size: 20px; margin-right: 14px;">{{getCategoryIcon(exp.category)}}</div>
+          <div class="expense-info">
+            <h4>{{exp.vendorName}}</h4>
+            <p>
+              {{exp.employee.fullName}} · {{exp.category}} · {{formatDate(exp.expenseDate)}}
+              <span *ngIf="exp.ocrConfidence" style="margin-left: 8px; color: var(--accent-teal);">OCR {{exp.ocrConfidence}}%</span>
+            </p>
+          </div>
+          <div class="expense-amount" style="color: var(--text-primary);">{{formatCurrency(exp.amount)}}</div>
+          <span class="status-badge" [style.background]="getStatusColor(exp.auditStatus) + '1a'" [style.color]="getStatusColor(exp.auditStatus)" style="margin-right: 12px;">
+            <span class="status-dot" [style.background]="getStatusColor(exp.auditStatus)"></span>
+            {{exp.auditStatus.replace('_', ' ')}}
+          </span>
+          <div class="expense-actions" *ngIf="exp.auditStatus === 'PENDING_AUDIT'">
+            <button class="btn btn-sm btn-success" (click)="approveExpense(exp)">✓ Approve</button>
+            <button class="btn btn-sm btn-danger" (click)="flagExpense(exp)">⚑ Flag</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card empty-state" *ngIf="expenses.length === 0">
+        <div class="empty-icon">💰</div>
+        <h4>No expense claims</h4>
+      </div>
+    </section>
+
+    <!-- ============== DUTY OF CARE ============== -->
+    <section *ngIf="activeTab === 'risk'">
+      <div class="page-header">
+        <h2>Duty of Care</h2>
+        <p>Real-time traveler safety monitoring and risk intelligence</p>
+      </div>
+
+      <div class="risk-grid">
+        <div class="risk-card animate-in" *ngFor="let loc of travelerLocations">
+          <div class="risk-header">
+            <div class="employee-cell">
+              <div class="avatar" [ngClass]="loc.threatLevel === 'LOW' ? 'green' : loc.threatLevel === 'MODERATE' ? 'orange' : 'red'">
+                {{loc.employee.firstName.charAt(0)}}
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 16px;">{{loc.employee.fullName}}</div>
+                <div style="font-size: 12px; color: var(--text-tertiary);">{{loc.employee.designation}}</div>
+              </div>
+            </div>
+            <span class="status-badge" [style.background]="getStatusColor(loc.threatLevel) + '1a'" [style.color]="getStatusColor(loc.threatLevel)">
+              {{getThreatIcon(loc.threatLevel)}} {{loc.threatLevel}}
+            </span>
+          </div>
+          <div class="risk-location">📍 {{loc.city}}, {{loc.country}}</div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <span class="status-badge" [style.background]="getStatusColor(loc.status) + '1a'" [style.color]="getStatusColor(loc.status)">
+              <span class="status-dot" [style.background]="getStatusColor(loc.status)"></span>
+              {{loc.status.replace('_', ' ')}}
+            </span>
+            <span style="font-size: 12px; color: var(--text-tertiary);">Updated: {{formatDateTime(loc.lastUpdated)}}</span>
+          </div>
+          <div class="risk-advisory" *ngIf="loc.advisoryNotes">
+            ⚠️ {{loc.advisoryNotes}}
+          </div>
+          <div style="margin-top: 14px; display: flex; gap: 8px;">
+            <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)">🚨 Trigger SOS</button>
+            <button class="btn btn-sm btn-ghost">📞 Contact</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card empty-state" *ngIf="travelerLocations.length === 0">
+        <div class="empty-icon">🛡️</div>
+        <h4>No active travelers</h4>
+      </div>
+    </section>
+
+    <!-- ============== NOTIFICATIONS ============== -->
+    <section *ngIf="activeTab === 'notifications'">
+      <div class="page-header">
+        <h2>Notifications</h2>
+        <p>System alerts, flight updates, and risk advisories</p>
+      </div>
+
+      <div class="card" *ngIf="notifications.length > 0">
+        <div *ngFor="let n of notifications" class="notification-item" [style.opacity]="n.readStatus ? '0.5' : '1'">
+          <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : n.severity === 'MEDIUM' ? 'rgba(255,159,10,0.12)' : 'rgba(10,132,255,0.12)'">
+            {{getCategoryIcon(n.category)}}
+          </div>
+          <div class="notification-body">
+            <h4>{{n.title}}</h4>
+            <p>{{n.message}}</p>
+            <div class="notification-time">
+              {{formatDateTime(n.createdAt)}}
+              <span *ngIf="n.targetEmployee"> · To: {{n.targetEmployee.fullName}}</span>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-ghost" *ngIf="!n.readStatus" (click)="markRead(n)">Mark Read</button>
+        </div>
+      </div>
+
+      <div class="card empty-state" *ngIf="notifications.length === 0">
+        <div class="empty-icon">🔔</div>
+        <h4>All clear</h4>
+        <p>No notifications at this time</p>
+      </div>
+    </section>
+
+    <!-- ============== EMPLOYEES ============== -->
+    <section *ngIf="activeTab === 'employees'">
+      <div class="page-header">
+        <h2>Employees</h2>
+        <p>Workforce directory and travel profiles</p>
+      </div>
+
+      <div class="card" *ngIf="employees.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Code</th>
+              <th>Department</th>
+              <th>Designation</th>
+              <th>Role</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let emp of employees">
+              <td>
+                <div class="employee-cell">
+                  <div class="avatar" [ngClass]="['blue', 'green', 'orange', 'purple', 'teal', 'red'][emp.id % 6]">
+                    {{emp.firstName.charAt(0)}}{{emp.lastName.charAt(0)}}
+                  </div>
+                  <div>
+                    <div style="font-weight: 600;">{{emp.fullName}}</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">{{emp.email}}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-family: monospace; color: var(--text-secondary);">{{emp.employeeCode}}</td>
+              <td>{{emp.department}}</td>
+              <td style="color: var(--text-secondary);">{{emp.designation}}</td>
+              <td>
+                <span class="status-badge" style="background: rgba(10,132,255,0.1); color: var(--accent-blue);">
+                  {{emp.role.replace('_', ' ')}}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [style.background]="emp.active ? 'rgba(48,209,88,0.12)' : 'rgba(142,142,147,0.12)'" [style.color]="emp.active ? 'var(--accent-green)' : '#8e8e93'">
+                  <span class="status-dot" [style.background]="emp.active ? 'var(--accent-green)' : '#8e8e93'"></span>
+                  {{emp.active ? 'Active' : 'Inactive'}}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card empty-state" *ngIf="employees.length === 0">
+        <div class="empty-icon">👥</div>
+        <h4>No employees found</h4>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============== CREATE REQUEST MODAL ============== -->
+<div class="modal-overlay" *ngIf="showCreateRequestModal" (click)="closeCreateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>New Travel Request</h3>
+      <button class="modal-close" (click)="closeCreateModal()">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Traveler</label>
+        <select class="form-control" [(ngModel)]="newRequest.employeeId">
+          <option [ngValue]="null" disabled>Select employee...</option>
+          <option *ngFor="let emp of employees" [ngValue]="emp.id">{{emp.fullName}} — {{emp.department}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Destination</label>
+        <input class="form-control" type="text" placeholder="e.g. Tokyo, Japan" [(ngModel)]="newRequest.destination">
+      </div>
+
+      <div class="form-group">
+        <label>Start Date</label>
+        <input class="form-control" type="date" [(ngModel)]="newRequest.startDate">
+      </div>
+
+      <div class="form-group">
+        <label>End Date</label>
+        <input class="form-control" type="date" [(ngModel)]="newRequest.endDate">
+      </div>
+
+      <div class="form-group full-width">
+        <label>Purpose</label>
+        <textarea class="form-control" placeholder="Describe the business purpose for this trip..." [(ngModel)]="newRequest.purpose"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Flight Class</label>
+        <select class="form-control" [(ngModel)]="newRequest.flightClass">
+          <option value="ECONOMY">Economy</option>
+          <option value="PREMIUM_ECONOMY">Premium Economy</option>
+          <option value="BUSINESS">Business</option>
+          <option value="FIRST">First</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Estimated Budget ($)</label>
+        <input class="form-control" type="number" placeholder="0.00" [(ngModel)]="newRequest.estimatedBudget">
+      </div>
+
+      <div class="form-group">
+        <label>Hotel Daily Rate ($)</label>
+        <input class="form-control" type="number" placeholder="0.00" [(ngModel)]="newRequest.hotelDailyRate">
+      </div>
+
+      <div class="form-group">
+        <label>Meal Allowance ($)</label>
+        <input class="form-control" type="number" [(ngModel)]="newRequest.mealAllowance">
+      </div>
+
+      <div class="form-group">
+        <label>Ground Transport ($)</label>
+        <input class="form-control" type="number" [(ngModel)]="newRequest.groundTransportBudget">
+      </div>
+
+      <div class="form-group">
+        <label>Country Code</label>
+        <input class="form-control" type="text" placeholder="e.g. JP" [(ngModel)]="newRequest.countryCode" maxlength="2" style="text-transform: uppercase;">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="submitTravelRequest()">Submit Request</button>
     </div>
   </div>
-</header>
+</div>
 
-<!-- Main Container -->
-<main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-10">
-
-  <!-- Apple Keynote Hero Header -->
-  <section class="relative rounded-3xl p-8 lg:p-12 overflow-hidden apple-glass border border-white/10 animate-fade-in-up">
-    <div class="absolute -top-32 -right-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse-glow"></div>
-    <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-pulse-glow"></div>
-
-    <div class="relative z-10 max-w-3xl space-y-4">
-      <div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-300">
-        <span>Workforce Travel & Logistics Engine</span>
-      </div>
-      <h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight apple-text-gradient leading-tight">
-        Precision Logistics. Intelligent Travel.
-      </h1>
-      <p class="text-lg text-zinc-400 leading-relaxed font-normal">
-        Automated pre-trip policy validation, managerial approval routing, preferred corporate rates, prototype asset delivery, duty of care traveler tracking, and instant OCR expense reconciliation.
-      </p>
+<!-- ============== DETAIL MODAL ============== -->
+<div class="modal-overlay" *ngIf="showDetailModal && selectedRequest" (click)="closeDetailModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Request #{{selectedRequest.id}} — {{selectedRequest.destination}}</h3>
+      <button class="modal-close" (click)="closeDetailModal()">✕</button>
     </div>
 
-    <!-- Live Executive Metrics Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/10">
-      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
-        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Total Managed Spend</span>
-        <div class="text-2xl font-bold apple-text-gradient mt-1">$148,500</div>
-        <span class="text-xs text-emerald-400">↑ 14% vs Q2</span>
-      </div>
-      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
-        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Policy Compliance</span>
-        <div class="text-2xl font-bold text-blue-400 mt-1">94.2%</div>
-        <span class="text-xs text-zinc-400">Automated check</span>
-      </div>
-      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
-        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Corporate Savings</span>
-        <div class="text-2xl font-bold apple-text-gradient-gold mt-1">$42,300</div>
-        <span class="text-xs text-amber-400">Preferred Rates</span>
-      </div>
-      <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
-        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Active Global Trips</span>
-        <div class="text-2xl font-bold text-purple-400 mt-1">18 Travelers</div>
-        <span class="text-xs text-purple-300">Live GPS Radar</span>
-      </div>
+    <div class="detail-row">
+      <span class="label">Traveler</span>
+      <span class="value">{{selectedRequest.employee.fullName}}</span>
     </div>
-  </section>
-
-  <!-- Navigation Tabs bar -->
-  <nav class="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-white/10">
-    <button 
-      (click)="activeTab = 'pre-trip'"
-      [class]="activeTab === 'pre-trip' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      1 & 2. Pre-Trip Request & Policy Engine
-    </button>
-    <button 
-      (click)="activeTab = 'approvals'"
-      [class]="activeTab === 'approvals' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      3. Manager Approval Workflow
-    </button>
-    <button 
-      (click)="activeTab = 'vendors'"
-      [class]="activeTab === 'vendors' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      4. Preferred Vendors
-    </button>
-    <button 
-      (click)="activeTab = 'logistics'"
-      [class]="activeTab === 'logistics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      5. Asset Shipment Sync
-    </button>
-    <button 
-      (click)="activeTab = 'disruptions'"
-      [class]="activeTab === 'disruptions' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      6. Disruption Notifications
-    </button>
-    <button 
-      (click)="activeTab = 'risk'"
-      [class]="activeTab === 'risk' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      7. Duty of Care Risk Map
-    </button>
-    <button 
-      (click)="activeTab = 'ocr'"
-      [class]="activeTab === 'ocr' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      8. OCR Receipt Scanner
-    </button>
-    <button 
-      (click)="activeTab = 'finance'"
-      [class]="activeTab === 'finance' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      9. Finance Auditing
-    </button>
-    <button 
-      (click)="activeTab = 'analytics'"
-      [class]="activeTab === 'analytics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-blue-400/30' : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'"
-      class="px-5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap border transition-all">
-      10. Travel ROI Analytics
-    </button>
-  </nav>
-
-  <!-- USER STORY 1 & 2: Pre-Trip Creation & Policy Engine -->
-  <section *ngIf="activeTab === 'pre-trip'" class="space-y-8 animate-fade-in-up">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- New Request Form -->
-      <div class="lg:col-span-1 apple-glass-card rounded-3xl p-6 space-y-5">
-        <h2 class="text-xl font-bold text-white flex items-center justify-between">
-          <span>Create Travel Request</span>
-          <span class="text-xs bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-full border border-blue-500/30">User Story 1 & 2</span>
-        </h2>
-        <form (ngSubmit)="submitTravelRequest()" class="space-y-4">
-          <div>
-            <label class="text-xs text-zinc-400 font-medium">Traveling Employee</label>
-            <input [(ngModel)]="newTrip.employeeName" name="employeeName" type="text" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-          </div>
-          <div>
-            <label class="text-xs text-zinc-400 font-medium">Destination</label>
-            <input [(ngModel)]="newTrip.destination" name="destination" type="text" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs text-zinc-400 font-medium">Start Date</label>
-              <input [(ngModel)]="newTrip.startDate" name="startDate" type="date" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-            </div>
-            <div>
-              <label class="text-xs text-zinc-400 font-medium">End Date</label>
-              <input [(ngModel)]="newTrip.endDate" name="endDate" type="date" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs text-zinc-400 font-medium">Flight Cabin Class</label>
-              <select [(ngModel)]="newTrip.flightClass" name="flightClass" class="w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white">
-                <option value="Economy">Economy</option>
-                <option value="Economy Premium">Economy Premium</option>
-                <option value="Business">Business (VP Approval)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs text-zinc-400 font-medium">Hotel Daily Rate ($)</label>
-              <input [(ngModel)]="newTrip.hotelDailyRate" name="hotelDailyRate" type="number" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none">
-            </div>
-          </div>
-          <div>
-            <label class="text-xs text-zinc-400 font-medium">Business Purpose</label>
-            <textarea [(ngModel)]="newTrip.purpose" name="purpose" rows="2" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none"></textarea>
-          </div>
-          
-          <!-- Live Automated Policy Engine Indicator -->
-          <div class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-1">
-            <span class="text-xs font-semibold text-blue-300">Automated Policy Check Preview:</span>
-            <p *ngIf="newTrip.hotelDailyRate > 350" class="text-xs text-amber-400">⚠️ Hotel rate (${{newTrip.hotelDailyRate}}) exceeds regional policy cap ($350/night)</p>
-            <p *ngIf="newTrip.flightClass === 'Business'" class="text-xs text-amber-400">⚠️ Business Class requires VP sign-off</p>
-            <p *ngIf="newTrip.hotelDailyRate <= 350 && newTrip.flightClass !== 'Business'" class="text-xs text-emerald-400">✓ Fully compliant with regional corporate policies</p>
-          </div>
-
-          <button type="submit" class="w-full py-3 apple-button-primary text-sm font-semibold">
-            Submit Request with Policy Validation
-          </button>
-        </form>
-      </div>
-
-      <!-- Active Travel Requests List -->
-      <div class="lg:col-span-2 space-y-4">
-        <h2 class="text-xl font-bold text-white flex items-center justify-between">
-          <span>Active Travel Requests</span>
-          <span class="text-xs text-zinc-400">{{ travelRequests.length }} requests logged</span>
-        </h2>
-        <div *ngFor="let req of travelRequests" class="apple-glass-card rounded-3xl p-6 space-y-3">
-          <div class="flex items-start justify-between">
-            <div>
-              <span class="text-xs text-blue-400 font-semibold uppercase tracking-wider">REQ-#{{ req.id }}</span>
-              <h3 class="text-lg font-bold text-white">{{ req.destination }}</h3>
-              <p class="text-xs text-zinc-400">{{ req.employeeName }} ({{ req.employeeRole }}) • {{ req.startDate }} to {{ req.endDate }}</p>
-            </div>
-            <div [ngSwitch]="req.status">
-              <span *ngSwitchCase="'APPROVED'" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">APPROVED</span>
-              <span *ngSwitchCase="'POLICY_VIOLATION'" class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">POLICY FLAG</span>
-              <span *ngSwitchDefault class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">PENDING APPROVAL</span>
-            </div>
-          </div>
-          <p class="text-xs text-zinc-300 bg-white/5 p-3 rounded-xl border border-white/10">{{ req.purpose }}</p>
-          <div class="flex items-center justify-between text-xs text-zinc-400 pt-2 border-t border-white/10">
-            <span>Est. Cost: <strong class="text-white">${{ req.estimatedCost }}</strong></span>
-            <span>Flight: <strong class="text-zinc-200">{{ req.flightClass }}</strong></span>
-            <span>Hotel: <strong class="text-zinc-200">${{ req.hotelDailyRate }}/night</strong></span>
-            <span>ROI Score: <strong class="text-emerald-400">{{ req.roiScore }}/100</strong></span>
-          </div>
-          <div *ngIf="req.policyViolations" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-            <strong>Policy Violations Detected:</strong> {{ req.policyViolations }}
-          </div>
-        </div>
-      </div>
-
+    <div class="detail-row">
+      <span class="label">Department</span>
+      <span class="value">{{selectedRequest.employee.department}}</span>
     </div>
-  </section>
-
-  <!-- USER STORY 3: Managerial Approval Workflow -->
-  <section *ngIf="activeTab === 'approvals'" class="space-y-6 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Approving Manager Dashboard</h2>
-        <p class="text-xs text-zinc-400">Review routed travel requests, evaluate out-of-policy exceptions & trip ROI.</p>
-      </div>
-      <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-semibold border border-purple-500/30">User Story 3</span>
+    <div class="detail-row">
+      <span class="label">Destination</span>
+      <span class="value">{{selectedRequest.destination}}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Travel Dates</span>
+      <span class="value">{{formatDate(selectedRequest.startDate)}} → {{formatDate(selectedRequest.endDate)}} ({{selectedRequest.tripDurationDays}} days)</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Purpose</span>
+      <span class="value" style="max-width: 400px; text-align: right;">{{selectedRequest.purpose}}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Flight Class</span>
+      <span class="value">{{selectedRequest.flightClass}}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Estimated Budget</span>
+      <span class="value" style="color: var(--accent-blue); font-size: 18px;">{{formatCurrency(selectedRequest.estimatedBudget)}}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Hotel Daily Rate</span>
+      <span class="value">{{formatCurrency(selectedRequest.hotelDailyRate)}}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Policy Compliance</span>
+      <span class="value" [style.color]="selectedRequest.policyComplianceScore >= 80 ? 'var(--accent-green)' : selectedRequest.policyComplianceScore >= 50 ? 'var(--accent-orange)' : 'var(--accent-red)'">
+        {{selectedRequest.policyComplianceScore}}/100
+      </span>
+    </div>
+    <div class="detail-row">
+      <span class="label">ROI Score</span>
+      <span class="value" style="color: var(--accent-teal);">{{selectedRequest.roiScore}}/100</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Status</span>
+      <span class="status-badge" [style.background]="getStatusColor(selectedRequest.status) + '1a'" [style.color]="getStatusColor(selectedRequest.status)">
+        <span class="status-dot" [style.background]="getStatusColor(selectedRequest.status)"></span>
+        {{selectedRequest.status.replace('_', ' ')}}
+      </span>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div *ngFor="let req of travelRequests" class="apple-glass-card rounded-3xl p-6 space-y-4">
-        <div class="flex items-start justify-between">
-          <div>
-            <h3 class="text-lg font-bold text-white">{{ req.destination }}</h3>
-            <span class="text-xs text-zinc-400">Submitted by <strong>{{ req.employeeName }}</strong></span>
-          </div>
-          <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-white/10 text-white">ROI: {{ req.roiScore }}%</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 text-xs bg-white/5 p-3 rounded-xl">
-          <div><span class="text-zinc-400">Est. Total Cost:</span> <div class="text-sm font-bold text-white">${{ req.estimatedCost }}</div></div>
-          <div><span class="text-zinc-400">Flight Cabin:</span> <div class="text-sm font-bold text-white">{{ req.flightClass }}</div></div>
-        </div>
-
-        <div *ngIf="req.policyViolations" class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
-          ⚠️ <strong>Flagged Policy Exception:</strong> {{ req.policyViolations }}
-        </div>
-
-        <div class="flex items-center space-x-3 pt-2">
-          <button (click)="updateRequestStatus(req.id!, 'APPROVED')" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all">
-            Approve Request
-          </button>
-          <button (click)="updateRequestStatus(req.id!, 'REJECTED')" class="flex-1 py-2.5 bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all">
-            Reject Request
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- USER STORY 4: Preferred Vendors -->
-  <section *ngIf="activeTab === 'vendors'" class="space-y-6 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Preferred Vendor Selection Catalog</h2>
-        <p class="text-xs text-zinc-400">Corporate negotiated rates for flights, luxury hotel chains, and executive ground transit.</p>
-      </div>
-      <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">User Story 4</span>
+    <!-- Violations -->
+    <div class="violations-box" *ngIf="selectedRequest.policyViolations">
+      <h4>⚠ Policy Violations Detected</h4>
+      <p>{{selectedRequest.policyViolations}}</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div *ngFor="let v of vendors" class="apple-glass-card rounded-3xl p-6 space-y-4">
-        <div class="flex items-start justify-between">
-          <div>
-            <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">{{ v.category }}</span>
-            <h3 class="text-lg font-bold text-white mt-1">{{ v.name }}</h3>
-          </div>
-          <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">Save {{ v.discountPercentage }}%</span>
-        </div>
-
-        <div class="flex items-baseline space-x-2">
-          <span class="text-2xl font-extrabold text-white">${{ v.corporateRate }}</span>
-          <span class="text-xs text-zinc-500 line-through">${{ v.standardRate }}</span>
-          <span class="text-xs text-zinc-400">/ rate</span>
-        </div>
-
-        <div class="flex flex-wrap gap-1.5 pt-2">
-          <span *ngFor="let badge of v.badges" class="px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 text-xs">
-            ✓ {{ badge }}
-          </span>
-        </div>
-
-        <button (click)="showToast('Booked with corporate rate ' + v.name)" class="w-full py-2.5 apple-button-primary text-xs font-bold">
-          Book at Corporate Rate
-        </button>
+    <!-- Approval Actions -->
+    <div *ngIf="selectedRequest.status === 'PENDING_APPROVAL' || selectedRequest.status === 'POLICY_VIOLATION'">
+      <div class="form-group" style="margin-top: 20px;">
+        <label>Manager Remarks</label>
+        <textarea class="form-control" placeholder="Add approval/rejection remarks..." [(ngModel)]="approvalRemarks"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-danger" (click)="rejectRequest()">Reject</button>
+        <button class="btn btn-success" (click)="approveRequest()">Approve</button>
       </div>
     </div>
-  </section>
 
-  <!-- USER STORY 5: Asset Shipment Sync -->
-  <section *ngIf="activeTab === 'logistics'" class="space-y-6 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Logistics: Physical Asset Synchronization</h2>
-        <p class="text-xs text-zinc-400">Coordinate & track delivery of hardware prototypes & materials synced with traveler arrival dates.</p>
+    <!-- Already decided -->
+    <div *ngIf="selectedRequest.approvedBy" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+      <div class="detail-row">
+        <span class="label">Decided By</span>
+        <span class="value">{{selectedRequest.approvedBy.fullName}}</span>
       </div>
-      <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-500/30">User Story 5</span>
-    </div>
-
-    <div class="space-y-4">
-      <div *ngFor="let asset of logisticsAssets" class="apple-glass-card rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="space-y-1">
-          <div class="flex items-center space-x-2">
-            <span class="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{{ asset.trackingCode }}</span>
-            <span class="text-xs text-emerald-400 font-semibold">Synced with {{ asset.syncedEmployee }}</span>
-          </div>
-          <h3 class="text-lg font-bold text-white">{{ asset.assetName }}</h3>
-          <p class="text-xs text-zinc-400">Serial #: {{ asset.serialNumber }} • Destination: {{ asset.destinationVenue }}</p>
-        </div>
-
-        <div class="flex items-center space-x-6">
-          <div class="text-right">
-            <span class="text-xs text-zinc-400">Target Delivery</span>
-            <div class="text-sm font-bold text-white">{{ asset.targetDeliveryDate }}</div>
-          </div>
-          <span class="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-            {{ asset.status }}
-          </span>
-        </div>
+      <div class="detail-row" *ngIf="selectedRequest.approvedAt">
+        <span class="label">Decision Date</span>
+        <span class="value">{{formatDateTime(selectedRequest.approvedAt)}}</span>
+      </div>
+      <div class="detail-row" *ngIf="selectedRequest.managerRemarks">
+        <span class="label">Remarks</span>
+        <span class="value">{{selectedRequest.managerRemarks}}</span>
       </div>
     </div>
-  </section>
 
-  <!-- USER STORY 6: Real-Time Disruption Hub -->
-  <section *ngIf="activeTab === 'disruptions'" class="space-y-6 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Real-Time Disruption Notification Hub</h2>
-        <p class="text-xs text-zinc-400">Live alerts regarding flight delays, hotel status changes, and logistics dispatches.</p>
-      </div>
-      <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">User Story 6</span>
+    <div class="modal-actions" *ngIf="selectedRequest.status !== 'PENDING_APPROVAL' && selectedRequest.status !== 'POLICY_VIOLATION'">
+      <button class="btn btn-ghost" (click)="closeDetailModal()">Close</button>
     </div>
-
-    <div class="space-y-4">
-      <div *ngFor="let d of disruptions" class="apple-glass-card rounded-3xl p-6 flex items-start space-x-4">
-        <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-          ⚡
-        </div>
-        <div class="flex-1 space-y-1">
-          <div class="flex items-center justify-between">
-            <h3 class="text-base font-bold text-white">{{ d.title }}</h3>
-            <span class="text-xs text-zinc-400">{{ d.timestamp }}</span>
-          </div>
-          <p class="text-xs text-zinc-300">{{ d.message }}</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- USER STORY 7: Duty of Care Risk Map -->
-  <section *ngIf="activeTab === 'risk'" class="space-y-6 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Duty of Care: Traveler Risk Radar Map</h2>
-        <p class="text-xs text-zinc-400">Security & risk management dashboard monitoring global feeds & active employee coordinates.</p>
-      </div>
-      <span class="px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold border border-red-500/30">User Story 7</span>
-    </div>
-
-    <!-- Simulated Global Map Radar -->
-    <div class="relative h-80 rounded-3xl bg-zinc-950 border border-white/10 p-6 overflow-hidden flex items-center justify-center">
-      <div class="absolute inset-0 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px] opacity-20"></div>
-      
-      <div class="relative z-10 text-center space-y-4">
-        <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-bold animate-pulse">
-          <span>● Live Global Intelligence Feed Active</span>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-          <div *ngFor="let risk of riskLocations" class="p-4 rounded-2xl apple-glass border border-white/10 text-left space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-white">{{ risk.employeeName }}</span>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/30 text-red-300">{{ risk.threatLevel }} RISK</span>
-            </div>
-            <p class="text-xs text-zinc-400">📍 {{ risk.city }}, {{ risk.country }}</p>
-            <button (click)="triggerSosAlert(risk)" class="w-full py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-all">
-              Dispatch Emergency Support
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- USER STORY 8: Expense Reporting via OCR -->
-  <section *ngIf="activeTab === 'ocr'" class="space-y-6 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Post-Trip Expense Reporting via OCR</h2>
-        <p class="text-xs text-zinc-400">Optical Character Recognition scanning receipts & matching itinerary data automatically.</p>
-      </div>
-      <span class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-semibold border border-sky-500/30">User Story 8</span>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <!-- OCR Scanner Upload Card -->
-      <div class="apple-glass-card rounded-3xl p-8 text-center space-y-6 border-2 border-dashed border-white/20">
-        <div class="w-16 h-16 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mx-auto text-2xl font-bold">
-          📷
-        </div>
-        <div>
-          <h3 class="text-lg font-bold text-white">Upload Receipt Image</h3>
-          <p class="text-xs text-zinc-400 mt-1">Drag & drop receipt photo or scan with camera for instant AI data extraction.</p>
-        </div>
-
-        <button (click)="triggerOcrScan()" [disabled]="ocrScanning" class="py-3 px-8 apple-button-primary text-xs font-bold">
-          {{ ocrScanning ? 'Scanning Receipt with OCR...' : 'Run OCR Receipt Scan' }}
-        </button>
-
-        <div *ngIf="ocrScanning" class="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 animate-pulse space-y-2">
-          <div class="h-2 bg-blue-400/40 rounded"></div>
-          <span class="text-xs text-blue-300">Extracting Vendor, Date, Tax, Total Amount & Line Items...</span>
-        </div>
-      </div>
-
-      <!-- Extracted OCR Result -->
-      <div *ngIf="ocrExtractedClaim" class="apple-glass-card rounded-3xl p-6 space-y-4">
-        <div class="flex items-center justify-between border-b border-white/10 pb-3">
-          <span class="text-xs font-bold text-emerald-400">✓ OCR Scan Verified ({{ ocrExtractedClaim.ocrConfidence }}% Confidence)</span>
-          <span class="text-xs text-zinc-400">Itinerary Matched: REQ-#{{ ocrExtractedClaim.matchedItineraryId }}</span>
-        </div>
-        <div class="space-y-2">
-          <div class="flex justify-between text-xs"><span class="text-zinc-400">Vendor:</span> <strong class="text-white">{{ ocrExtractedClaim.vendorName }}</strong></div>
-          <div class="flex justify-between text-xs"><span class="text-zinc-400">Category:</span> <strong class="text-white">{{ ocrExtractedClaim.category }}</strong></div>
-          <div class="flex justify-between text-xs"><span class="text-zinc-400">Date:</span> <strong class="text-white">{{ ocrExtractedClaim.date }}</strong></div>
-          <div class="flex justify-between text-xs"><span class="text-zinc-400">Tax Included:</span> <strong class="text-white">${{ ocrExtractedClaim.taxAmount }}</strong></div>
-          <div class="flex justify-between text-sm pt-2 border-t border-white/10"><span class="text-zinc-400">Total Claim:</span> <strong class="text-lg text-emerald-400">${{ ocrExtractedClaim.amount }}</strong></div>
-        </div>
-        <button (click)="showToast('Submitted expense claim for audit!')" class="w-full py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl">
-          Submit Claim for Reimbursement
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- USER STORY 9: Finance Auditing & Reimbursements -->
-  <section *ngIf="activeTab === 'finance'" class="space-y-6 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Finance & Procurement Reimbursement Workspace</h2>
-        <p class="text-xs text-zinc-400">Audit submitted claims, prevent fraud, and process 1-click payouts directly to bank accounts.</p>
-      </div>
-      <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">User Story 9</span>
-    </div>
-
-    <div class="space-y-4">
-      <div *ngFor="let claim of expenses" class="apple-glass-card rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="space-y-1">
-          <div class="flex items-center space-x-2">
-            <span class="text-xs font-bold text-zinc-300">{{ claim.employeeName }}</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-white/10 text-zinc-400">{{ claim.category }}</span>
-          </div>
-          <h3 class="text-lg font-bold text-white">{{ claim.vendorName }} — ${{ claim.amount }}</h3>
-          <p class="text-xs text-zinc-400">OCR Confidence: {{ claim.ocrConfidence }}% • Date: {{ claim.date }}</p>
-        </div>
-
-        <div class="flex items-center space-x-4">
-          <span [ngClass]="claim.auditStatus === 'APPROVED_PAYOUT' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'"
-                class="px-3 py-1.5 rounded-full text-xs font-bold border">
-            {{ claim.auditStatus }}
-          </span>
-
-          <button *ngIf="claim.auditStatus !== 'APPROVED_PAYOUT'" (click)="approveReimbursement(claim.id)" class="py-2 px-5 apple-button-primary text-xs font-bold">
-            1-Click Bank Reimbursement
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- USER STORY 10: Travel ROI & Analytics Reporting -->
-  <section *ngIf="activeTab === 'analytics'" class="space-y-8 animate-fade-in-up">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-white">Executive Analytics: Travel ROI & Spend Reporting</h2>
-        <p class="text-xs text-zinc-400">Consolidated analytics reports on vendor spend, monthly travel costs, and policy compliance.</p>
-      </div>
-      <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-semibold border border-purple-500/30">User Story 10</span>
-    </div>
-
-    <div *ngIf="analytics" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <!-- Department Spend breakdown -->
-      <div class="apple-glass-card rounded-3xl p-6 space-y-4">
-        <h3 class="text-base font-bold text-white">Quarterly Spend by Department</h3>
-        <div class="space-y-3">
-          <div *ngFor="let dep of analytics.spendByDepartment" class="space-y-1">
-            <div class="flex justify-between text-xs text-zinc-300">
-              <span>{{ dep.department }}</span>
-              <strong class="text-white">${{ dep.spend }}</strong>
-            </div>
-            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-              <div class="h-full bg-blue-500 rounded-full" [style.width.%]="(dep.spend / 62000) * 100"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Policy Violation Breakdown -->
-      <div class="apple-glass-card rounded-3xl p-6 space-y-4">
-        <h3 class="text-base font-bold text-white">Policy Violation Breakdown</h3>
-        <div class="space-y-3">
-          <div *ngFor="let v of analytics.policyViolationBreakdown" class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-            <span class="text-xs text-zinc-300">{{ v.reason }}</span>
-            <span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold">{{ v.count }} Occurrences</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</main>
+  </div>
+</div>

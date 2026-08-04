@@ -1,77 +1,134 @@
-#  Apple Enterprise | Workforce Travel & Logistics Management System
+# TravelOps — Workforce Travel & Logistics Management
 
-An enterprise full-stack platform built with an **Angular** frontend styled in **Apple website aesthetics & animations** and a **Java Spring Boot 3** REST API backend, implementing all 10 core business user stories.
-
----
-
-## 🌟 Key Features & User Stories Implemented
-
-1. **Pre-Trip Travel Request Creation**: Define trip parameters including destination, travel dates, business purpose, flight class, and hotel daily budgets.
-2. **Automated Policy Engine**: Pre-check travel parameters against regional hotel caps ($350/night) and cabin class rules, flagging policy violations automatically before committing budget.
-3. **Managerial Approval Workflow**: Interactive dashboard for approving managers with real-time ROI scores, cost vs value metrics, and 1-click Approve/Reject actions.
-4. **Preferred Vendor Selection**: Access corporate rates with negotiated discounts (30%+ savings) across preferred airlines, hotel chains, and executive ground transportation.
-5. **Asset Shipment & Synchronization**: Coordinate and track physical hardware asset dispatches (e.g. prototypes, event equipment) synchronized with employee travel itineraries.
-6. **Real-Time Disruption Notification Hub**: Live updates for flight delays, hotel confirmations, shipment deliveries, and transit alerts.
-7. **Duty of Care & Traveler Risk Monitoring**: Interactive risk map radar tracking active employee coordinates, regional threat levels, and 1-click emergency SOS support dispatch.
-8. **Post-Trip Expense Reporting via OCR**: Optical Character Recognition scanner extracting vendor, date, amount, tax, and auto-matching claims to trip itineraries with high confidence scores.
-9. **Expense Auditing & Bank Reimbursements**: Finance team auditing workspace with fraud prevention checks and 1-click direct bank payout processing.
-10. **Executive Travel ROI & Reporting**: Consolidated analytics charts on departmental spend, corporate savings, policy violation breakdowns, and overall travel ROI.
+An industry-grade, full-stack workforce travel and logistics management platform built with **Angular 18** + **Spring Boot 3** + **PostgreSQL**.
 
 ---
 
-## 📐 Technology Stack
+## Tech Stack
 
-- **Frontend**: Angular 18 (Standalone Components, Reactive State, RxJS, HttpClient)
-- **Design & Styling**: Apple Website Aesthetics (SF Pro / Inter typography, dark glassmorphism `backdrop-blur-2xl`, glowing metrics, custom animations)
-- **Backend**: Java 17 + Spring Boot 3.3.1 (Spring Web, Spring Data JPA, H2 Database)
-- **Database**: H2 In-Memory Database (Zero-config local execution out of the box; supports PostgreSQL)
+| Layer     | Technology                       |
+| --------- | -------------------------------- |
+| Frontend  | Angular 18, TypeScript, RxJS     |
+| Backend   | Java 17+, Spring Boot 3, JPA    |
+| Database  | PostgreSQL 15+                   |
+| Design    | Apple-inspired dark glassmorphism|
 
 ---
 
-## 🚀 Quick Start Guide
+## Features
 
-### 1. Prerequisites
-- **Node.js**: v18 or higher
-- **Java OpenJDK**: v17 or higher
-- **Maven**: 3.8+ (or included Maven runner)
+### Core Modules
+- **Dashboard** — Real-time KPI command center with spend analytics, policy compliance, and traveler safety overview
+- **Travel Requests** — Full CRUD with automated policy engine validation, ROI scoring, and approval workflow
+- **Vendors** — Preferred corporate vendor catalog with negotiated rate comparisons and badges
+- **Shipments** — Asset/equipment logistics tracking with status management
+- **Expenses** — OCR-ready expense claim submission with audit trail and reimbursement workflow
+- **Duty of Care** — Real-time traveler location monitoring, threat level tracking, and SOS dispatch
+- **Notifications** — System-generated alerts for flight delays, policy violations, risk advisories
 
-### 2. Running Backend (Spring Boot)
+### Business Logic
+- **Automated Policy Engine** — Rules-based compliance checking (hotel caps, flight class restrictions, advance booking requirements, budget thresholds)
+- **ROI Scoring** — Purpose-based trip valuation with cost-efficiency factors
+- **Real-time Polling** — Frontend polls backend every 30 seconds for live data
+- **Seed Data** — Auto-populates enterprise data on first run
+
+---
+
+## Prerequisites
+
+1. **Java 17+** (JDK)
+2. **Maven 3.8+**
+3. **Node.js 18+** and **npm**
+4. **PostgreSQL 15+**
+
+---
+
+## Setup
+
+### 1. PostgreSQL Database
+
+```sql
+CREATE DATABASE workforce_travel;
+```
+
+The application uses `hibernate.ddl-auto=update` which auto-creates all tables on startup.
+
+### 2. Backend
+
 ```bash
 cd backend
+
+# Set environment variables (optional - defaults to localhost:5432/workforce_travel)
+set SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/workforce_travel
+set SPRING_DATASOURCE_USERNAME=postgres
+set SPRING_DATASOURCE_PASSWORD=postgres
+
 mvn spring-boot:run
 ```
-> The Spring Boot REST API will start on **`http://localhost:8080`**. H2 Console is available at **`http://localhost:8080/h2-console`**.
 
-### 3. Running Frontend (Angular)
+Backend starts at: **http://localhost:8080**
+
+### 3. Frontend
+
 ```bash
 cd frontend
 npm install
 npm start
 ```
-> The Angular app will run on **`http://localhost:4200`**.
+
+Frontend starts at: **http://localhost:4200**
+
+### Quick Start (Windows)
+
+```bash
+# Terminal 1
+start-backend.bat
+
+# Terminal 2
+start-frontend.bat
+```
 
 ---
 
-## 🐙 Uploading / Pushing to a New GitHub Repository
+## API Endpoints
 
-Follow these step-by-step commands to push this project to a new repository on GitHub:
+| Method | Endpoint                          | Description                    |
+| ------ | --------------------------------- | ------------------------------ |
+| GET    | `/api/analytics/dashboard`        | Real-time dashboard KPIs       |
+| GET    | `/api/employees`                  | List active employees          |
+| GET    | `/api/travel-requests`            | List all travel requests       |
+| POST   | `/api/travel-requests`            | Create with policy validation  |
+| PUT    | `/api/travel-requests/{id}/status`| Approve/reject request         |
+| GET    | `/api/vendors`                    | List active vendors            |
+| GET    | `/api/shipments`                  | List all shipments             |
+| PUT    | `/api/shipments/{id}/status`      | Update shipment status         |
+| GET    | `/api/notifications`              | List all notifications         |
+| PUT    | `/api/notifications/{id}/read`    | Mark notification as read      |
+| GET    | `/api/risk/travelers`             | List traveler locations         |
+| POST   | `/api/risk/sos`                   | Trigger SOS dispatch           |
+| GET    | `/api/expenses`                   | List all expense claims        |
+| PUT    | `/api/expenses/{id}/audit`        | Audit expense claim            |
 
-```bash
-# 1. Initialize git in project root
-git init
+---
 
-# 2. Add all files
-git add .
+## Architecture
 
-# 3. Commit changes
-git commit -m "Initial commit: Fullstack Workforce Travel & Logistics System (Angular + Spring Boot + Apple UI)"
-
-# 4. Rename main branch
-git branch -M main
-
-# 5. Link your new GitHub repository (replace with your repo URL)
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/Workforce-Travel-Logistics-Management.git
-
-# 6. Push to GitHub
-git push -u origin main
 ```
+backend/
+├── entity/          # JPA entities (Employee, TravelRequest, Vendor, etc.)
+├── repository/      # Spring Data JPA repositories with custom queries
+├── service/         # Business logic (policy engine, analytics, ROI scoring)
+├── controller/      # REST API controllers
+└── config/          # DataSeeder for initial data population
+
+frontend/
+├── services/        # Angular HttpClient API service with typed interfaces
+├── app.component.*  # Single-page app with tab navigation
+└── styles.css       # Apple-inspired dark mode design system
+```
+
+---
+
+## License
+
+MIT

@@ -1,4 +1,8 @@
 @echo off
-echo Starting Angular Frontend...
-cd frontend
+echo ==========================================
+echo   Starting Angular Frontend (port 4200)
+echo ==========================================
+echo.
+
+cd /d "%~dp0frontend"
 npm start

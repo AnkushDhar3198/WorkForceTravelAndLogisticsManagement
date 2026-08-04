@@ -1,126 +1,311 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
-import { 
-  TravelLogisticsService, 
-  TravelRequest, 
-  PreferredVendor, 
-  LogisticsAsset, 
-  DisruptionNotification, 
-  TravelerRiskLocation, 
-  ExpenseClaim, 
-  AnalyticsSummary 
-} from './services/travel-logistics.service';
+import {
+  ApiService,
+  TravelRequest, Employee, Vendor, Shipment,
+  Notification, TravelerLocation, ExpenseClaim, DashboardAnalytics
+} from './services/api.service';
+import { Subscription, interval, startWith, switchMap, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit {
-  activeTab: string = 'pre-trip';
-  activeRole: string = 'EMPLOYEE';
+export class AppComponent implements OnInit, OnDestroy {
+  activeTab = 'dashboard';
+  sidebarOpen = true;
 
-  // Story 1 & 2: New Trip Creation Form State
-  newTrip = {
-    employeeName: 'Sarah Jenkins',
-    employeeRole: 'Senior AI Engineer',
-    destination: 'San Francisco, USA',
-    countryCode: 'US',
-    startDate: '2026-09-10',
-    endDate: '2026-09-16',
-    purpose: 'Keynote Launch & Executive Partner Briefing',
-    estimatedCost: 2950,
-    flightClass: 'Economy Premium',
-    hotelDailyRate: 310
+  // Data
+  analytics: DashboardAnalytics | null = null;
+  travelRequests: TravelRequest[] = [];
+  employees: Employee[] = [];
+  vendors: Vendor[] = [];
+  shipments: Shipment[] = [];
+  notifications: Notification[] = [];
+  travelerLocations: TravelerLocation[] = [];
+  expenses: ExpenseClaim[] = [];
+
+  // Modals
+  showCreateRequestModal = false;
+  showDetailModal = false;
+  selectedRequest: TravelRequest | null = null;
+
+  // Form
+  newRequest = {
+    employeeId: null as number | null,
+    destination: '',
+    countryCode: '',
+    startDate: '',
+    endDate: '',
+    purpose: '',
+    estimatedBudget: 0,
+    flightClass: 'ECONOMY',
+    hotelDailyRate: 0,
+    mealAllowance: 50,
+    groundTransportBudget: 100
   };
 
-  // Data streams from Spring Boot Backend
-  travelRequests: TravelRequest[] = [];
-  vendors: PreferredVendor[] = [];
-  logisticsAssets: LogisticsAsset[] = [];
-  disruptions: DisruptionNotification[] = [];
-  riskLocations: TravelerRiskLocation[] = [];
-  expenses: ExpenseClaim[] = [];
-  analytics: AnalyticsSummary | null = null;
+  approvalRemarks = '';
+  isLoading = true;
 
-  // Notification Toast & Modal states
-  toastMessage: string | null = null;
-  ocrScanning: boolean = false;
-  ocrExtractedClaim: ExpenseClaim | null = null;
-  selectedRiskTraveler: TravelerRiskLocation | null = null;
+  private pollSub?: Subscription;
 
-  constructor(private service: TravelLogisticsService) {}
+  constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.service.activeRole$.subscribe(r => this.activeRole = r);
     this.loadAllData();
+    // Poll every 30 seconds for real-time updates
+    this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+  }
+
+  ngOnDestroy() {
+    this.pollSub?.unsubscribe();
   }
 
   loadAllData() {
-    this.service.getTravelRequests().subscribe(data => this.travelRequests = data);
-    this.service.getPreferredVendors().subscribe(data => this.vendors = data);
-    this.service.getLogisticsAssets().subscribe(data => this.logisticsAssets = data);
-    this.service.getDisruptionNotifications().subscribe(data => this.disruptions = data);
-    this.service.getTravelerRiskLocations().subscribe(data => this.riskLocations = data);
-    this.service.getExpenseClaims().subscribe(data => this.expenses = data);
-    this.service.getAnalyticsSummary().subscribe(data => this.analytics = data);
-  }
-
-  switchRole(role: string) {
-    this.service.setRole(role);
-    this.showToast(`Switched view role to ${role}`);
-  }
-
-  submitTravelRequest() {
-    this.service.createTravelRequest(this.newTrip).subscribe(res => {
-      this.loadAllData();
-      if (res.status === 'POLICY_VIOLATION') {
-        this.showToast(`Trip created with Policy Exception flags!`);
-      } else {
-        this.showToast(`Travel Request submitted for Manager Approval!`);
+    forkJoin({
+      analytics: this.api.getDashboardAnalytics(),
+      requests: this.api.getTravelRequests(),
+      employees: this.api.getEmployees(),
+      vendors: this.api.getVendors(),
+      shipments: this.api.getShipments(),
+      notifications: this.api.getNotifications(),
+      locations: this.api.getTravelerLocations(),
+      expenses: this.api.getExpenses()
+    }).subscribe({
+      next: (data) => {
+        this.analytics = data.analytics;
+        this.travelRequests = data.requests;
+        this.employees = data.employees;
+        this.vendors = data.vendors;
+        this.shipments = data.shipments;
+        this.notifications = data.notifications;
+        this.travelerLocations = data.locations;
+        this.expenses = data.expenses;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load data:', err);
+        this.isLoading = false;
       }
     });
   }
 
-  updateRequestStatus(id: number, status: 'APPROVED' | 'REJECTED') {
-    this.service.updateRequestStatus(id, status).subscribe(() => {
-      this.loadAllData();
-      this.showToast(`Request #${id} set to ${status}`);
-    });
+  switchTab(tab: string) {
+    this.activeTab = tab;
+    // Scroll to top on mobile
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  triggerOcrScan() {
-    this.ocrScanning = true;
-    setTimeout(() => {
-      this.service.processOcrScan({ image: 'receipt_sample.png' }).subscribe(claim => {
-        this.ocrScanning = false;
-        this.ocrExtractedClaim = claim;
+  // Travel Request CRUD
+  openCreateModal() {
+    this.showCreateRequestModal = true;
+    this.newRequest = {
+      employeeId: null,
+      destination: '',
+      countryCode: '',
+      startDate: '',
+      endDate: '',
+      purpose: '',
+      estimatedBudget: 0,
+      flightClass: 'ECONOMY',
+      hotelDailyRate: 0,
+      mealAllowance: 50,
+      groundTransportBudget: 100
+    };
+  }
+
+  closeCreateModal() {
+    this.showCreateRequestModal = false;
+  }
+
+  submitTravelRequest() {
+    if (!this.newRequest.employeeId || !this.newRequest.destination) return;
+
+    const payload = {
+      employee: { id: this.newRequest.employeeId },
+      destination: this.newRequest.destination,
+      countryCode: this.newRequest.countryCode,
+      startDate: this.newRequest.startDate,
+      endDate: this.newRequest.endDate,
+      purpose: this.newRequest.purpose,
+      estimatedBudget: this.newRequest.estimatedBudget,
+      flightClass: this.newRequest.flightClass,
+      hotelDailyRate: this.newRequest.hotelDailyRate,
+      mealAllowance: this.newRequest.mealAllowance,
+      groundTransportBudget: this.newRequest.groundTransportBudget
+    };
+
+    this.api.createTravelRequest(payload).subscribe({
+      next: () => {
+        this.showCreateRequestModal = false;
         this.loadAllData();
-        this.showToast(`Receipt scanned with 99.4% OCR Confidence!`);
-      });
-    }, 2200);
-  }
-
-  approveReimbursement(claimId: number) {
-    this.service.approveReimbursement(claimId).subscribe(() => {
-      this.loadAllData();
-      this.showToast(`Direct Bank Payout processed for Claim #${claimId}!`);
+      },
+      error: (err) => console.error('Failed to create request:', err)
     });
   }
 
-  triggerSosAlert(traveler: TravelerRiskLocation) {
-    this.selectedRiskTraveler = traveler;
-    this.showToast(`EMERGENCY SOS: Support team dispatched to ${traveler.city}!`);
+  viewRequestDetail(request: TravelRequest) {
+    this.selectedRequest = request;
+    this.showDetailModal = true;
+    this.approvalRemarks = '';
   }
 
-  showToast(msg: string) {
-    this.toastMessage = msg;
-    setTimeout(() => {
-      this.toastMessage = null;
-    }, 4000);
+  closeDetailModal() {
+    this.showDetailModal = false;
+    this.selectedRequest = null;
+  }
+
+  approveRequest() {
+    if (!this.selectedRequest) return;
+    this.api.updateTravelRequestStatus(this.selectedRequest.id, {
+      status: 'APPROVED',
+      approverId: '1',
+      remarks: this.approvalRemarks
+    }).subscribe(() => {
+      this.closeDetailModal();
+      this.loadAllData();
+    });
+  }
+
+  rejectRequest() {
+    if (!this.selectedRequest) return;
+    this.api.updateTravelRequestStatus(this.selectedRequest.id, {
+      status: 'REJECTED',
+      approverId: '1',
+      remarks: this.approvalRemarks
+    }).subscribe(() => {
+      this.closeDetailModal();
+      this.loadAllData();
+    });
+  }
+
+  // Shipment actions
+  updateShipmentStatus(shipment: Shipment, newStatus: string) {
+    this.api.updateShipmentStatus(shipment.id, { status: newStatus }).subscribe(() => {
+      this.loadAllData();
+    });
+  }
+
+  // Notification actions
+  markRead(notification: Notification) {
+    this.api.markNotificationRead(notification.id).subscribe(() => {
+      this.loadAllData();
+    });
+  }
+
+  // Expense actions
+  approveExpense(expense: ExpenseClaim) {
+    this.api.auditExpense(expense.id, {
+      auditStatus: 'APPROVED_PAYOUT',
+      auditRemarks: 'Approved for reimbursement',
+      auditorId: '1'
+    }).subscribe(() => this.loadAllData());
+  }
+
+  flagExpense(expense: ExpenseClaim) {
+    this.api.auditExpense(expense.id, {
+      auditStatus: 'REJECTED_FLAGGED',
+      auditRemarks: 'Flagged for review',
+      auditorId: '1'
+    }).subscribe(() => this.loadAllData());
+  }
+
+  // SOS
+  triggerSos(location: TravelerLocation) {
+    this.api.triggerSos({ employeeId: location.employee.id }).subscribe(() => {
+      this.loadAllData();
+    });
+  }
+
+  // Helpers
+  getStatusColor(status: string): string {
+    const map: Record<string, string> = {
+      'APPROVED': '#34c759',
+      'COMPLETED': '#34c759',
+      'DELIVERED': '#34c759',
+      'SAFE': '#34c759',
+      'APPROVED_PAYOUT': '#34c759',
+      'PENDING_APPROVAL': '#ff9f0a',
+      'PENDING_AUDIT': '#ff9f0a',
+      'IN_TRANSIT': '#007aff',
+      'CUSTOMS_CLEARANCE': '#5856d6',
+      'POLICY_VIOLATION': '#ff3b30',
+      'REJECTED': '#ff3b30',
+      'REJECTED_FLAGGED': '#ff3b30',
+      'ALERT': '#ff9f0a',
+      'ASSISTANCE_REQUESTED': '#ff3b30',
+      'MODERATE': '#ff9f0a',
+      'HIGH': '#ff3b30',
+      'CRITICAL': '#ff3b30',
+      'LOW': '#34c759',
+      'DRAFT': '#8e8e93'
+    };
+    return map[status] || '#8e8e93';
+  }
+
+  getThreatIcon(level: string): string {
+    const map: Record<string, string> = {
+      'LOW': '🟢',
+      'MODERATE': '🟡',
+      'HIGH': '🔴',
+      'CRITICAL': '⚠️'
+    };
+    return map[level] || '⚪';
+  }
+
+  getCategoryIcon(category: string): string {
+    const map: Record<string, string> = {
+      'FLIGHT': '✈️',
+      'HOTEL': '🏨',
+      'GROUND_TRANSPORT': '🚗',
+      'MEALS': '🍽️',
+      'MISC': '📦',
+      'LOGISTICS': '📦',
+      'RISK': '🛡️',
+      'SYSTEM': '⚙️'
+    };
+    return map[category] || '📋';
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+  }
+
+  formatDate(date: string): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  formatDateTime(date: string): string {
+    if (!date) return '';
+    return new Date(date).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  get unreadNotifications(): number {
+    return this.notifications.filter(n => !n.readStatus).length;
+  }
+
+  get pendingRequestsCount(): number {
+    return this.travelRequests.filter(r => r.status === 'PENDING_APPROVAL' || r.status === 'POLICY_VIOLATION').length;
+  }
+
+  get pendingExpensesCount(): number {
+    return this.expenses.filter(e => e.auditStatus === 'PENDING_AUDIT').length;
+  }
+
+  getDeptSpendMax(): number {
+    if (!this.analytics?.spendByDepartment?.length) return 1;
+    return Math.max(...this.analytics.spendByDepartment.map(d => d.spend));
+  }
+
+  getVendorBadges(badges: string): string[] {
+    return badges ? badges.split(',').map(b => b.trim()) : [];
   }
 }
