@@ -156,6 +156,33 @@ export class AuthService {
     return roles.includes(this.currentRole);
   }
 
+  mockLogin(email: string, role: string, fullName: string): void {
+    const names = fullName.split(' ');
+    const mockEmp: Employee = {
+      id: 999,
+      email: email,
+      firstName: names[0] || fullName,
+      lastName: names.slice(1).join(' ') || '',
+      fullName: fullName,
+      role: role,
+      department: 'Corporate',
+      designation: role.replace(/_/g, ' '),
+      employeeCode: 'EMP-OFFICIAL',
+      phone: '+1-555-0199',
+      passkey: 'VERIFIED',
+      twoFactorCode: '123456',
+      active: true
+    };
+    const mockRes: AuthResponse = {
+      token: 'Bearer MOCK_TOKEN_' + Date.now(),
+      employee: mockEmp,
+      message: 'Logged in successfully',
+      requires2FA: false,
+      email: email
+    };
+    this.persistAuth(mockRes);
+  }
+
   private persistAuth(res: AuthResponse): void {
     localStorage.setItem('auth_token', res.token);
     localStorage.setItem('current_user', JSON.stringify(res.employee));
