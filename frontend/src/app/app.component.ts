@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewChecked, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -17,9 +17,15 @@ import { Subscription, interval, forkJoin, catchError, of } from 'rxjs';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
+
+  // ===== View State Machine =====
+  // 'landing' → 'login' → 'signup' → 'app'
+  currentView: 'landing' | 'login' | 'signup' | 'app' = 'landing';
+
   activeTab = 'dashboard';
   sidebarOpen = false;
+  forceMobile = false;
 
   // Data
   analytics: DashboardAnalytics | null = null;
@@ -35,15 +41,30 @@ export class AppComponent implements OnInit, OnDestroy {
   searchTerm = '';
   statusFilter = 'ALL';
 
-  // 2-Step Login Form
+  // ===== Login Form =====
   loginEmail = '';
-  loginPasskey = '';
-  twoFactorCodeInput = '';
-  step1Error = '';
-  step2Error = '';
+  loginPassword = '';
+  loginError = '';
   isAuthenticating = false;
 
-  // Known Officials Map for Instant 1-Click Login & Auto-Filling
+  // ===== 2FA State (1-Click Official Only) =====
+  twoFAActive = false;
+  twoFAEmail = '';
+  twoFACodeInput = '';
+  twoFAError = '';
+
+  // ===== Signup Form =====
+  signupForm = {
+    firstName: '', lastName: '', employeeCode: '', email: '',
+    phone: '', nationality: '', department: 'Engineering',
+    designation: '', password: '', confirmPassword: '',
+    emergencyContactName: '', emergencyContactPhone: ''
+  };
+  signupErrors: Record<string, string> = {};
+  signupTouched: Record<string, boolean> = {};
+  signupError = '';
+
+  // Official Accounts Map
   officialAccounts: Record<string, { email: string; passkey: string; code: string; role: string; name: string }> = {
     'CTM': { email: 'travel.manager@cbg-enterprise.com', passkey: 'CTM-9948-ALPHA', code: '774892', role: 'CORPORATE_TRAVEL_MANAGER', name: 'Victoria Vance' },
     'MGR': { email: 'manager.david@cbg-enterprise.com', passkey: 'MGR-3381-BETA', code: '882194', role: 'APPROVING_MANAGER', name: 'David Chen' },
@@ -53,6 +74,12 @@ export class AppComponent implements OnInit, OnDestroy {
     'EMP': { email: 'employee.sarah@cbg-enterprise.com', passkey: 'EMP-4421-ZETA', code: '123984', role: 'EMPLOYEE', name: 'Sarah Jenkins' }
   };
 
+  // ===== Custom Popup =====
+  popup: { show: boolean; type: 'success' | 'error' | 'warning' | 'info'; title: string; message: string; confirmAction?: () => void; showCancel?: boolean } = {
+    show: false, type: 'info', title: '', message: ''
+  };
+  private popupTimeout: any;
+
   // Modals
   showCreateRequestModal = false;
   showCreateVendorModal = false;
@@ -61,53 +88,22 @@ export class AppComponent implements OnInit, OnDestroy {
   showDetailModal = false;
   selectedRequest: TravelRequest | null = null;
 
-  // Form State
+  // Form States
   newRequest = {
-    employeeId: null as number | null,
-    destination: '',
-    countryCode: '',
-    startDate: '',
-    endDate: '',
-    purpose: '',
-    estimatedBudget: 0,
-    flightClass: 'ECONOMY',
-    hotelDailyRate: 0,
-    mealAllowance: 50,
-    groundTransportBudget: 100
+    employeeId: null as number | null, destination: '', countryCode: '',
+    startDate: '', endDate: '', purpose: '', estimatedBudget: 0,
+    flightClass: 'ECONOMY', hotelDailyRate: 0, mealAllowance: 50, groundTransportBudget: 100
   };
-
-  newVendor = {
-    name: '',
-    category: 'FLIGHT',
-    corporateRate: 0,
-    standardRate: 0,
-    rating: 4.8,
-    preferred: true,
-    badges: 'Corporate Partner',
-    region: 'GLOBAL'
-  };
-
-  newExpense = {
-    vendorName: '',
-    category: 'MEALS',
-    expenseDate: '',
-    amount: 0,
-    currency: 'USD',
-    receiptFileName: 'receipt_scan.pdf'
-  };
-
-  newShipment = {
-    assetName: '',
-    serialNumber: '',
-    destinationVenue: '',
-    targetDeliveryDate: '',
-    trackingCode: '',
-    shippingCarrier: 'FedEx Express',
-    weightKg: 5.0
-  };
-
+  newVendor = { name: '', category: 'FLIGHT', corporateRate: 0, standardRate: 0, rating: 4.8, preferred: true, badges: 'Corporate Partner', region: 'GLOBAL' };
+  newExpense = { vendorName: '', category: 'MEALS', expenseDate: '', amount: 0, currency: 'USD', receiptFileName: 'receipt_scan.pdf' };
+  newShipment = { assetName: '', serialNumber: '', destinationVenue: '', targetDeliveryDate: '', trackingCode: '', shippingCarrier: 'FedEx Express', weightKg: 5.0 };
   approvalRemarks = '';
   isLoading = true;
+
+  // Charts
+  private chartsDrawn = false;
+  @ViewChild('pieChart1') pieChart1Ref?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('pieChart2') pieChart2Ref?: ElementRef<HTMLCanvasElement>;
 
   private pollSub?: Subscription;
 
@@ -118,14 +114,254 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.loadAllData();
-    this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+    if (this.auth.isAuthenticated) {
+      this.currentView = 'app';
+      this.loadAllData();
+      this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+    } else {
+      this.isLoading = false;
+    }
   }
 
   ngOnDestroy() {
     this.pollSub?.unsubscribe();
+    if (this.popupTimeout) clearTimeout(this.popupTimeout);
   }
 
+  ngAfterViewChecked() {
+    if (this.currentView === 'app' && this.activeTab === 'dashboard' && !this.chartsDrawn && this.analytics) {
+      this.drawCharts();
+      this.chartsDrawn = true;
+    }
+  }
+
+  // ===== Navigation =====
+  navigateTo(view: 'landing' | 'login' | 'signup' | 'app') {
+    this.currentView = view;
+    this.loginError = '';
+    this.signupError = '';
+    this.twoFAActive = false;
+    this.twoFAError = '';
+    window.scrollTo({ top: 0 });
+  }
+
+  // ===== Employee Login (Email + Password — No 2FA) =====
+  onEmployeeLogin() {
+    if (!this.loginEmail || !this.loginPassword) {
+      this.loginError = 'Please enter your email and password';
+      return;
+    }
+    this.isAuthenticating = true;
+    this.loginError = '';
+
+    this.auth.loginWithPassword(this.loginEmail, this.loginPassword).subscribe({
+      next: () => {
+        this.isAuthenticating = false;
+        this.currentView = 'app';
+        this.loadAllData();
+        this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+        this.showPopup('success', 'Welcome Back!', `Signed in as ${this.auth.currentUserValue?.fullName}`);
+      },
+      error: (err: any) => {
+        this.loginError = err.error?.message || 'Authentication failed. Please check your credentials.';
+        this.isAuthenticating = false;
+      }
+    });
+  }
+
+  // ===== 1-Click Official Login with 2FA =====
+  startOfficialLogin(key: string) {
+    const official = this.officialAccounts[key];
+    if (!official) return;
+
+    this.isAuthenticating = true;
+    this.loginError = '';
+
+    // Step 1: Validate passkey
+    this.auth.loginStep1(official.email, official.passkey).subscribe({
+      next: () => {
+        this.isAuthenticating = false;
+        this.twoFAActive = true;
+        this.twoFAEmail = official.email;
+        this.twoFACodeInput = '';
+        this.twoFAError = '';
+      },
+      error: (err: any) => {
+        this.loginError = err.error?.message || 'Passkey validation failed';
+        this.isAuthenticating = false;
+      }
+    });
+  }
+
+  onVerify2FA() {
+    if (!this.twoFACodeInput || this.twoFACodeInput.length !== 6) {
+      this.twoFAError = 'Please enter the 6-digit verification code';
+      return;
+    }
+    this.isAuthenticating = true;
+    this.twoFAError = '';
+
+    this.auth.verify2FA(this.twoFAEmail, this.twoFACodeInput).subscribe({
+      next: () => {
+        this.isAuthenticating = false;
+        this.twoFAActive = false;
+        this.currentView = 'app';
+        this.loadAllData();
+        this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+        this.showPopup('success', '2FA Verified!', `Welcome, ${this.auth.currentUserValue?.fullName}`);
+      },
+      error: (err: any) => {
+        this.twoFAError = err.error?.message || 'Invalid verification code';
+        this.isAuthenticating = false;
+      }
+    });
+  }
+
+  cancelTwoFA() {
+    this.twoFAActive = false;
+    this.twoFAError = '';
+    this.auth.step1Complete = false;
+  }
+
+  // ===== Employee Signup =====
+  validateSignupField(field: string) {
+    this.signupTouched[field] = true;
+    const f = this.signupForm;
+    const errors: Record<string, string> = { ...this.signupErrors };
+
+    switch (field) {
+      case 'firstName':
+        errors['firstName'] = !f.firstName.trim() ? 'First name is required' : (f.firstName.trim().length < 2 ? 'Must be at least 2 characters' : '');
+        break;
+      case 'lastName':
+        errors['lastName'] = !f.lastName.trim() ? 'Last name is required' : '';
+        break;
+      case 'employeeCode':
+        const codePattern = /^EMP-\d{4,}$/;
+        errors['employeeCode'] = !f.employeeCode.trim() ? 'Employee code is required' : (!codePattern.test(f.employeeCode.trim()) ? 'Format: EMP-XXXX (e.g. EMP-1001)' : '');
+        break;
+      case 'email':
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        errors['email'] = !f.email.trim() ? 'Email is required' : (!emailPattern.test(f.email.trim()) ? 'Enter a valid email address' : '');
+        break;
+      case 'phone':
+        const phonePattern = /^[+]?[\d\s\-()]{7,}$/;
+        errors['phone'] = !f.phone.trim() ? 'Phone number is required' : (!phonePattern.test(f.phone.trim()) ? 'Enter a valid phone number' : '');
+        break;
+      case 'password':
+        const pwd = f.password;
+        if (!pwd) { errors['password'] = 'Password is required'; }
+        else if (pwd.length < 8) { errors['password'] = 'Must be at least 8 characters'; }
+        else if (!/[A-Z]/.test(pwd)) { errors['password'] = 'Must contain an uppercase letter'; }
+        else if (!/[0-9]/.test(pwd)) { errors['password'] = 'Must contain a number'; }
+        else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) { errors['password'] = 'Must contain a special character'; }
+        else { errors['password'] = ''; }
+        // Also re-validate confirm password
+        if (this.signupTouched['confirmPassword']) {
+          errors['confirmPassword'] = f.confirmPassword !== f.password ? 'Passwords do not match' : '';
+        }
+        break;
+      case 'confirmPassword':
+        errors['confirmPassword'] = f.confirmPassword !== f.password ? 'Passwords do not match' : (!f.confirmPassword ? 'Please confirm your password' : '');
+        break;
+      case 'nationality':
+        errors['nationality'] = !f.nationality.trim() ? 'Nationality is required' : '';
+        break;
+    }
+
+    this.signupErrors = errors;
+  }
+
+  getFieldStatus(field: string): 'valid' | 'invalid' | 'none' {
+    if (!this.signupTouched[field]) return 'none';
+    return this.signupErrors[field] ? 'invalid' : 'valid';
+  }
+
+  getPasswordStrength(): number {
+    const pwd = this.signupForm.password;
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) score++;
+    return score;
+  }
+
+  getPasswordStrengthLabel(): string {
+    const s = this.getPasswordStrength();
+    if (s === 0) return '';
+    if (s <= 1) return 'Weak';
+    if (s <= 2) return 'Fair';
+    if (s <= 3) return 'Good';
+    return 'Strong';
+  }
+
+  get isSignupFormValid(): boolean {
+    const f = this.signupForm;
+    return !!f.firstName && !!f.lastName && !!f.employeeCode && !!f.email && !!f.phone
+      && !!f.password && f.password.length >= 8 && f.confirmPassword === f.password
+      && !!f.nationality && !Object.values(this.signupErrors).some(e => !!e);
+  }
+
+  onSignup() {
+    // Touch all fields to show errors
+    ['firstName', 'lastName', 'employeeCode', 'email', 'phone', 'password', 'confirmPassword', 'nationality'].forEach(f => this.validateSignupField(f));
+
+    if (!this.isSignupFormValid) {
+      this.signupError = 'Please fix the errors above before continuing';
+      return;
+    }
+
+    this.isAuthenticating = true;
+    this.signupError = '';
+
+    this.auth.signup({
+      firstName: this.signupForm.firstName.trim(),
+      lastName: this.signupForm.lastName.trim(),
+      employeeCode: this.signupForm.employeeCode.trim(),
+      email: this.signupForm.email.trim(),
+      phone: this.signupForm.phone.trim(),
+      department: this.signupForm.department,
+      designation: this.signupForm.designation.trim() || 'Employee',
+      nationality: this.signupForm.nationality.trim(),
+      password: this.signupForm.password,
+      emergencyContactName: this.signupForm.emergencyContactName.trim(),
+      emergencyContactPhone: this.signupForm.emergencyContactPhone.trim()
+    }).subscribe({
+      next: () => {
+        this.isAuthenticating = false;
+        this.currentView = 'app';
+        this.loadAllData();
+        this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+        this.showPopup('success', 'Account Created!', 'Welcome to CBG Enterprise Travel Platform');
+      },
+      error: (err: any) => {
+        this.signupError = err.error?.message || 'Signup failed. Please try again.';
+        this.isAuthenticating = false;
+      }
+    });
+  }
+
+  // ===== Custom Popup System =====
+  showPopup(type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, confirmAction?: () => void) {
+    if (this.popupTimeout) clearTimeout(this.popupTimeout);
+    this.popup = { show: true, type, title, message, confirmAction, showCancel: !!confirmAction };
+    if (!confirmAction) {
+      this.popupTimeout = setTimeout(() => this.closePopup(), 3000);
+    }
+  }
+
+  closePopup() {
+    this.popup.show = false;
+  }
+
+  confirmPopup() {
+    if (this.popup.confirmAction) this.popup.confirmAction();
+    this.closePopup();
+  }
+
+  // ===== Data Loading =====
   loadAllData() {
     forkJoin({
       analytics: this.api.getDashboardAnalytics().pipe(catchError(() => of(null))),
@@ -137,7 +373,7 @@ export class AppComponent implements OnInit, OnDestroy {
       locations: this.api.getTravelerLocations().pipe(catchError(() => of([]))),
       expenses: this.api.getExpenses().pipe(catchError(() => of([])))
     }).subscribe({
-      next: (data) => {
+      next: (data: any) => {
         this.analytics = data.analytics;
         this.travelRequests = data.requests;
         this.employees = data.employees;
@@ -147,133 +383,123 @@ export class AppComponent implements OnInit, OnDestroy {
         this.travelerLocations = data.locations;
         this.expenses = data.expenses;
         this.isLoading = false;
+        this.chartsDrawn = false; // Redraw charts on data refresh
       },
-      error: (err) => {
-        console.error('Failed to load data:', err);
-        this.isLoading = false;
-      }
+      error: () => { this.isLoading = false; }
     });
   }
 
-  // 2-Step Login Handlers
-  onStep1Submit() {
-    if (!this.loginEmail || !this.loginPasskey) {
-      this.step1Error = 'Please enter both Official Email and Passkey';
-      return;
-    }
-    this.isAuthenticating = true;
-    this.step1Error = '';
-
-    this.auth.loginStep1(this.loginEmail, this.loginPasskey).subscribe({
-      next: () => {
-        this.isAuthenticating = false;
-        // Auto-fill 2FA code if it's one of the known official accounts for convenience
-        const official = Object.values(this.officialAccounts).find(o => o.email.toLowerCase() === this.loginEmail.toLowerCase());
-        if (official) {
-          this.twoFactorCodeInput = official.code;
-        }
-      },
-      error: (err) => {
-        this.step1Error = err.error?.message || 'Step 1 Passkey authentication failed';
-        this.isAuthenticating = false;
-      }
-    });
-  }
-
-  onStep2Submit() {
-    if (!this.twoFactorCodeInput) {
-      this.step2Error = 'Please enter the 6-digit 2FA Verification Code';
-      return;
-    }
-    this.isAuthenticating = true;
-    this.step2Error = '';
-
-    this.auth.verify2FA(this.auth.pendingEmail || this.loginEmail, this.twoFactorCodeInput).subscribe({
-      next: () => {
-        this.isAuthenticating = false;
-        this.loginEmail = '';
-        this.loginPasskey = '';
-        this.twoFactorCodeInput = '';
-        this.loadAllData();
-      },
-      error: (err) => {
-        this.step2Error = err.error?.message || 'Invalid 2FA Verification Code';
-        this.isAuthenticating = false;
-      }
-    });
-  }
-
-  // Auto-fill Passkey & 2FA into the inputs for manual testing
-  fillCredentials(officialKey: string) {
-    const official = this.officialAccounts[officialKey];
-    if (official) {
-      this.loginEmail = official.email;
-      this.loginPasskey = official.passkey;
-      this.twoFactorCodeInput = official.code;
-      this.step1Error = '';
-      this.step2Error = '';
-    }
-  }
-
-  // 1-Click Direct Login for Officials
-  quickLoginAsOfficial(officialKey: string) {
-    const official = this.officialAccounts[officialKey];
-    if (!official) return;
-
-    this.loginEmail = official.email;
-    this.loginPasskey = official.passkey;
-    this.twoFactorCodeInput = official.code;
-    this.isAuthenticating = true;
-    this.step1Error = '';
-
-    // Execute Step 1 + Step 2 authentication
-    this.auth.loginDirect(official.email).subscribe({
-      next: (res) => {
-        this.isAuthenticating = false;
-        this.loadAllData();
-      },
-      error: (err) => {
-        this.step1Error = err.error?.message || 'Authentication failed';
-        this.isAuthenticating = false;
-      }
-    });
-  }
-
+  // ===== Navigation & Theme =====
   logout() {
     this.auth.logout();
+    this.currentView = 'landing';
     this.loginEmail = '';
-    this.loginPasskey = '';
-    this.twoFactorCodeInput = '';
+    this.loginPassword = '';
+    this.pollSub?.unsubscribe();
   }
 
-  toggleSidebar() {
-    this.sidebarOpen = !this.sidebarOpen;
-  }
-
-  closeSidebar() {
-    this.sidebarOpen = false;
-  }
+  toggleSidebar() { this.sidebarOpen = !this.sidebarOpen; }
+  closeSidebar() { this.sidebarOpen = false; }
 
   switchTab(tab: string) {
     this.activeTab = tab;
     this.sidebarOpen = false;
     this.searchTerm = '';
     this.statusFilter = 'ALL';
+    this.chartsDrawn = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  setTheme(theme: ThemeMode) {
-    this.themeService.setTheme(theme);
+  setTheme(theme: ThemeMode) { this.themeService.setTheme(theme); }
+
+  toggleViewMode() {
+    this.forceMobile = !this.forceMobile;
+    if (this.forceMobile) {
+      document.body.classList.add('force-mobile');
+    } else {
+      document.body.classList.remove('force-mobile');
+    }
   }
 
-  // Filtered Datasets
+  // ===== Role-Specific Sidebar Items =====
+  get sidebarItems(): { section: string; items: { tab: string; icon: string; label: string; badge?: number }[] }[] {
+    const role = this.auth.currentRole;
+    const items: { section: string; items: { tab: string; icon: string; label: string; badge?: number }[] }[] = [];
+
+    items.push({ section: 'Overview', items: [{ tab: 'dashboard', icon: '📊', label: 'Command Center' }] });
+
+    switch (role) {
+      case 'EMPLOYEE':
+        items.push({ section: 'My Travel', items: [
+          { tab: 'requests', icon: '🗂️', label: 'My Trip Requests', badge: this.pendingRequestsCount },
+          { tab: 'expenses', icon: '🧾', label: 'My Expense Receipts', badge: this.pendingExpensesCount }
+        ]});
+        break;
+
+      case 'APPROVING_MANAGER':
+      case 'MANAGER':
+        items.push({ section: 'Approvals', items: [
+          { tab: 'requests', icon: '✅', label: 'Approval Queue', badge: this.pendingRequestsCount },
+          { tab: 'expenses', icon: '💰', label: 'Budget Overview' }
+        ]});
+        items.push({ section: 'Team', items: [
+          { tab: 'employees', icon: '👥', label: 'My Team Directory' }
+        ]});
+        break;
+
+      case 'CORPORATE_TRAVEL_MANAGER':
+        items.push({ section: 'Program Management', items: [
+          { tab: 'vendors', icon: '🤝', label: 'Vendor Catalog' },
+          { tab: 'requests', icon: '📋', label: 'Policy Compliance', badge: this.pendingRequestsCount }
+        ]});
+        items.push({ section: 'Analytics', items: [
+          { tab: 'expenses', icon: '📊', label: 'Spend Analytics' }
+        ]});
+        break;
+
+      case 'FINANCE_ADMIN':
+        items.push({ section: 'Audit & Payout', items: [
+          { tab: 'expenses', icon: '🔍', label: 'Expense Audit Queue', badge: this.pendingExpensesCount },
+          { tab: 'requests', icon: '📑', label: 'Budget Reconciliation' }
+        ]});
+        break;
+
+      case 'RISK_OFFICER':
+        items.push({ section: 'Safety & Security', items: [
+          { tab: 'risk', icon: '🛡️', label: 'Duty of Care Map' },
+          { tab: 'notifications', icon: '🚨', label: 'Threat Alerts', badge: this.unreadNotifications }
+        ]});
+        break;
+
+      case 'LOGISTICS_COORDINATOR':
+        items.push({ section: 'Cargo & Transport', items: [
+          { tab: 'shipments', icon: '📦', label: 'Active Shipments' },
+          { tab: 'requests', icon: '🔗', label: 'Synced Travelers' }
+        ]});
+        break;
+
+      default:
+        items.push({ section: 'Navigation', items: [
+          { tab: 'requests', icon: '🗂️', label: 'Travel Requests' },
+          { tab: 'vendors', icon: '🤝', label: 'Vendors' },
+          { tab: 'shipments', icon: '📦', label: 'Shipments' },
+          { tab: 'expenses', icon: '💰', label: 'Expenses' },
+          { tab: 'risk', icon: '🛡️', label: 'Risk' },
+          { tab: 'notifications', icon: '🔔', label: 'Alerts' },
+          { tab: 'employees', icon: '👥', label: 'Directory' }
+        ]});
+    }
+
+    return items;
+  }
+
+  // ===== Filtered Datasets =====
   get filteredRequests(): TravelRequest[] {
     return this.travelRequests.filter(req => {
       const matchesSearch = !this.searchTerm ||
         req.destination.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         req.employee.fullName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         req.purpose.toLowerCase().includes(this.searchTerm.toLowerCase());
-
       const matchesStatus = this.statusFilter === 'ALL' || req.status === this.statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -284,7 +510,6 @@ export class AppComponent implements OnInit, OnDestroy {
       const matchesSearch = !this.searchTerm ||
         exp.vendorName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         exp.employee.fullName.toLowerCase().includes(this.searchTerm.toLowerCase());
-
       const matchesStatus = this.statusFilter === 'ALL' || exp.auditStatus === this.statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -299,7 +524,272 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Export Data to CSV
+  // ===== Charts (Pure Canvas) =====
+  drawCharts() {
+    setTimeout(() => {
+      if (this.pieChart1Ref) {
+        this.drawPieChart(this.pieChart1Ref.nativeElement, this.getChart1Data());
+      }
+      if (this.pieChart2Ref) {
+        this.drawPieChart(this.pieChart2Ref.nativeElement, this.getChart2Data());
+      }
+    }, 100);
+  }
+
+  getChart1Data(): { label: string; value: number; color: string }[] {
+    const role = this.auth.currentRole;
+    if (role === 'CORPORATE_TRAVEL_MANAGER' || role === 'FINANCE_ADMIN') {
+      const cats = this.analytics?.spendByCategory || [];
+      const colors = ['#0A84FF', '#BF5AF2', '#30D158', '#FF9F0A', '#FF453A', '#64D2FF'];
+      return cats.map((c, i) => ({ label: c.category, value: c.spend, color: colors[i % colors.length] }));
+    }
+    if (role === 'LOGISTICS_COORDINATOR') {
+      const statusMap: Record<string, number> = {};
+      this.shipments.forEach(s => { statusMap[s.status] = (statusMap[s.status] || 0) + 1; });
+      const colors: Record<string, string> = { 'IN_TRANSIT': '#0A84FF', 'DELIVERED': '#30D158', 'CUSTOMS_CLEARANCE': '#BF5AF2', 'PENDING': '#FF9F0A' };
+      return Object.entries(statusMap).map(([k, v]) => ({ label: k.replace('_', ' '), value: v, color: colors[k] || '#8e8e93' }));
+    }
+    if (role === 'RISK_OFFICER') {
+      const threatMap: Record<string, number> = {};
+      this.travelerLocations.forEach(l => { threatMap[l.threatLevel] = (threatMap[l.threatLevel] || 0) + 1; });
+      const colors: Record<string, string> = { 'LOW': '#30D158', 'MODERATE': '#FF9F0A', 'HIGH': '#FF453A', 'CRITICAL': '#FF453A' };
+      return Object.entries(threatMap).map(([k, v]) => ({ label: k, value: v, color: colors[k] || '#8e8e93' }));
+    }
+    // Default: status breakdown of requests
+    const statusMap: Record<string, number> = {};
+    this.travelRequests.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + 1; });
+    const colors: Record<string, string> = { 'APPROVED': '#30D158', 'PENDING_APPROVAL': '#FF9F0A', 'REJECTED': '#FF453A', 'POLICY_VIOLATION': '#BF5AF2' };
+    return Object.entries(statusMap).map(([k, v]) => ({ label: k.replace('_', ' '), value: v, color: colors[k] || '#8e8e93' }));
+  }
+
+  getChart2Data(): { label: string; value: number; color: string }[] {
+    if (this.auth.currentRole === 'FINANCE_ADMIN') {
+      const auditMap: Record<string, number> = {};
+      this.expenses.forEach(e => { auditMap[e.auditStatus] = (auditMap[e.auditStatus] || 0) + 1; });
+      const colors: Record<string, string> = { 'PENDING_AUDIT': '#FF9F0A', 'APPROVED_PAYOUT': '#30D158', 'REJECTED_FLAGGED': '#FF453A' };
+      return Object.entries(auditMap).map(([k, v]) => ({ label: k.replace('_', ' '), value: v, color: colors[k] || '#8e8e93' }));
+    }
+    // Department spend
+    const depts = this.analytics?.spendByDepartment || [];
+    const colors = ['#0A84FF', '#30D158', '#BF5AF2', '#FF9F0A', '#FF453A', '#64D2FF'];
+    return depts.map((d, i) => ({ label: d.department, value: d.spend, color: colors[i % colors.length] }));
+  }
+
+  drawPieChart(canvas: HTMLCanvasElement, data: { label: string; value: number; color: string }[]) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !data.length) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const size = 180;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.scale(dpr, dpr);
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = 80, innerR = 50;
+    const total = data.reduce((sum, d) => sum + d.value, 0);
+    if (total === 0) return;
+
+    let startAngle = -Math.PI / 2;
+    data.forEach(d => {
+      const slice = (d.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, startAngle, startAngle + slice);
+      ctx.arc(cx, cy, innerR, startAngle + slice, startAngle, true);
+      ctx.closePath();
+      ctx.fillStyle = d.color;
+      ctx.fill();
+      startAngle += slice;
+    });
+
+    // Center text
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#f5f5f7';
+    ctx.font = '700 22px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(total), cx, cy - 6);
+    ctx.font = '500 10px Inter';
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-tertiary').trim() || '#888';
+    ctx.fillText('TOTAL', cx, cy + 10);
+  }
+
+  // ===== CRUD Operations =====
+  openCreateVendorModal() {
+    this.showCreateVendorModal = true;
+    this.newVendor = { name: '', category: 'FLIGHT', corporateRate: 0, standardRate: 0, rating: 4.8, preferred: true, badges: 'Corporate Partner', region: 'GLOBAL' };
+  }
+
+  submitVendor() {
+    if (!this.newVendor.name || !this.newVendor.corporateRate) return;
+    this.api.createVendor(this.newVendor).subscribe(() => {
+      this.showCreateVendorModal = false;
+      this.loadAllData();
+      this.showPopup('success', 'Vendor Added', `${this.newVendor.name} has been added to the preferred vendor catalog`);
+    });
+  }
+
+  deleteVendor(vendorId: number) {
+    this.showPopup('warning', 'Remove Vendor?', 'This vendor will be removed from the preferred catalog.', () => {
+      this.api.deleteVendor(vendorId).subscribe(() => {
+        this.loadAllData();
+        this.showPopup('success', 'Vendor Removed', 'The vendor has been removed from the catalog');
+      });
+    });
+  }
+
+  openCreateModal() {
+    this.showCreateRequestModal = true;
+    this.newRequest = {
+      employeeId: this.auth.currentUserValue?.id || null, destination: '', countryCode: '',
+      startDate: '', endDate: '', purpose: '', estimatedBudget: 0,
+      flightClass: 'ECONOMY', hotelDailyRate: 0, mealAllowance: 50, groundTransportBudget: 100
+    };
+  }
+
+  closeCreateModal() { this.showCreateRequestModal = false; }
+
+  submitTravelRequest() {
+    if (!this.newRequest.employeeId || !this.newRequest.destination) return;
+    const payload = {
+      employee: { id: this.newRequest.employeeId },
+      destination: this.newRequest.destination, countryCode: this.newRequest.countryCode,
+      startDate: this.newRequest.startDate, endDate: this.newRequest.endDate,
+      purpose: this.newRequest.purpose, estimatedBudget: this.newRequest.estimatedBudget,
+      flightClass: this.newRequest.flightClass, hotelDailyRate: this.newRequest.hotelDailyRate,
+      mealAllowance: this.newRequest.mealAllowance, groundTransportBudget: this.newRequest.groundTransportBudget
+    };
+    this.api.createTravelRequest(payload).subscribe({
+      next: () => {
+        this.showCreateRequestModal = false;
+        this.loadAllData();
+        this.showPopup('success', 'Trip Submitted', `Your travel request to ${this.newRequest.destination} has been submitted for approval`);
+      },
+      error: () => this.showPopup('error', 'Submission Failed', 'Could not submit travel request. Please try again.')
+    });
+  }
+
+  viewRequestDetail(request: TravelRequest) {
+    this.selectedRequest = request;
+    this.showDetailModal = true;
+    this.approvalRemarks = '';
+  }
+
+  closeDetailModal() { this.showDetailModal = false; this.selectedRequest = null; }
+
+  approveRequest() {
+    if (!this.selectedRequest) return;
+    this.api.updateTravelRequestStatus(this.selectedRequest.id, {
+      status: 'APPROVED', approverId: String(this.auth.currentUserValue?.id || 1), remarks: this.approvalRemarks
+    }).subscribe(() => {
+      this.closeDetailModal();
+      this.loadAllData();
+      this.showPopup('success', 'Request Approved', `Trip to ${this.selectedRequest?.destination} has been approved`);
+    });
+  }
+
+  rejectRequest() {
+    if (!this.selectedRequest) return;
+    this.api.updateTravelRequestStatus(this.selectedRequest.id, {
+      status: 'REJECTED', approverId: String(this.auth.currentUserValue?.id || 1), remarks: this.approvalRemarks
+    }).subscribe(() => {
+      this.closeDetailModal();
+      this.loadAllData();
+      this.showPopup('info', 'Request Rejected', 'The travel request has been rejected');
+    });
+  }
+
+  openCreateExpenseModal() {
+    this.showCreateExpenseModal = true;
+    this.newExpense = { vendorName: '', category: 'MEALS', expenseDate: new Date().toISOString().split('T')[0], amount: 0, currency: 'USD', receiptFileName: 'scanned_receipt.pdf' };
+  }
+
+  submitExpense() {
+    if (!this.newExpense.vendorName || !this.newExpense.amount) return;
+    const payload = {
+      employee: { id: this.auth.currentUserValue?.id || 1 },
+      vendorName: this.newExpense.vendorName, category: this.newExpense.category,
+      expenseDate: this.newExpense.expenseDate, amount: this.newExpense.amount,
+      currency: this.newExpense.currency, ocrConfidence: 97.5,
+      auditStatus: 'PENDING_AUDIT', receiptFileName: this.newExpense.receiptFileName
+    };
+    this.api.createExpense(payload).subscribe(() => {
+      this.showCreateExpenseModal = false;
+      this.loadAllData();
+      this.showPopup('success', 'Expense Submitted', 'Your expense claim has been submitted for audit review');
+    });
+  }
+
+  approveExpense(expense: ExpenseClaim) {
+    this.api.auditExpense(expense.id, {
+      auditStatus: 'APPROVED_PAYOUT', auditRemarks: 'Approved by Finance Director for payout',
+      auditorId: String(this.auth.currentUserValue?.id || 1)
+    }).subscribe(() => {
+      this.loadAllData();
+      this.showPopup('success', 'Payout Approved', `$${expense.amount.toFixed(2)} approved for reimbursement`);
+    });
+  }
+
+  flagExpense(expense: ExpenseClaim) {
+    this.showPopup('warning', 'Flag this Claim?', `Flag the $${expense.amount.toFixed(2)} expense from ${expense.vendorName} for audit review?`, () => {
+      this.api.auditExpense(expense.id, {
+        auditStatus: 'REJECTED_FLAGGED', auditRemarks: 'Flagged for audit review',
+        auditorId: String(this.auth.currentUserValue?.id || 1)
+      }).subscribe(() => {
+        this.loadAllData();
+        this.showPopup('info', 'Claim Flagged', 'The expense claim has been flagged for investigation');
+      });
+    });
+  }
+
+  openCreateShipmentModal() {
+    this.showCreateShipmentModal = true;
+    this.newShipment = {
+      assetName: '', serialNumber: 'SN-' + Math.floor(100000 + Math.random() * 900000),
+      destinationVenue: '', targetDeliveryDate: new Date().toISOString().split('T')[0],
+      trackingCode: 'LOG-CBG-' + Math.floor(100000 + Math.random() * 900000),
+      shippingCarrier: 'FedEx Express', weightKg: 8.5
+    };
+  }
+
+  submitShipment() {
+    if (!this.newShipment.assetName || !this.newShipment.destinationVenue) return;
+    const payload = {
+      assetName: this.newShipment.assetName, serialNumber: this.newShipment.serialNumber,
+      destinationVenue: this.newShipment.destinationVenue,
+      syncedEmployee: { id: this.auth.currentUserValue?.id || 1 },
+      targetDeliveryDate: this.newShipment.targetDeliveryDate,
+      trackingCode: this.newShipment.trackingCode, status: 'IN_TRANSIT',
+      weightKg: this.newShipment.weightKg, shippingCarrier: this.newShipment.shippingCarrier
+    };
+    this.api.createShipment(payload).subscribe(() => {
+      this.showCreateShipmentModal = false;
+      this.loadAllData();
+      this.showPopup('success', 'Shipment Dispatched', `${this.newShipment.assetName} has been dispatched via ${this.newShipment.shippingCarrier}`);
+    });
+  }
+
+  updateShipmentStatus(shipment: Shipment, newStatus: string) {
+    this.api.updateShipmentStatus(shipment.id, { status: newStatus }).subscribe(() => {
+      this.loadAllData();
+      this.showPopup('success', 'Status Updated', `${shipment.assetName} marked as ${newStatus.replace('_', ' ')}`);
+    });
+  }
+
+  markRead(notification: Notification) {
+    this.api.markNotificationRead(notification.id).subscribe(() => this.loadAllData());
+  }
+
+  triggerSos(location: TravelerLocation) {
+    this.showPopup('warning', 'Dispatch Emergency SOS?', `Send emergency assistance to ${location.employee.fullName} in ${location.city}, ${location.country}?`, () => {
+      this.api.triggerSos({ employeeId: location.employee.id }).subscribe(() => {
+        this.loadAllData();
+        this.showPopup('success', 'SOS Dispatched', `Emergency response initiated for ${location.employee.fullName}`);
+      });
+    });
+  }
+
   exportDataCsv() {
     let csvContent = 'data:text/csv;charset=utf-8,';
     if (this.activeTab === 'requests') {
@@ -318,267 +808,37 @@ export class AppComponent implements OnInit, OnDestroy {
         csvContent += `"${v.id}","${v.name}","${v.category}","${v.corporateRate}","${v.standardRate}","${v.rating}"\n`;
       });
     }
-
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `cbg_official_${this.activeTab}_report.csv`);
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `cbg_${this.activeTab}_report.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    this.showPopup('success', 'Export Complete', 'CSV report has been downloaded');
   }
 
-  // Vendor Management (Corporate Travel Manager)
-  openCreateVendorModal() {
-    this.showCreateVendorModal = true;
-    this.newVendor = {
-      name: '',
-      category: 'FLIGHT',
-      corporateRate: 0,
-      standardRate: 0,
-      rating: 4.8,
-      preferred: true,
-      badges: 'Corporate Partner',
-      region: 'GLOBAL'
-    };
-  }
-
-  submitVendor() {
-    if (!this.newVendor.name || !this.newVendor.corporateRate) return;
-    this.api.createVendor(this.newVendor).subscribe(() => {
-      this.showCreateVendorModal = false;
-      this.loadAllData();
-    });
-  }
-
-  deleteVendor(vendorId: number) {
-    if (confirm('Are you sure you want to remove this preferred vendor?')) {
-      this.api.deleteVendor(vendorId).subscribe(() => this.loadAllData());
-    }
-  }
-
-  // Travel Request Modals
-  openCreateModal() {
-    this.showCreateRequestModal = true;
-    this.newRequest = {
-      employeeId: this.auth.currentUserValue?.id || null,
-      destination: '',
-      countryCode: '',
-      startDate: '',
-      endDate: '',
-      purpose: '',
-      estimatedBudget: 0,
-      flightClass: 'ECONOMY',
-      hotelDailyRate: 0,
-      mealAllowance: 50,
-      groundTransportBudget: 100
-    };
-  }
-
-  closeCreateModal() {
-    this.showCreateRequestModal = false;
-  }
-
-  submitTravelRequest() {
-    if (!this.newRequest.employeeId || !this.newRequest.destination) return;
-
-    const payload = {
-      employee: { id: this.newRequest.employeeId },
-      destination: this.newRequest.destination,
-      countryCode: this.newRequest.countryCode,
-      startDate: this.newRequest.startDate,
-      endDate: this.newRequest.endDate,
-      purpose: this.newRequest.purpose,
-      estimatedBudget: this.newRequest.estimatedBudget,
-      flightClass: this.newRequest.flightClass,
-      hotelDailyRate: this.newRequest.hotelDailyRate,
-      mealAllowance: this.newRequest.mealAllowance,
-      groundTransportBudget: this.newRequest.groundTransportBudget
-    };
-
-    this.api.createTravelRequest(payload).subscribe({
-      next: () => {
-        this.showCreateRequestModal = false;
-        this.loadAllData();
-      },
-      error: (err) => console.error('Failed to create request:', err)
-    });
-  }
-
-  viewRequestDetail(request: TravelRequest) {
-    this.selectedRequest = request;
-    this.showDetailModal = true;
-    this.approvalRemarks = '';
-  }
-
-  closeDetailModal() {
-    this.showDetailModal = false;
-    this.selectedRequest = null;
-  }
-
-  approveRequest() {
-    if (!this.selectedRequest) return;
-    this.api.updateTravelRequestStatus(this.selectedRequest.id, {
-      status: 'APPROVED',
-      approverId: String(this.auth.currentUserValue?.id || 1),
-      remarks: this.approvalRemarks
-    }).subscribe(() => {
-      this.closeDetailModal();
-      this.loadAllData();
-    });
-  }
-
-  rejectRequest() {
-    if (!this.selectedRequest) return;
-    this.api.updateTravelRequestStatus(this.selectedRequest.id, {
-      status: 'REJECTED',
-      approverId: String(this.auth.currentUserValue?.id || 1),
-      remarks: this.approvalRemarks
-    }).subscribe(() => {
-      this.closeDetailModal();
-      this.loadAllData();
-    });
-  }
-
-  // Expense Creation (Employee)
-  openCreateExpenseModal() {
-    this.showCreateExpenseModal = true;
-    this.newExpense = {
-      vendorName: '',
-      category: 'MEALS',
-      expenseDate: new Date().toISOString().split('T')[0],
-      amount: 0,
-      currency: 'USD',
-      receiptFileName: 'scanned_receipt.pdf'
-    };
-  }
-
-  submitExpense() {
-    if (!this.newExpense.vendorName || !this.newExpense.amount) return;
-    const payload = {
-      employee: { id: this.auth.currentUserValue?.id || 1 },
-      vendorName: this.newExpense.vendorName,
-      category: this.newExpense.category,
-      expenseDate: this.newExpense.expenseDate,
-      amount: this.newExpense.amount,
-      currency: this.newExpense.currency,
-      ocrConfidence: 97.5,
-      auditStatus: 'PENDING_AUDIT',
-      receiptFileName: this.newExpense.receiptFileName
-    };
-
-    this.api.createExpense(payload).subscribe(() => {
-      this.showCreateExpenseModal = false;
-      this.loadAllData();
-    });
-  }
-
-  approveExpense(expense: ExpenseClaim) {
-    this.api.auditExpense(expense.id, {
-      auditStatus: 'APPROVED_PAYOUT',
-      auditRemarks: 'Approved by Finance Director for payout',
-      auditorId: String(this.auth.currentUserValue?.id || 1)
-    }).subscribe(() => this.loadAllData());
-  }
-
-  flagExpense(expense: ExpenseClaim) {
-    this.api.auditExpense(expense.id, {
-      auditStatus: 'REJECTED_FLAGGED',
-      auditRemarks: 'Flagged for audit review',
-      auditorId: String(this.auth.currentUserValue?.id || 1)
-    }).subscribe(() => this.loadAllData());
-  }
-
-  // Shipment Creation (Logistics Coordinator)
-  openCreateShipmentModal() {
-    this.showCreateShipmentModal = true;
-    this.newShipment = {
-      assetName: '',
-      serialNumber: 'SN-' + Math.floor(100000 + Math.random() * 900000),
-      destinationVenue: '',
-      targetDeliveryDate: new Date().toISOString().split('T')[0],
-      trackingCode: 'LOG-CBG-' + Math.floor(100000 + Math.random() * 900000),
-      shippingCarrier: 'FedEx Express',
-      weightKg: 8.5
-    };
-  }
-
-  submitShipment() {
-    if (!this.newShipment.assetName || !this.newShipment.destinationVenue) return;
-    const payload = {
-      assetName: this.newShipment.assetName,
-      serialNumber: this.newShipment.serialNumber,
-      destinationVenue: this.newShipment.destinationVenue,
-      syncedEmployee: { id: this.auth.currentUserValue?.id || 1 },
-      targetDeliveryDate: this.newShipment.targetDeliveryDate,
-      trackingCode: this.newShipment.trackingCode,
-      status: 'IN_TRANSIT',
-      weightKg: this.newShipment.weightKg,
-      shippingCarrier: this.newShipment.shippingCarrier
-    };
-
-    this.api.createShipment(payload).subscribe(() => {
-      this.showCreateShipmentModal = false;
-      this.loadAllData();
-    });
-  }
-
-  updateShipmentStatus(shipment: Shipment, newStatus: string) {
-    this.api.updateShipmentStatus(shipment.id, { status: newStatus }).subscribe(() => {
-      this.loadAllData();
-    });
-  }
-
-  markRead(notification: Notification) {
-    this.api.markNotificationRead(notification.id).subscribe(() => {
-      this.loadAllData();
-    });
-  }
-
-  triggerSos(location: TravelerLocation) {
-    this.api.triggerSos({ employeeId: location.employee.id }).subscribe(() => {
-      this.loadAllData();
-    });
-  }
-
-  // Formatters & Helpers
+  // ===== Formatters & Helpers =====
   getStatusColor(status: string): string {
     const map: Record<string, string> = {
-      'APPROVED': '#30D158',
-      'COMPLETED': '#30D158',
-      'DELIVERED': '#30D158',
-      'SAFE': '#30D158',
-      'APPROVED_PAYOUT': '#30D158',
-      'PENDING_APPROVAL': '#FF9F0A',
-      'PENDING_AUDIT': '#FF9F0A',
-      'IN_TRANSIT': '#0A84FF',
-      'CUSTOMS_CLEARANCE': '#BF5AF2',
-      'POLICY_VIOLATION': '#FF453A',
-      'REJECTED': '#FF453A',
-      'REJECTED_FLAGGED': '#FF453A',
-      'ALERT': '#FF9F0A',
-      'ASSISTANCE_REQUESTED': '#FF453A',
-      'MODERATE': '#FF9F0A',
-      'HIGH': '#FF453A',
-      'CRITICAL': '#FF453A',
-      'LOW': '#30D158',
-      'DRAFT': '#8e8e93'
+      'APPROVED': '#30D158', 'COMPLETED': '#30D158', 'DELIVERED': '#30D158', 'SAFE': '#30D158',
+      'APPROVED_PAYOUT': '#30D158', 'PENDING_APPROVAL': '#FF9F0A', 'PENDING_AUDIT': '#FF9F0A',
+      'IN_TRANSIT': '#0A84FF', 'CUSTOMS_CLEARANCE': '#BF5AF2', 'POLICY_VIOLATION': '#FF453A',
+      'REJECTED': '#FF453A', 'REJECTED_FLAGGED': '#FF453A', 'ALERT': '#FF9F0A',
+      'ASSISTANCE_REQUESTED': '#FF453A', 'MODERATE': '#FF9F0A', 'HIGH': '#FF453A',
+      'CRITICAL': '#FF453A', 'LOW': '#30D158', 'DRAFT': '#8e8e93'
     };
     return map[status] || '#8e8e93';
   }
 
   getThreatIcon(level: string): string {
-    const map: Record<string, string> = {
-      'LOW': '🟢', 'MODERATE': '🟡', 'HIGH': '🔴', 'CRITICAL': '⚠️'
-    };
+    const map: Record<string, string> = { 'LOW': '🟢', 'MODERATE': '🟡', 'HIGH': '🔴', 'CRITICAL': '⚠️' };
     return map[level] || '⚪';
   }
 
   getCategoryIcon(category: string): string {
     const map: Record<string, string> = {
       'FLIGHT': '✈️', 'HOTEL': '🏨', 'GROUND_TRANSPORT': '🚗',
-      'MEALS': '🍽️', 'MISC': '📦', 'LOGISTICS': '📦',
-      'RISK': '🛡️', 'SYSTEM': '⚙️'
+      'MEALS': '🍽️', 'MISC': '📦', 'LOGISTICS': '📦', 'RISK': '🛡️', 'SYSTEM': '⚙️'
     };
     return map[category] || '📋';
   }
@@ -594,22 +854,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   formatDateTime(date: string): string {
     if (!date) return '';
-    return new Date(date).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
+    return new Date(date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
-  get unreadNotifications(): number {
-    return this.notifications.filter(n => !n.readStatus).length;
-  }
-
-  get pendingRequestsCount(): number {
-    return this.travelRequests.filter(r => r.status === 'PENDING_APPROVAL' || r.status === 'POLICY_VIOLATION').length;
-  }
-
-  get pendingExpensesCount(): number {
-    return this.expenses.filter(e => e.auditStatus === 'PENDING_AUDIT').length;
-  }
+  get unreadNotifications(): number { return this.notifications.filter(n => !n.readStatus).length; }
+  get pendingRequestsCount(): number { return this.travelRequests.filter(r => r.status === 'PENDING_APPROVAL' || r.status === 'POLICY_VIOLATION').length; }
+  get pendingExpensesCount(): number { return this.expenses.filter(e => e.auditStatus === 'PENDING_AUDIT').length; }
 
   getDeptSpendMax(): number {
     if (!this.analytics?.spendByDepartment?.length) return 1;
@@ -618,5 +868,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getVendorBadges(badges: string): string[] {
     return badges ? badges.split(',').map(b => b.trim()) : [];
+  }
+
+  getPopupIcon(): string {
+    const map: Record<string, string> = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+    return map[this.popup.type] || 'ℹ';
   }
 }

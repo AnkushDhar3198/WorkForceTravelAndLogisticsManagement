@@ -3,6 +3,7 @@ package com.cbg.travel.controller;
 import com.cbg.travel.dto.AuthRequest;
 import com.cbg.travel.dto.AuthResponse;
 import com.cbg.travel.entity.Employee;
+import com.cbg.travel.entity.UserRole;
 import com.cbg.travel.repository.EmployeeRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,103 @@ public class AuthController {
     }
 
     /**
-     * Step 1: Validate Official Email and Passkey
+     * Employee Login (Email + Password) — No 2FA required
+     */
+    @PostMapping("/login-employee")
+    public ResponseEntity<?> loginEmployee(@RequestBody AuthRequest request) {
+        if (request.getEmail() == null || request.getPassword() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required"));
+        }
+
+        String email = request.getEmail().trim().toLowerCase();
+        Optional<Employee> empOpt = employeeRepo.findByEmail(email);
+
+        if (empOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "No account found with this email address"));
+        }
+
+        Employee employee = empOpt.get();
+        String providedPassword = request.getPassword().trim();
+        String expectedPassword = employee.getPassword() != null ? employee.getPassword().trim() : "";
+
+        if (!providedPassword.equals(expectedPassword)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid password. Please try again."));
+        }
+
+        String rawToken = employee.getId() + ":" + employee.getEmail() + ":" + System.currentTimeMillis();
+        String token = "Bearer " + Base64.getEncoder().encodeToString(rawToken.getBytes());
+
+        return ResponseEntity.ok(new AuthResponse(token, employee, "Login successful", false, employee.getEmail()));
+    }
+
+    /**
+     * Employee Signup — Creates a new EMPLOYEE account
+     */
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody AuthRequest request) {
+        // Validate required fields
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email is required"));
+        }
+        if (request.getPassword() == null || request.getPassword().trim().length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Password must be at least 8 characters"));
+        }
+        if (request.getFirstName() == null || request.getFirstName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "First name is required"));
+        }
+        if (request.getLastName() == null || request.getLastName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Last name is required"));
+        }
+        if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Phone number is required"));
+        }
+        if (request.getEmployeeCode() == null || request.getEmployeeCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Employee code is required"));
+        }
+
+        String email = request.getEmail().trim().toLowerCase();
+
+        // Check if email already exists
+        if (employeeRepo.findByEmail(email).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "An account with this email already exists"));
+        }
+
+        // Check if employee code already exists
+        Optional<Employee> codeCheck = employeeRepo.findByEmployeeCode(request.getEmployeeCode().trim());
+        if (codeCheck.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "This employee code is already registered"));
+        }
+
+        // Create new employee
+        Employee newEmployee = new Employee();
+        newEmployee.setFirstName(request.getFirstName().trim());
+        newEmployee.setLastName(request.getLastName().trim());
+        newEmployee.setEmail(email);
+        newEmployee.setPassword(request.getPassword().trim());
+        newEmployee.setPhone(request.getPhone().trim());
+        newEmployee.setEmployeeCode(request.getEmployeeCode().trim());
+        newEmployee.setRole(UserRole.EMPLOYEE);
+        newEmployee.setDepartment(request.getDepartment() != null ? request.getDepartment().trim() : "General");
+        newEmployee.setDesignation(request.getDesignation() != null ? request.getDesignation().trim() : "Employee");
+        newEmployee.setNationality(request.getNationality() != null ? request.getNationality().trim() : "");
+        newEmployee.setEmergencyContactName(request.getEmergencyContactName() != null ? request.getEmergencyContactName().trim() : "");
+        newEmployee.setEmergencyContactPhone(request.getEmergencyContactPhone() != null ? request.getEmergencyContactPhone().trim() : "");
+
+        Employee saved = employeeRepo.save(newEmployee);
+
+        String rawToken = saved.getId() + ":" + saved.getEmail() + ":" + System.currentTimeMillis();
+        String token = "Bearer " + Base64.getEncoder().encodeToString(rawToken.getBytes());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new AuthResponse(token, saved, "Account created successfully! Welcome to CBG Enterprise.", false, saved.getEmail()));
+    }
+
+    /**
+     * Step 1: Validate Official Email and Passkey (for 1-Click Official Login)
      */
     @PostMapping("/login-step1")
     public ResponseEntity<?> loginStep1(@RequestBody AuthRequest request) {
@@ -57,7 +154,7 @@ public class AuthController {
     }
 
     /**
-     * Step 2: Validate 6-Digit 2FA Verification Code
+     * Step 2: Validate 6-Digit 2FA Verification Code (for 1-Click Official Login)
      */
     @PostMapping("/verify-2fa")
     public ResponseEntity<?> verify2FA(@RequestBody AuthRequest request) {
@@ -89,7 +186,7 @@ public class AuthController {
     }
 
     /**
-     * Direct Official Login (Direct 1-Click Authentication)
+     * Direct Official Login (1-Click Authentication — bypasses manual 2FA for testing)
      */
     @PostMapping("/login")
     public ResponseEntity<?> loginDirect(@RequestBody AuthRequest request) {

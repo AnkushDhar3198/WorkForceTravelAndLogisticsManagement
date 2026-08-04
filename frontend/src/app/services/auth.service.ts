@@ -11,6 +11,20 @@ export interface AuthResponse {
   email: string;
 }
 
+export interface SignupRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  employeeCode: string;
+  department: string;
+  designation: string;
+  nationality: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private baseUrl = 'http://localhost:8080/api/auth';
@@ -19,7 +33,7 @@ export class AuthService {
 
   private tokenSubject = new BehaviorSubject<string | null>(localStorage.getItem('auth_token'));
 
-  // 2FA state
+  // 2FA state (used only for 1-click official login)
   public step1Complete = false;
   public pendingEmail = '';
 
@@ -47,11 +61,37 @@ export class AuthService {
   }
 
   /**
-   * Step 1: Passkey Verification
+   * Employee Login (Email + Password) — No 2FA required
+   */
+  loginWithPassword(email: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/login-employee`, { email, password }).pipe(
+      tap((res: AuthResponse) => {
+        if (res && res.token) {
+          this.persistAuth(res);
+        }
+      })
+    );
+  }
+
+  /**
+   * Employee Signup
+   */
+  signup(data: SignupRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/signup`, data).pipe(
+      tap((res: AuthResponse) => {
+        if (res && res.token) {
+          this.persistAuth(res);
+        }
+      })
+    );
+  }
+
+  /**
+   * Step 1: Passkey Verification (for 1-click official login flow)
    */
   loginStep1(email: string, passkey: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login-step1`, { email, passkey }).pipe(
-      tap(res => {
+      tap((res: AuthResponse) => {
         if (res && res.requires2FA) {
           this.step1Complete = true;
           this.pendingEmail = res.email;
@@ -61,16 +101,13 @@ export class AuthService {
   }
 
   /**
-   * Step 2: 2FA Verification Code
+   * Step 2: 2FA Verification Code (for 1-click official login flow)
    */
   verify2FA(email: string, twoFactorCode: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/verify-2fa`, { email, twoFactorCode }).pipe(
-      tap(res => {
+      tap((res: AuthResponse) => {
         if (res && res.token) {
-          localStorage.setItem('auth_token', res.token);
-          localStorage.setItem('current_user', JSON.stringify(res.employee));
-          this.tokenSubject.next(res.token);
-          this.currentUserSubject.next(res.employee);
+          this.persistAuth(res);
           this.step1Complete = false;
           this.pendingEmail = '';
         }
@@ -79,16 +116,13 @@ export class AuthService {
   }
 
   /**
-   * Direct 1-Click Login for Official Testing
+   * Direct 1-Click Login (bypasses manual 2FA — for testing)
    */
   loginDirect(email: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, { email }).pipe(
-      tap(res => {
+      tap((res: AuthResponse) => {
         if (res && res.token) {
-          localStorage.setItem('auth_token', res.token);
-          localStorage.setItem('current_user', JSON.stringify(res.employee));
-          this.tokenSubject.next(res.token);
-          this.currentUserSubject.next(res.employee);
+          this.persistAuth(res);
           this.step1Complete = false;
           this.pendingEmail = '';
         }
@@ -106,7 +140,13 @@ export class AuthService {
   }
 
   hasRole(...roles: string[]): boolean {
-    const userRole = this.currentRole;
-    return roles.includes(userRole);
+    return roles.includes(this.currentRole);
+  }
+
+  private persistAuth(res: AuthResponse): void {
+    localStorage.setItem('auth_token', res.token);
+    localStorage.setItem('current_user', JSON.stringify(res.employee));
+    this.tokenSubject.next(res.token);
+    this.currentUserSubject.next(res.employee);
   }
 }
