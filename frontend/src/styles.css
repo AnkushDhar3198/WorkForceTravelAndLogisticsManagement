@@ -1530,160 +1530,539 @@ textarea.form-control { min-height: 80px; resize: vertical; }
 }
 
 /* ============================================
-   NEXT-GEN MOBILE & TABLET RESPONSIVE ENGINE
+   PIXEL-PERFECT MOBILE PHONE VIEW & RESPONSIVE ENGINE
    ============================================ */
 
-/* Tablet & Mobile Screens (<= 992px) */
+/* Simulated Phone Frame Container when forceMobile = true */
+body.force-mobile {
+  max-width: 430px !important;
+  margin: 24px auto !important;
+  border-radius: 44px !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 0 12px #1c1c1e, 0 0 0 14px rgba(255, 255, 255, 0.1) !important;
+  position: relative !important;
+  overflow-x: hidden !important;
+  min-height: 880px !important;
+  background: var(--bg-primary) !important;
+}
+
+/* Dynamic Island Notch for Phone View */
+body.force-mobile::before {
+  content: '';
+  position: fixed;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 26px;
+  background: #000000;
+  border-radius: 20px;
+  z-index: 999999;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+/* Tablet Screens (<= 992px) */
 @media screen and (max-width: 992px) {
   .landing-hero { padding: 40px 20px; text-align: center; }
-  .hero-title { font-size: 38px; line-height: 1.15; }
-  .hero-subtitle { font-size: 16px; max-width: 100%; }
+  .hero-title { font-size: 36px; line-height: 1.15; }
+  .hero-subtitle { font-size: 15px; max-width: 100%; }
   
   .features-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .analytics-grid { grid-template-columns: 1fr; gap: 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
-/* Mobile Devices (<= 768px) */
-@media screen and (max-width: 768px) {
-  /* Layout Containers */
-  body { font-size: 13.5px; overflow-x: hidden; }
-  .main-content { padding: 14px 10px; margin-left: 0 !important; width: 100% !important; }
-  
-  /* Navbar & Header */
-  .landing-nav { padding: 12px 14px; flex-wrap: wrap; gap: 10px; }
-  .landing-nav-links { display: none; }
-  .landing-nav-actions { width: 100%; justify-content: space-between; }
-  
+/* Combined Real Mobile Devices AND Force Mobile Toggle Mode */
+@media screen and (max-width: 768px), body.force-mobile {
+
+  /* Global Container Adjustments */
+  body, .landing-page, .app-container {
+    font-size: 13px !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .main-content {
+    padding: 12px 10px !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Header & Navigation Bar */
+  .landing-nav {
+    padding: 10px 12px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    height: auto !important;
+    min-height: 52px !important;
+  }
+  .landing-nav-links { display: none !important; }
+  .landing-nav-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
   .top-header, .main-header {
-    padding: 10px 12px; flex-wrap: wrap; gap: 10px; min-height: 56px;
+    padding: 10px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    min-height: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
-  .logo-area, .header-brand { font-size: 16px; }
+
+  .header-brand, .logo-area {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    font-size: 15px !important;
+  }
+
   .header-actions {
-    width: 100%; justify-content: flex-end; gap: 6px; flex-wrap: wrap;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 6px !important;
+    justify-content: space-between !important;
   }
-  .header-actions button, .header-actions .btn {
-    padding: 6px 10px; font-size: 12px; height: 36px;
+
+  .header-actions button, .header-actions .btn, .view-toggle {
+    flex: 1 1 calc(50% - 4px) !important;
+    height: 38px !important;
+    padding: 6px 8px !important;
+    font-size: 11.5px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
   }
-  
-  /* Mobile Sidebar Drawer */
+
+  /* Sidebar Drawer */
   .sidebar {
-    width: 84vw !important; max-width: 310px !important; z-index: 1000;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 84vw !important;
+    max-width: 320px !important;
+    z-index: 100000 !important;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.8) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
-  
-  /* Auth Cards & 1-Click Official Login */
+
+  .sidebar.open {
+    transform: translateX(0) !important;
+  }
+
+  /* Landing Page Hero & Features */
+  .landing-hero {
+    padding: 30px 14px !important;
+    text-align: center !important;
+  }
+  .hero-title {
+    font-size: 28px !important;
+    line-height: 1.2 !important;
+  }
+  .hero-subtitle {
+    font-size: 13.5px !important;
+    margin-top: 10px !important;
+  }
+  .hero-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+  .hero-actions button {
+    width: 100% !important;
+    height: 44px !important;
+  }
+  .features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Auth Cards & 1-Click Official Access */
   .auth-card, .signup-card, .landing-card {
-    width: 96% !important; max-width: 100% !important; margin: 16px auto;
-    padding: 18px 14px !important; border-radius: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 12px 0 !important;
+    padding: 16px 12px !important;
+    border-radius: 18px !important;
+    box-sizing: border-box !important;
   }
+
+  .official-access {
+    width: 100% !important;
+    margin-top: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .official-access-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    margin-bottom: 10px !important;
+    text-align: center !important;
+  }
+
   .official-grid {
-    grid-template-columns: 1fr !important; gap: 10px !important; width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
+
   .official-btn {
-    padding: 12px 14px !important; min-height: 52px !important;
-    text-align: left !important; display: flex !important; align-items: center !important;
-    justify-content: flex-start !important; border-radius: 14px !important;
+    width: 100% !important;
+    padding: 12px 14px !important;
+    min-height: 54px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+    border: 1px solid var(--border-subtle) !important;
+    background: rgba(255,255,255,0.04) !important;
   }
+
   .official-btn div {
-    display: flex; flex-direction: column; gap: 2px; text-align: left; width: 100%;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    text-align: left !important;
+    word-break: break-word !important;
   }
-  .off-role { margin-top: 2px; font-size: 11px; }
 
-  /* 2FA Code Input Modal */
+  .off-role {
+    font-size: 10.5px !important;
+    color: var(--text-tertiary) !important;
+    display: block !important;
+    margin-top: 1px !important;
+  }
+
+  /* 2FA Verification Card */
   .twofa-modal-card {
-    width: 95% !important; padding: 20px 14px !important; border-radius: 18px !important;
+    width: 100% !important;
+    padding: 18px 14px !important;
+    border-radius: 18px !important;
+    box-sizing: border-box !important;
   }
+
   .twofa-code-input {
-    letter-spacing: 6px !important; font-size: 20px !important; height: 48px !important;
+    width: 100% !important;
+    letter-spacing: 6px !important;
+    font-size: 20px !important;
+    height: 46px !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
   }
 
-  /* Weather Widget Mobile Optimization */
+  /* Weather Widget Phone View */
   .weather-widget-card {
-    padding: 14px 12px !important; border-radius: 18px !important; margin-bottom: 16px;
+    width: 100% !important;
+    padding: 14px 12px !important;
+    border-radius: 18px !important;
+    margin-bottom: 14px !important;
+    box-sizing: border-box !important;
   }
+
   .weather-header {
-    flex-direction: column !important; align-items: flex-start !important; gap: 10px !important;
-  }
-  .weather-location-select {
-    width: 100% !important; flex-wrap: wrap !important; gap: 8px !important;
-  }
-  .weather-select-dropdown, .weather-search-input {
-    width: 100% !important; font-size: 13px !important; height: 38px !important;
-  }
-  .weather-search-bar {
-    width: 100% !important; flex-wrap: wrap !important; gap: 6px !important;
-  }
-  .weather-search-bar input { flex: 1; min-width: 140px; }
-  .weather-search-bar button { height: 38px; }
-  .weather-main-row {
-    flex-direction: column !important; align-items: flex-start !important; gap: 10px !important;
-  }
-  .weather-temp-badge { font-size: 34px !important; }
-  .weather-metrics-grid {
-    grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; padding: 10px 12px !important;
-  }
-
-  /* Form & Modals */
-  .modal-container, .form-modal-card {
-    width: 95vw !important; max-width: 100% !important;
-    max-height: 90vh !important; padding: 16px 12px !important; border-radius: 20px !important;
-  }
-  .form-grid, .form-row, .modal-body {
-    grid-template-columns: 1fr !important; gap: 12px !important;
-  }
-  .modal-actions {
-    flex-direction: column-reverse !important; width: 100% !important; gap: 8px !important;
-  }
-  .modal-actions button, .modal-actions .btn {
-    width: 100% !important; height: 42px !important; font-size: 14px !important;
-  }
-
-  /* Tables & Responsive Scrolling */
-  .data-table-container {
-    overflow-x: auto !important; -webkit-overflow-scrolling: touch;
-    border-radius: 14px !important; margin: 10px 0;
-  }
-  .data-table { min-width: 600px !important; font-size: 12.5px !important; }
-  .data-table th, .data-table td { padding: 10px 8px !important; }
-
-  /* Toolbar Bar */
-  .toolbar-bar {
-    flex-direction: column !important; align-items: stretch !important; gap: 10px !important;
-  }
-  .toolbar-bar .search-input, .toolbar-bar select {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
     width: 100% !important;
   }
 
-  /* PDF & Document Modal */
-  .doc-modal-overlay { padding: 10px 6px !important; }
+  .weather-location-select {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .weather-select-dropdown {
+    width: 100% !important;
+    height: 40px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .weather-search-bar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .weather-search-bar input {
+    flex: 1 1 100% !important;
+    height: 40px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .weather-search-bar button, .weather-refresh-btn {
+    flex: 1 !important;
+    height: 38px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .weather-main-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .weather-temp-badge {
+    font-size: 32px !important;
+    font-weight: 800 !important;
+  }
+
+  .weather-metrics-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .weather-forecast-row {
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 4px !important;
+    width: 100% !important;
+  }
+
+  /* Toolbar & Search Bar */
+  .toolbar-bar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin-bottom: 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  .toolbar-bar .search-input, .toolbar-bar input, .toolbar-bar select {
+    width: 100% !important;
+    height: 40px !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+  }
+
+  .toolbar-bar button {
+    width: 100% !important;
+    height: 42px !important;
+    font-size: 13.5px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Dashboard Stats & Analytics Grids */
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .stat-card {
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .analytics-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+  }
+
+  .chart-card {
+    width: 100% !important;
+    padding: 14px 10px !important;
+    border-radius: 16px !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+  }
+
+  /* Data Tables (Requests, Expenses, Vendors, Shipments) */
+  .table-card, .data-table-container {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 16px !important;
+    margin: 10px 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .data-table {
+    min-width: 600px !important;
+    font-size: 12px !important;
+    width: 100% !important;
+  }
+
+  .data-table th, .data-table td {
+    padding: 10px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Modals & Category Form Inputs */
+  .modal-overlay {
+    padding: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 100000 !important;
+  }
+
+  .modal-container, .form-modal-card {
+    width: 96vw !important;
+    max-width: 440px !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    padding: 16px 12px !important;
+    border-radius: 20px !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
+  }
+
+  .form-grid, .form-row, .modal-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .form-group {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+  }
+
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100% !important;
+    height: 40px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .modal-actions {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    width: 100% !important;
+    gap: 8px !important;
+    margin-top: 14px !important;
+  }
+
+  .modal-actions button, .modal-actions .btn {
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+  }
+
+  /* PDF Preview & Document Viewport */
+  .doc-modal-overlay {
+    padding: 6px !important;
+    z-index: 100000 !important;
+  }
+
   .doc-modal-content {
-    width: 100% !important; max-height: 95vh !important; border-radius: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 95vh !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
   }
+
   .doc-toolbar {
-    padding: 10px !important; flex-wrap: wrap !important; justify-content: center !important; gap: 8px !important;
+    padding: 10px 6px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 6px !important;
   }
-  .doc-toolbar button { padding: 6px 10px !important; font-size: 12px !important; }
+
+  .doc-toolbar button {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+
+  .doc-viewport {
+    padding: 8px 4px !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: calc(95vh - 60px) !important;
+  }
+
   .doc-paper {
-    padding: 16px 12px !important; margin: 0 auto !important; max-width: 100% !important;
-    font-size: 12px !important; border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 14px 10px !important;
+    margin: 0 auto !important;
+    font-size: 11.5px !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+  }
+
+  .doc-grid-2, .doc-grid-3 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .popup-card {
+    width: 92% !important;
+    padding: 18px 14px !important;
+    border-radius: 20px !important;
   }
 }
 
 /* Extra Small Mobile Screens (<= 480px) */
 @media screen and (max-width: 480px) {
-  .hero-title { font-size: 28px !important; }
-  .hero-subtitle { font-size: 14px !important; }
+  .hero-title { font-size: 26px !important; }
+  .hero-subtitle { font-size: 13px !important; }
   .hero-actions { flex-direction: column; width: 100%; gap: 10px; }
   .hero-actions button { width: 100%; }
 
   .features-grid { grid-template-columns: 1fr !important; }
   .stats-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
   
-  .auth-title { font-size: 22px !important; }
-  .auth-subtitle { font-size: 12.5px !important; }
+  .auth-title { font-size: 20px !important; }
+  .auth-subtitle { font-size: 12px !important; }
   
-  .popup-card { width: 92% !important; padding: 18px 14px !important; }
+  .popup-card { width: 94% !important; padding: 16px 12px !important; }
 }
+
 
 
