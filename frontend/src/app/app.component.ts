@@ -88,6 +88,32 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   showDetailModal = false;
   selectedRequest: TravelRequest | null = null;
 
+  // ===== Next-Gen Document Preview & PDF Generation State =====
+  showDocPreviewModal = false;
+  docPreviewType: 'TRAVEL_ITINERARY' | 'EXPENSE_VOUCHER' | 'SHIPMENT_WAYBILL' = 'TRAVEL_ITINERARY';
+  docPreviewData: any = null;
+  docZoomLevel = 1.0;
+
+  openDocPreview(type: 'TRAVEL_ITINERARY' | 'EXPENSE_VOUCHER' | 'SHIPMENT_WAYBILL', item: any) {
+    this.docPreviewType = type;
+    this.docPreviewData = item;
+    this.docZoomLevel = 1.0;
+    this.showDocPreviewModal = true;
+  }
+
+  closeDocPreview() {
+    this.showDocPreviewModal = false;
+    this.docPreviewData = null;
+  }
+
+  zoomDoc(delta: number) {
+    this.docZoomLevel = Math.max(0.7, Math.min(1.4, this.docZoomLevel + delta));
+  }
+
+  printDocument() {
+    window.print();
+  }
+
   // Form States
   newRequest = {
     employeeId: null as number | null, destination: '', countryCode: '',

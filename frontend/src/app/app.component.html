@@ -853,7 +853,7 @@
         <div class="table-responsive">
           <table class="data-table">
             <thead>
-              <tr><th>ID</th><th>Traveler</th><th>Destination</th><th>Dates</th><th>Budget</th><th>Score</th><th>Status</th></tr>
+              <tr><th>ID</th><th>Traveler</th><th>Destination</th><th>Dates</th><th>Budget</th><th>Score</th><th>Status</th><th>Document PDF</th></tr>
             </thead>
             <tbody>
               <tr *ngFor="let req of filteredRequests" (click)="viewRequestDetail(req)">
@@ -869,6 +869,7 @@
                 <td style="font-weight:600;">{{formatCurrency(req.estimatedBudget)}}</td>
                 <td><span style="font-weight:700;" [style.color]="req.policyComplianceScore >= 80 ? 'var(--accent-green)' : 'var(--accent-orange)'">{{req.policyComplianceScore}}</span></td>
                 <td><span class="status-badge" [style.background]="getStatusColor(req.status)+'1a'" [style.color]="getStatusColor(req.status)"><span class="status-dot" [style.background]="getStatusColor(req.status)"></span>{{req.status.replace('_',' ')}}</span></td>
+                <td><button class="btn btn-sm btn-ghost" (click)="$event.stopPropagation(); openDocPreview('TRAVEL_ITINERARY', req)">📄 E-Ticket PDF</button></td>
               </tr>
             </tbody>
           </table>
@@ -925,9 +926,10 @@
           <div class="shipment-detail"><div class="label">Carrier</div><div class="value">{{s.shippingCarrier}}</div></div>
           <div class="shipment-detail"><div class="label">Delivery</div><div class="value">{{formatDate(s.targetDeliveryDate)}}</div></div>
         </div>
-        <div style="margin-top:14px; display:flex; gap:8px;" *ngIf="auth.currentRole === 'LOGISTICS_COORDINATOR'">
-          <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'IN_TRANSIT'" (click)="updateShipmentStatus(s, 'DELIVERED')">✓ Delivered</button>
-          <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'CUSTOMS_CLEARANCE'" (click)="updateShipmentStatus(s, 'IN_TRANSIT')">↪ Clear Customs</button>
+        <div style="margin-top:14px; display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-sm btn-ghost" (click)="openDocPreview('SHIPMENT_WAYBILL', s)">📄 Waybill Carnet PDF</button>
+          <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'IN_TRANSIT' && auth.currentRole === 'LOGISTICS_COORDINATOR'" (click)="updateShipmentStatus(s, 'DELIVERED')">✓ Delivered</button>
+          <button class="btn btn-sm btn-ghost" *ngIf="s.status === 'CUSTOMS_CLEARANCE' && auth.currentRole === 'LOGISTICS_COORDINATOR'" (click)="updateShipmentStatus(s, 'IN_TRANSIT')">↪ Clear Customs</button>
         </div>
       </div>
       <div class="card empty-state" *ngIf="filteredShipments.length === 0"><div class="empty-icon">📦</div><h4>No active shipments</h4></div>
@@ -950,9 +952,10 @@
           </div>
           <div class="expense-amount">{{formatCurrency(exp.amount)}}</div>
           <span class="status-badge" [style.background]="getStatusColor(exp.auditStatus)+'1a'" [style.color]="getStatusColor(exp.auditStatus)" style="margin-right:10px;">{{exp.auditStatus.replace('_',' ')}}</span>
-          <div style="display:flex; gap:6px;" *ngIf="exp.auditStatus === 'PENDING_AUDIT' && (auth.currentRole === 'FINANCE_ADMIN' || auth.currentRole === 'APPROVING_MANAGER')">
-            <button class="btn btn-sm btn-success" (click)="approveExpense(exp)">✓ Approve</button>
-            <button class="btn btn-sm btn-danger" (click)="flagExpense(exp)">⚑ Flag</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-sm btn-ghost" (click)="openDocPreview('EXPENSE_VOUCHER', exp)">📄 Receipt PDF</button>
+            <button class="btn btn-sm btn-success" *ngIf="exp.auditStatus === 'PENDING_AUDIT' && (auth.currentRole === 'FINANCE_ADMIN' || auth.currentRole === 'APPROVING_MANAGER')" (click)="approveExpense(exp)">✓ Approve</button>
+            <button class="btn btn-sm btn-danger" *ngIf="exp.auditStatus === 'PENDING_AUDIT' && (auth.currentRole === 'FINANCE_ADMIN' || auth.currentRole === 'APPROVING_MANAGER')" (click)="flagExpense(exp)">⚑ Flag</button>
           </div>
         </div>
       </div>
@@ -1095,6 +1098,9 @@
     <div style="font-size:13px; margin-bottom:10px;"><strong>Purpose:</strong> {{selectedRequest.purpose}}</div>
     <div style="font-size:13px; margin-bottom:10px;"><strong>Budget:</strong> {{formatCurrency(selectedRequest.estimatedBudget)}}</div>
     <div *ngIf="selectedRequest.policyViolations" style="padding:10px; background:rgba(255,69,58,0.1); color:var(--accent-red); border-radius:10px; margin-bottom:14px; font-size:12px;">⚠️ {{selectedRequest.policyViolations}}</div>
+    <div style="margin-bottom:14px;">
+      <button class="btn btn-sm btn-ghost" (click)="openDocPreview('TRAVEL_ITINERARY', selectedRequest); closeDetailModal()">📄 Generate Official PDF Pass</button>
+    </div>
     <div *ngIf="(selectedRequest.status === 'PENDING_APPROVAL' || selectedRequest.status === 'POLICY_VIOLATION') && (auth.currentRole === 'APPROVING_MANAGER' || auth.currentRole === 'MANAGER')">
       <div class="form-group"><label>Manager Remarks</label><textarea class="form-control" placeholder="Approval remarks..." [(ngModel)]="approvalRemarks"></textarea></div>
       <div class="modal-actions"><button class="btn btn-danger" (click)="rejectRequest()">Reject</button><button class="btn btn-success" (click)="approveRequest()">Approve</button></div>
@@ -1104,3 +1110,251 @@
     </div>
   </div>
 </div>
+
+<!-- NEXT-GEN DOCUMENT PREVIEW & PDF GENERATION MODAL -->
+<div class="doc-modal-overlay" *ngIf="showDocPreviewModal && docPreviewData">
+
+  <!-- Floating Glass Toolbar -->
+  <div class="doc-toolbar">
+    <div class="doc-toolbar-title">
+      <span style="font-size:20px;">📄</span>
+      <span>Document Preview</span>
+      <span class="doc-type-tag">{{docPreviewType.replace('_', ' ')}}</span>
+    </div>
+
+    <div class="doc-toolbar-actions">
+      <button class="btn btn-sm btn-ghost" (click)="zoomDoc(-0.1)">🔍 -</button>
+      <span style="font-size:12px; color:var(--text-secondary);">Zoom</span>
+      <button class="btn btn-sm btn-ghost" (click)="zoomDoc(0.1)">🔍 +</button>
+      <button class="btn btn-sm btn-primary" (click)="printDocument()">🖨️ Export PDF / Print</button>
+      <button class="btn btn-sm btn-danger" (click)="closeDocPreview()">✕ Close</button>
+    </div>
+  </div>
+
+  <!-- Document Viewport -->
+  <div class="doc-viewport">
+    <div class="doc-paper" [style.transform]="'scale(' + docZoomLevel + ')'">
+
+      <!-- 1. TRAVEL ITINERARY & E-TICKET DOCUMENT -->
+      <div *ngIf="docPreviewType === 'TRAVEL_ITINERARY'">
+        <div class="doc-header-row">
+          <div class="doc-logo-brand">
+            <div class="doc-logo-icon">✈</div>
+            <div>
+              <div class="doc-brand-title">CBG ENTERPRISE</div>
+              <div class="doc-brand-sub">Official Boarding Pass & Travel Authorization</div>
+            </div>
+          </div>
+          <div class="doc-meta-block">
+            <div class="doc-number">REQN-#00{{docPreviewData.id}}</div>
+            <div class="doc-date">Issued: {{formatDate(docPreviewData.createdAt || docPreviewData.startDate)}}</div>
+            <div class="doc-status-stamp" [ngClass]="docPreviewData.status.toLowerCase()">
+              {{docPreviewData.status.replace('_', ' ')}}
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-grid-2">
+          <div class="doc-section-box">
+            <div class="doc-section-title">Passenger / Traveler Profile</div>
+            <div class="doc-field-row"><span class="doc-field-label">Full Name:</span><span class="doc-field-val">{{docPreviewData.employee.fullName}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Employee Code:</span><span class="doc-field-val">{{docPreviewData.employee.employeeCode}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Department:</span><span class="doc-field-val">{{docPreviewData.employee.department}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Corporate Email:</span><span class="doc-field-val">{{docPreviewData.employee.email}}</span></div>
+          </div>
+
+          <div class="doc-section-box">
+            <div class="doc-section-title">Travel & Flight Logistics</div>
+            <div class="doc-field-row"><span class="doc-field-label">Destination:</span><span class="doc-field-val">{{docPreviewData.destination}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Travel Window:</span><span class="doc-field-val">{{formatDate(docPreviewData.startDate)}} — {{formatDate(docPreviewData.endDate)}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Cabin Class:</span><span class="doc-field-val">{{docPreviewData.flightClass}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Policy Compliance:</span><span class="doc-field-val" style="color:#16a34a;">{{docPreviewData.policyComplianceScore}}% Compliant</span></div>
+          </div>
+        </div>
+
+        <table class="doc-table">
+          <thead>
+            <tr><th>Line Item Description</th><th>Class / Category</th><th>Rate / Budget</th><th>Compliance Status</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Flight Requisition & Booking</strong><br><span style="font-size:11px; color:#6b7280;">Airfare to {{docPreviewData.destination}}</span></td>
+              <td>{{docPreviewData.flightClass}}</td>
+              <td>{{formatCurrency(docPreviewData.estimatedBudget * 0.6)}}</td>
+              <td><span style="color:#16a34a; font-weight:700;">✓ Approved</span></td>
+            </tr>
+            <tr>
+              <td><strong>Hotel Accommodation</strong><br><span style="font-size:11px; color:#6b7280;">Preferred Corporate Lodging</span></td>
+              <td>DAILY RATE</td>
+              <td>{{formatCurrency(docPreviewData.hotelDailyRate || 180)}}/night</td>
+              <td><span style="color:#16a34a; font-weight:700;">✓ Preferred Contract</span></td>
+            </tr>
+            <tr>
+              <td><strong>Per Diem Meal Allowance</strong><br><span style="font-size:11px; color:#6b7280;">Daily subsistence stipend</span></td>
+              <td>PER DIEM</td>
+              <td>{{formatCurrency(docPreviewData.mealAllowance || 50)}}/day</td>
+              <td><span style="color:#16a34a; font-weight:700;">✓ Standard Policy</span></td>
+            </tr>
+            <tr class="doc-total-row">
+              <td colspan="2">TOTAL ESTIMATED REQUISITION VALUE</td>
+              <td colspan="2">{{formatCurrency(docPreviewData.estimatedBudget)}}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; margin-bottom:28px;">
+          <div style="font-size:12px; font-weight:700; color:#15803d; margin-bottom:4px;">✓ Corporate Policy Compliance Certificate</div>
+          <div style="font-size:11px; color:#166534;">
+            This travel requisition has been evaluated by the T&E Policy Automated Engine. All booking parameters align with executive guidelines and advance reservation rules.
+          </div>
+        </div>
+
+        <div class="doc-security-footer">
+          <div class="doc-barcode-container">
+            <div class="doc-barcode-lines">
+              <span style="width:3px;"></span><span style="width:1px;"></span><span style="width:4px;"></span><span style="width:2px;"></span>
+              <span style="width:1px;"></span><span style="width:5px;"></span><span style="width:2px;"></span><span style="width:3px;"></span>
+              <span style="width:1px;"></span><span style="width:4px;"></span><span style="width:2px;"></span><span style="width:6px;"></span>
+              <span style="width:3px;"></span><span style="width:1px;"></span><span style="width:4px;"></span><span style="width:2px;"></span>
+            </div>
+            <div class="doc-barcode-text">*PNR-CBG-00{{docPreviewData.id}}-SEC*</div>
+          </div>
+          <div class="doc-seal-stamp">
+            OFFICIAL<br>CBG ENTERPRISE<br>VERIFIED PASS
+          </div>
+          <div class="doc-signature-block">
+            <div class="doc-sig-line"></div>
+            <div class="doc-sig-label">Authorized Signature<br>Executive Travel Directorate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. EXPENSE REIMBURSEMENT VOUCHER -->
+      <div *ngIf="docPreviewType === 'EXPENSE_VOUCHER'">
+        <div class="doc-header-row">
+          <div class="doc-logo-brand">
+            <div class="doc-logo-icon" style="background:linear-gradient(135deg, #30D158, #0A84FF);">💰</div>
+            <div>
+              <div class="doc-brand-title">CBG FINANCE DIRECTORATE</div>
+              <div class="doc-brand-sub">Expense Reimbursement & Audit Voucher</div>
+            </div>
+          </div>
+          <div class="doc-meta-block">
+            <div class="doc-number">EXP-CLAIM-#00{{docPreviewData.id}}</div>
+            <div class="doc-date">Claim Date: {{formatDate(docPreviewData.expenseDate)}}</div>
+            <div class="doc-status-stamp approved">
+              {{docPreviewData.auditStatus.replace('_', ' ')}}
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-grid-2">
+          <div class="doc-section-box">
+            <div class="doc-section-title">Claimant Information</div>
+            <div class="doc-field-row"><span class="doc-field-label">Employee Name:</span><span class="doc-field-val">{{docPreviewData.employee.fullName}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Employee ID:</span><span class="doc-field-val">{{docPreviewData.employee.employeeCode}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Department:</span><span class="doc-field-val">{{docPreviewData.employee.department}}</span></div>
+          </div>
+
+          <div class="doc-section-box">
+            <div class="doc-section-title">OCR Receipt Audit Data</div>
+            <div class="doc-field-row"><span class="doc-field-label">Vendor Name:</span><span class="doc-field-val">{{docPreviewData.vendorName}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Category:</span><span class="doc-field-val">{{docPreviewData.category}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">OCR Scan Confidence:</span><span class="doc-field-val" style="color:#0284c7;">{{docPreviewData.ocrConfidence || 97.5}}% Match</span></div>
+          </div>
+        </div>
+
+        <table class="doc-table">
+          <thead>
+            <tr><th>Receipt Document</th><th>Category</th><th>Expense Date</th><th>Amount</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>{{docPreviewData.receiptFileName || 'scanned_receipt.pdf'}}</strong><br><span style="font-size:11px; color:#6b7280;">Digital receipt archive #{{docPreviewData.id}}</span></td>
+              <td>{{docPreviewData.category}}</td>
+              <td>{{formatDate(docPreviewData.expenseDate)}}</td>
+              <td>{{formatCurrency(docPreviewData.amount)}} {{docPreviewData.currency}}</td>
+            </tr>
+            <tr class="doc-total-row">
+              <td colspan="3">CLEARED REIMBURSEMENT PAYOUT AMOUNT</td>
+              <td>{{formatCurrency(docPreviewData.amount)}} USD</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="doc-security-footer">
+          <div class="doc-barcode-container">
+            <div class="doc-barcode-lines">
+              <span style="width:2px;"></span><span style="width:3px;"></span><span style="width:1px;"></span><span style="width:4px;"></span>
+              <span style="width:2px;"></span><span style="width:2px;"></span><span style="width:5px;"></span><span style="width:1px;"></span>
+            </div>
+            <div class="doc-barcode-text">*PAYOUT-FIN-00{{docPreviewData.id}}*</div>
+          </div>
+          <div class="doc-seal-stamp" style="border-color:#16a34a; color:#16a34a;">
+            AUDITED & APPROVED<br>FINANCE PAYOUT<br>CLEARED
+          </div>
+          <div class="doc-signature-block">
+            <div class="doc-sig-line"></div>
+            <div class="doc-sig-label">Finance Controller Signature<br>Accounts Payable Division</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. SHIPMENT WAYBILL & CUSTOMS CARNET -->
+      <div *ngIf="docPreviewType === 'SHIPMENT_WAYBILL'">
+        <div class="doc-header-row">
+          <div class="doc-logo-brand">
+            <div class="doc-logo-icon" style="background:linear-gradient(135deg, #FF9F0A, #BF5AF2);">📦</div>
+            <div>
+              <div class="doc-brand-title">CBG GLOBAL LOGISTICS</div>
+              <div class="doc-brand-sub">International Waybill & Customs Carnet</div>
+            </div>
+          </div>
+          <div class="doc-meta-block">
+            <div class="doc-number">{{docPreviewData.trackingCode}}</div>
+            <div class="doc-date">Dispatch Date: {{formatDate(docPreviewData.targetDeliveryDate)}}</div>
+            <div class="doc-status-stamp in_transit">
+              {{docPreviewData.status.replace('_', ' ')}}
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-grid-2">
+          <div class="doc-section-box">
+            <div class="doc-section-title">Cargo & Asset Profile</div>
+            <div class="doc-field-row"><span class="doc-field-label">Asset Name:</span><span class="doc-field-val">{{docPreviewData.assetName}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Serial Number:</span><span class="doc-field-val">{{docPreviewData.serialNumber}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Gross Weight:</span><span class="doc-field-val">{{docPreviewData.weightKg || 5.0}} kg</span></div>
+          </div>
+
+          <div class="doc-section-box">
+            <div class="doc-section-title">3PL Carrier & Transit Destination</div>
+            <div class="doc-field-row"><span class="doc-field-label">Carrier:</span><span class="doc-field-val">{{docPreviewData.shippingCarrier}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Destination Venue:</span><span class="doc-field-val">{{docPreviewData.destinationVenue}}</span></div>
+            <div class="doc-field-row"><span class="doc-field-label">Synced Personnel:</span><span class="doc-field-val">{{docPreviewData.syncedEmployee?.fullName || 'Synced with traveler'}}</span></div>
+          </div>
+        </div>
+
+        <div class="doc-security-footer">
+          <div class="doc-barcode-container">
+            <div class="doc-barcode-lines" style="height:46px;">
+              <span style="width:4px;"></span><span style="width:1px;"></span><span style="width:3px;"></span><span style="width:2px;"></span>
+              <span style="width:5px;"></span><span style="width:2px;"></span><span style="width:4px;"></span><span style="width:1px;"></span>
+              <span style="width:3px;"></span><span style="width:2px;"></span><span style="width:6px;"></span><span style="width:2px;"></span>
+            </div>
+            <div class="doc-barcode-text">*{{docPreviewData.trackingCode}}*</div>
+          </div>
+          <div class="doc-seal-stamp" style="border-color:#2563eb; color:#2563eb;">
+            CUSTOMS CLEARED<br>CARNET VALIDATED<br>EXPRESS CARGO
+          </div>
+          <div class="doc-signature-block">
+            <div class="doc-sig-line"></div>
+            <div class="doc-sig-label">Logistics Dispatch Officer<br>Global Cargo Operations</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
