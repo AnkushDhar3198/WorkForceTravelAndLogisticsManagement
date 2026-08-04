@@ -49,23 +49,51 @@ export class WeatherService {
     'toronto': { lat: 43.6532, lon: -79.3832, country: 'Canada' },
     'chicago': { lat: 41.8781, lon: -87.6298, country: 'United States' },
     'los angeles': { lat: 34.0522, lon: -118.2437, country: 'United States' },
-    'seoul': { lat: 37.5665, lon: 126.9780, country: 'South Korea' }
+    'miami': { lat: 25.7617, lon: -80.1918, country: 'United States' },
+    'seoul': { lat: 37.5665, lon: 126.9780, country: 'South Korea' },
+    'beijing': { lat: 39.9042, lon: 116.4074, country: 'China' },
+    'shanghai': { lat: 31.2304, lon: 121.4737, country: 'China' },
+    'hong kong': { lat: 22.3193, lon: 114.1694, country: 'China' },
+    'bangkok': { lat: 13.7563, lon: 100.5018, country: 'Thailand' },
+    'amsterdam': { lat: 52.3676, lon: 4.9041, country: 'Netherlands' },
+    'rome': { lat: 41.9028, lon: 12.4964, country: 'Italy' },
+    'madrid': { lat: 40.4168, lon: -3.7038, country: 'Spain' },
+    'barcelona': { lat: 41.3851, lon: 2.1734, country: 'Spain' },
+    'vienna': { lat: 48.2082, lon: 16.3738, country: 'Austria' },
+    'prague': { lat: 50.0755, lon: 14.4378, country: 'Czech Republic' },
+    'dublin': { lat: 53.3498, lon: -6.2603, country: 'Ireland' },
+    'stockholm': { lat: 59.3293, lon: 18.0686, country: 'Sweden' },
+    'copenhagen': { lat: 55.6761, lon: 12.5683, country: 'Denmark' },
+    'cairo': { lat: 30.0444, lon: 31.2357, country: 'Egypt' },
+    'rio de janeiro': { lat: -22.9068, lon: -43.1729, country: 'Brazil' },
+    'sao paulo': { lat: -23.5505, lon: -46.6333, country: 'Brazil' },
+    'buenos aires': { lat: -34.6037, lon: -58.3816, country: 'Argentina' },
+    'mexico city': { lat: 19.4326, lon: -99.1332, country: 'Mexico' },
+    'melbourne': { lat: -37.8136, lon: 144.9631, country: 'Australia' },
+    'vancouver': { lat: 49.2827, lon: -123.1207, country: 'Canada' },
+    'seattle': { lat: 47.6062, lon: -122.3321, country: 'United States' }
   };
 
   constructor(private http: HttpClient) {}
 
   getLiveWeather(destination: string): Observable<LiveDestinationWeather> {
     const rawCity = (destination || 'Tokyo').trim();
-    const cleanCity = rawCity.split(',')[0].trim();
-    const cityKey = cleanCity.toLowerCase();
-    const preset = this.cityCoords[cityKey];
+    // 1. Clean query for geocoding search
+    let primarySearch = rawCity;
+    if (rawCity.includes(',')) {
+      primarySearch = rawCity.split(',')[0].trim();
+    }
+
+    const key = primarySearch.toLowerCase();
+    const preset = this.cityCoords[key];
 
     if (preset) {
       return this.fetchForecastData(preset.lat, preset.lon, rawCity, preset.country);
     }
 
-    // Geocode ANY destination city worldwide
-    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanCity)}&count=1&language=en&format=json`;
+    // 2. Geocode ANY city using Open-Meteo Geocoding API
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(primarySearch)}&count=5&language=en&format=json`;
+    
     return this.http.get<any>(geoUrl).pipe(
       switchMap(geo => {
         if (geo?.results && geo.results.length > 0) {
@@ -73,6 +101,23 @@ export class WeatherService {
           const countryStr = res.country || (rawCity.includes(',') ? rawCity.split(',')[1].trim() : 'Global');
           return this.fetchForecastData(res.latitude, res.longitude, rawCity, countryStr);
         }
+        
+        // 3. Fallback: try first single word (e.g. "Paris" if "Paris France" was entered)
+        const firstWord = primarySearch.split(' ')[0].trim();
+        if (firstWord && firstWord !== primarySearch) {
+          const fallbackUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(firstWord)}&count=5&language=en&format=json`;
+          return this.http.get<any>(fallbackUrl).pipe(
+            switchMap(geo2 => {
+              if (geo2?.results && geo2.results.length > 0) {
+                const res2 = geo2.results[0];
+                return this.fetchForecastData(res2.latitude, res2.longitude, rawCity, res2.country || 'Global');
+              }
+              return this.fetchForecastData(35.6762, 139.6503, rawCity, 'Global');
+            }),
+            catchError(() => this.fetchForecastData(35.6762, 139.6503, rawCity, 'Global'))
+          );
+        }
+
         return this.fetchForecastData(35.6762, 139.6503, rawCity, 'Global');
       }),
       catchError(() => {
@@ -120,7 +165,7 @@ export class WeatherService {
           });
         }
 
-        // Standardize city display name (strip redundant country if already present in cityName)
+        // Standardize city & country display strings
         let displayCity = cityName;
         let displayCountry = countryName;
         if (cityName.includes(',')) {
