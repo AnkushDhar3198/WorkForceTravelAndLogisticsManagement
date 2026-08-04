@@ -7,16 +7,24 @@ services:
     name: workforce-travel-backend
     env: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     plan: free
     region: singapore
     envVars:
       - key: PORT
         value: 8080
       - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://workforce-travel-db/workforce_travel
+      - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: workforce-travel-db
-          property: connectionString
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: workforce-travel-db
+          property: password
+      - key: SPRING_DATASOURCE_DRIVER
+        value: org.postgresql.Driver
       - key: SPRING_JPA_DIALECT
         value: org.hibernate.dialect.PostgreSQLDialect
 
