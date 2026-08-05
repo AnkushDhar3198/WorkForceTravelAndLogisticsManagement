@@ -19,6 +19,8 @@ import com.cbg.travel.service.AuditService;
 import java.time.LocalDateTime;
 import java.util.Random;
 
+import com.cbg.travel.service.SmsService;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
@@ -27,13 +29,16 @@ public class AuthController {
     private final EmployeeRepository employeeRepo;
     private final NotificationRepository notificationRepo;
     private final AuditService auditService;
+    private final SmsService smsService;
 
     public AuthController(EmployeeRepository employeeRepo,
                           NotificationRepository notificationRepo,
-                          AuditService auditService) {
+                          AuditService auditService,
+                          SmsService smsService) {
         this.employeeRepo = employeeRepo;
         this.notificationRepo = notificationRepo;
         this.auditService = auditService;
+        this.smsService = smsService;
     }
 
     /**
@@ -72,7 +77,9 @@ public class AuthController {
             employee.setPhoneOtpExpiry(LocalDateTime.now().plusMinutes(5));
             employeeRepo.save(employee);
 
-            // Dispatch SMS OTP Notification
+            // Dispatch Cellular SMS OTP & System Notification
+            smsService.sendSms(employee.getPhone(), "CBG Enterprise Security: Your 6-digit verification code for " + employee.getPhone() + " is " + otp + ". Valid for 5 min.");
+
             Notification notification = new Notification();
             notification.setTitle("📲 Mandatory 2FA Login OTP");
             notification.setMessage("A 6-digit 2FA SMS OTP code was dispatched to your mobile phone (" + employee.getPhone() + "). Valid for 5 minutes.");
@@ -120,6 +127,8 @@ public class AuthController {
         employee.setPhoneOtp(otp);
         employee.setPhoneOtpExpiry(LocalDateTime.now().plusMinutes(5));
         employeeRepo.save(employee);
+
+        smsService.sendSms(employee.getPhone(), "CBG Enterprise Security: Your 6-digit login verification code for " + employee.getPhone() + " is " + otp + ". Valid for 5 min.");
 
         Notification notification = new Notification();
         notification.setTitle("📲 SMS Login OTP Dispatched");
@@ -281,6 +290,8 @@ public class AuthController {
         employee.setPhoneOtp(otp);
         employee.setPhoneOtpExpiry(LocalDateTime.now().plusMinutes(5));
         employeeRepo.save(employee);
+
+        smsService.sendSms(employee.getPhone(), "CBG Enterprise Security: Your 6-digit 2FA login verification code for " + employee.getPhone() + " is " + otp + ". Valid for 5 min.");
 
         // Dispatch SMS OTP System Notification
         Notification notification = new Notification();
