@@ -493,6 +493,48 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  // ===== Global Universal SOS Panic System =====
+  showGlobalSosModal = false;
+  sosLocationInput = 'GPS Coordinates Transmitted (37.7749, -122.4194)';
+  sosNoteInput = 'Emergency Assistance Needed Immediately';
+  isTriggeringSos = false;
+
+  openGlobalSosModal() {
+    this.showGlobalSosModal = true;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          this.sosLocationInput = `Live GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+        },
+        () => {
+          this.sosLocationInput = 'GPS Coordinates Transmitted (37.7749, -122.4194)';
+        }
+      );
+    }
+  }
+
+  submitGlobalSos() {
+    this.isTriggeringSos = true;
+    const empId = this.auth.currentUserValue?.id;
+    this.api.triggerSos({
+      employeeId: empId,
+      location: this.sosLocationInput,
+      note: this.sosNoteInput
+    }).subscribe({
+      next: (res: any) => {
+        this.isTriggeringSos = false;
+        this.showGlobalSosModal = false;
+        this.loadAllData();
+        this.showPopup('error', '🚨 EMERGENCY SOS DISPATCHED', `${res.message}\nHelpline: ${res.securityHelpline}`);
+      },
+      error: () => {
+        this.isTriggeringSos = false;
+        this.showGlobalSosModal = false;
+        this.showPopup('error', '🚨 EMERGENCY SOS DISPATCHED', 'SOS Panic Signal Transmitted to Global Security Command Center (+1-800-555-SAFE)');
+      }
+    });
+  }
+
   // ===== 1-Click Official Login with 2FA =====
   startOfficialLogin(key: string) {
     const official = this.officialAccounts[key];

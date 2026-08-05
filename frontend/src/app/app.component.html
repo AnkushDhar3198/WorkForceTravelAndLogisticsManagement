@@ -465,6 +465,9 @@
       <button class="view-toggle" [class.active]="forceMobile" (click)="toggleViewMode()">
         {{forceMobile ? '🖥️ Desktop' : '📱 Phone'}}
       </button>
+      <button class="btn btn-sm btn-danger pulse-anim" (click)="openGlobalSosModal()" style="background:#ff3b30; color:white; border-radius:100px; padding:5px 12px; font-weight:800; box-shadow:0 0 12px rgba(255,59,48,0.5);">
+        <span style="margin-right:4px;">🚨</span> SOS PANIC
+      </button>
       <button class="btn btn-sm btn-ghost" (click)="openPhoneOtpModal()">
         <span style="font-size:14px; margin-right:4px;">📲</span> {{auth.currentUserValue?.phoneVerified ? 'Phone Verified ✓' : 'Verify SMS OTP'}}
       </button>
@@ -1466,6 +1469,54 @@
 <!-- ============================================
      MODALS
      ============================================ -->
+
+<!-- GLOBAL SOS PANIC EMERGENCY MODAL -->
+<div class="modal-overlay" *ngIf="showGlobalSosModal" (click)="showGlobalSosModal = false">
+  <div class="modal-content" style="max-width:480px; border:2px solid #ff3b30;" (click)="$event.stopPropagation()">
+    <div class="modal-header" style="border-bottom:1px solid rgba(255,59,48,0.3); padding-bottom:12px;">
+      <h3 style="color:#ff3b30; display:flex; align-items:center; gap:8px;">
+        <span class="spin-anim" style="font-size:22px;">🚨</span> GLOBAL SOS EMERGENCY DISPATCH
+      </h3>
+      <button class="modal-close" (click)="showGlobalSosModal = false">✕</button>
+    </div>
+
+    <div style="background:rgba(255,59,48,0.1); border:1px solid rgba(255,59,48,0.3); border-radius:12px; padding:14px; margin-bottom:16px;">
+      <div style="font-size:13px; font-weight:800; color:#ff3b30; margin-bottom:4px;">⚠️ HIGH PRIORITY EMERGENCY ALARM</div>
+      <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
+        Triggering this panic alarm instantly dispatches your live GPS location to CBG Global Security Command Center, Risk Officers, and local emergency response teams.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Your Live GPS Location / Coordinates</label>
+      <input class="form-control" type="text" [(ngModel)]="sosLocationInput" readonly style="background:var(--bg-tertiary); font-weight:700; color:var(--accent-blue);">
+    </div>
+
+    <div class="form-group">
+      <label>Emergency Situation / Note (Optional)</label>
+      <textarea class="form-control" rows="2" placeholder="Describe emergency, e.g. medical distress, transport failure, extreme weather..." [(ngModel)]="sosNoteInput"></textarea>
+    </div>
+
+    <div style="background:var(--bg-tertiary); border:1px solid var(--border-subtle); border-radius:12px; padding:12px; font-size:12px; margin-bottom:16px;">
+      <div style="font-weight:700; color:var(--text-primary); margin-bottom:6px;">Direct Emergency Contacts:</div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Corporate 24/7 Security:</span>
+        <strong style="color:var(--accent-green); font-family:monospace;">+1-800-555-SAFE (7233)</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:var(--text-secondary);">Local First Responders:</span>
+        <strong style="color:#ff3b30; font-family:monospace;">911 (US/CA) / 112 (EU/Asia)</strong>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showGlobalSosModal = false">Cancel</button>
+      <button class="btn btn-danger" (click)="submitGlobalSos()" [disabled]="isTriggeringSos" style="background:#ff3b30; color:white; font-weight:800; padding:10px 20px;">
+        {{isTriggeringSos ? 'Transmitting SOS...' : '🚨 TRANSMIT SOS PANIC SIGNAL'}}
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- PHONE SMS OTP VERIFICATION MODAL -->
 <div class="modal-overlay" *ngIf="showPhoneOtpModal" (click)="showPhoneOtpModal = false">

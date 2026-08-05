@@ -287,7 +287,7 @@ export class ApiService {
   }
 
   triggerSos(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/risk/sos`, payload);
+    return this.http.post(`${this.baseUrl}/sos/trigger`, payload);
   }
 
   // Expenses (US-14, US-15, US-16)
@@ -378,6 +378,15 @@ export class ApiService {
 
   clearReadNotifications(): Observable<any> {
     return this.http.delete(`${this.baseUrl}/notifications/clear`);
+  }
+
+  // Mandatory Phone SMS Login OTP
+  sendLoginPhoneOtp(phone: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/send-phone-login-otp`, { phone });
+  }
+
+  verifyLoginPhoneOtp(phone: string, otp: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/verify-phone-login-otp`, { phone, otp });
   }
 
   // Reimbursements (US-17)
