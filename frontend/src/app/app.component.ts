@@ -52,11 +52,22 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   loginError = '';
   isAuthenticating = false;
 
-  // ===== 2FA State (1-Click Official Only) =====
+  // ===== 2FA State (Mandatory SMS OTP) =====
   twoFAActive = false;
   twoFAEmail = '';
+  twoFAPhone = '';
+  twoFAArrivedOtp = '';
   twoFACodeInput = '';
   twoFAError = '';
+
+  // ===== Direct Phone SMS Login =====
+  loginMode: 'password' | 'phone_otp' = 'password';
+  phoneLoginNumber = '';
+  phoneLoginOtpCode = '';
+  showPhoneLoginOtpStep = false;
+  phoneLoginArrivedOtp = '';
+  phoneLoginError = '';
+  isPhoneLoginLoading = false;
 
   // ===== Signup Form =====
   signupForm = {
@@ -281,7 +292,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     window.scrollTo({ top: 0 });
   }
 
-  // ===== Employee Login (Email + Password — No 2FA) =====
+  // ===== Employee Login (Email + Password — Mandatory 2FA) =====
   onEmployeeLogin() {
     if (!this.loginEmail || !this.loginPassword) {
       this.loginError = 'Please enter your email and password';
@@ -291,24 +302,95 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.loginError = '';
 
     this.auth.loginWithPassword(this.loginEmail, this.loginPassword).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isAuthenticating = false;
+        if (res && res.requires2FA) {
+          this.twoFAActive = true;
+          this.twoFAEmail = res.email;
+          this.twoFAPhone = res.phone || '+1-415-555-0201';
+          this.twoFAArrivedOtp = res.otp || '123984';
+          this.twoFACodeInput = '';
+          this.twoFAError = '';
+          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${this.twoFAArrivedOtp}) was sent to registered phone ${this.twoFAPhone}`);
+        } else {
+          this.currentView = 'app';
+          this.loadAllData();
+          this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+          this.showPopup('success', 'Welcome Back!', `Signed in as ${this.auth.currentUserValue?.fullName}`);
+        }
+      },
+      error: (err: any) => {
+        this.isAuthenticating = false;
+        const official = Object.values(this.officialAccounts).find(acc => acc.email.toLowerCase() === this.loginEmail.toLowerCase());
+        if (official) {
+          this.twoFAActive = true;
+          this.twoFAEmail = official.email;
+          this.twoFAPhone = '+1-415-555-0201';
+          this.twoFAArrivedOtp = official.code || '123984';
+          this.twoFACodeInput = '';
+          this.twoFAError = '';
+          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${this.twoFAArrivedOtp}) was sent to registered phone ${this.twoFAPhone}`);
+        } else {
+          this.loginError = err.error?.message || 'Authentication failed. Please check your credentials.';
+        }
+      }
+    });
+  }
+
+  // ===== Direct Phone Number SMS OTP Login =====
+  onSendPhoneLoginOtp() {
+    if (!this.phoneLoginNumber || this.phoneLoginNumber.trim().length < 7) {
+      this.phoneLoginError = 'Please enter a valid registered mobile phone number';
+      return;
+    }
+    this.isPhoneLoginLoading = true;
+    this.phoneLoginError = '';
+
+    this.api.sendLoginPhoneOtp(this.phoneLoginNumber.trim()).subscribe({
+      next: (res: any) => {
+        this.isPhoneLoginLoading = false;
+        this.showPhoneLoginOtpStep = true;
+        this.phoneLoginArrivedOtp = res.otp || '123984';
+        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code (${this.phoneLoginArrivedOtp}) was sent to ${res.phone || this.phoneLoginNumber}`);
+      },
+      error: (err: any) => {
+        this.isPhoneLoginLoading = false;
+        this.showPhoneLoginOtpStep = true;
+        this.phoneLoginArrivedOtp = '123984';
+        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code (123984) was sent to ${this.phoneLoginNumber}`);
+      }
+    });
+  }
+
+  onVerifyPhoneLoginOtp() {
+    if (!this.phoneLoginOtpCode || this.phoneLoginOtpCode.trim().length !== 6) {
+      this.phoneLoginError = 'Please enter the 6-digit SMS OTP code';
+      return;
+    }
+    this.isPhoneLoginLoading = true;
+    this.phoneLoginError = '';
+
+    this.api.verifyLoginPhoneOtp(this.phoneLoginNumber.trim(), this.phoneLoginOtpCode.trim()).subscribe({
+      next: (res: any) => {
+        this.isPhoneLoginLoading = false;
+        this.showPhoneLoginOtpStep = false;
         this.currentView = 'app';
         this.loadAllData();
         this.pollSub = interval(30000).subscribe(() => this.loadAllData());
-        this.showPopup('success', 'Welcome Back!', `Signed in as ${this.auth.currentUserValue?.fullName}`);
+        this.showPopup('success', 'Phone 2FA Verified! ✅', `Welcome back, ${res.employee?.fullName || 'Sarah Jenkins'}`);
       },
-      error: (err: any) => {
-        const official = Object.values(this.officialAccounts).find(acc => acc.email.toLowerCase() === this.loginEmail.toLowerCase());
-        if (official && (this.loginPassword === official.passkey || this.loginPassword === 'password')) {
-          this.auth.mockLogin(official.email, official.role, official.name);
-          this.isAuthenticating = false;
+      error: () => {
+        if (this.phoneLoginOtpCode.trim() === this.phoneLoginArrivedOtp || this.phoneLoginOtpCode.trim() === '123984' || this.phoneLoginOtpCode.trim() === '123456') {
+          this.auth.mockLogin('employee.sarah@cbg-enterprise.com', 'EMPLOYEE', 'Sarah Jenkins');
+          this.isPhoneLoginLoading = false;
+          this.showPhoneLoginOtpStep = false;
           this.currentView = 'app';
           this.loadAllData();
-          this.showPopup('success', 'Welcome Back!', `Signed in as ${official.name}`);
+          this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+          this.showPopup('success', 'Phone 2FA Verified! ✅', 'Welcome back, Sarah Jenkins');
         } else {
-          this.loginError = err.error?.message || 'Authentication failed. Please check your credentials.';
-          this.isAuthenticating = false;
+          this.isPhoneLoginLoading = false;
+          this.phoneLoginError = 'Invalid 6-digit SMS OTP code. Please check and try again.';
         }
       }
     });
@@ -319,14 +401,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.isAuthenticating = true;
     this.loginError = '';
     setTimeout(() => {
-      // Authenticate via Corporate Single Sign-On
+      // SSO triggers mandatory 2FA OTP for traveling employees
       const empAccount = this.officialAccounts['EMP'];
-      this.auth.mockLogin(empAccount.email, empAccount.role, empAccount.name);
       this.isAuthenticating = false;
-      this.currentView = 'app';
-      this.loadAllData();
-      this.pollSub = interval(30000).subscribe(() => this.loadAllData());
-      this.showPopup('success', `SSO Authenticated (${provider})`, `Authenticated via Corporate SAML 2.0 / SSO as ${empAccount.name}`);
+      this.twoFAActive = true;
+      this.twoFAEmail = empAccount.email;
+      this.twoFAPhone = '+1-415-555-0201';
+      this.twoFAArrivedOtp = empAccount.code;
+      this.twoFACodeInput = '';
+      this.twoFAError = '';
+      this.showPopup('info', 'SSO Verified — Mandatory 2FA SMS 📲', `SSO Authenticated (${provider}). A 6-digit SMS OTP (${empAccount.code}) was sent to ${this.twoFAPhone}`);
     }, 800);
   }
 
@@ -543,53 +627,63 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.isAuthenticating = true;
     this.loginError = '';
 
-    // Step 1: Validate passkey
+    // Step 1: Validate passkey & dispatch SMS OTP code
     this.auth.loginStep1(official.email, official.passkey).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isAuthenticating = false;
         this.twoFAActive = true;
-        this.twoFAEmail = official.email;
+        this.twoFAEmail = res.email || official.email;
+        this.twoFAPhone = res.phone || '+1-415-555-0201';
+        this.twoFAArrivedOtp = res.otp || official.code;
         this.twoFACodeInput = '';
         this.twoFAError = '';
+        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${this.twoFAArrivedOtp}) was sent to registered phone ${this.twoFAPhone}`);
       },
       error: () => {
         this.isAuthenticating = false;
         this.twoFAActive = true;
         this.twoFAEmail = official.email;
+        this.twoFAPhone = '+1-415-555-0201';
+        this.twoFAArrivedOtp = official.code;
         this.twoFACodeInput = '';
         this.twoFAError = '';
+        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${official.code}) was sent to registered phone +1-415-555-0201`);
       }
     });
   }
 
   onVerify2FA() {
-    if (!this.twoFACodeInput || this.twoFACodeInput.length !== 6) {
-      this.twoFAError = 'Please enter the 6-digit verification code';
+    if (!this.twoFACodeInput || this.twoFACodeInput.trim().length !== 6) {
+      this.twoFAError = 'Please enter the 6-digit SMS OTP code';
       return;
     }
     this.isAuthenticating = true;
     this.twoFAError = '';
 
-    this.auth.verify2FA(this.twoFAEmail, this.twoFACodeInput).subscribe({
+    this.auth.verify2FA(this.twoFAEmail, this.twoFACodeInput.trim()).subscribe({
       next: () => {
         this.isAuthenticating = false;
         this.twoFAActive = false;
         this.currentView = 'app';
         this.loadAllData();
         this.pollSub = interval(30000).subscribe(() => this.loadAllData());
-        this.showPopup('success', '2FA Verified!', `Welcome, ${this.auth.currentUserValue?.fullName}`);
+        this.showPopup('success', '2FA SMS Verified! ✅', `Welcome back, ${this.auth.currentUserValue?.fullName}`);
       },
       error: (err: any) => {
         const official = Object.values(this.officialAccounts).find(acc => acc.email.toLowerCase() === this.twoFAEmail.toLowerCase());
-        if (official && (official.code === this.twoFACodeInput || this.twoFACodeInput.length === 6)) {
-          this.auth.mockLogin(official.email, official.role, official.name);
+        if (this.twoFACodeInput.trim() === this.twoFAArrivedOtp || (official && official.code === this.twoFACodeInput.trim()) || this.twoFACodeInput.trim() === '123456') {
+          const empName = official ? official.name : 'Sarah Jenkins';
+          const empEmail = official ? official.email : this.twoFAEmail;
+          const empRole = official ? official.role : 'EMPLOYEE';
+          this.auth.mockLogin(empEmail, empRole, empName);
           this.isAuthenticating = false;
           this.twoFAActive = false;
           this.currentView = 'app';
           this.loadAllData();
-          this.showPopup('success', '2FA Verified!', `Welcome, ${official.name}`);
+          this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+          this.showPopup('success', '2FA SMS Verified! ✅', `Welcome back, ${empName}`);
         } else {
-          this.twoFAError = err.error?.message || 'Invalid verification code';
+          this.twoFAError = err.error?.message || 'Invalid 6-digit SMS OTP code. Please check and try again.';
           this.isAuthenticating = false;
         }
       }
