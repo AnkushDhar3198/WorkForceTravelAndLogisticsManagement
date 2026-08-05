@@ -632,6 +632,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.auth.step1Complete = false;
   }
 
+  autoFillTwoFA() {
+    this.twoFACodeInput = this.twoFAArrivedOtp || '123984';
+    this.twoFAError = '';
+    this.showPopup('success', 'SMS OTP Auto-Filled ⚡', `Extracted 6-digit code (${this.twoFACodeInput}) from incoming Cellular SMS notification tray.`);
+  }
+
   // ===== Employee Signup =====
   validateSignupField(field: string) {
     this.signupTouched[field] = true;
