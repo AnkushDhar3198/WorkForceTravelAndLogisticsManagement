@@ -85,21 +85,37 @@ public class SmsService {
             String cleanTo = toPhone.replaceAll("\\D", "");
             if (cleanTo.length() > 10) cleanTo = cleanTo.substring(cleanTo.length() - 10);
 
-            System.out.println("📲 Dispatching Fast2SMS Cellular SMS to: +91 " + cleanTo);
+            // Extract 6-digit OTP code from messageText
+            String otpCode = "123984";
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\b\\d{6}\\b").matcher(messageText);
+            if (matcher.find()) {
+                otpCode = matcher.group();
+            }
 
-            String jsonBody = String.format("{\"route\":\"q\",\"message\":\"%s\",\"language\":\"english\",\"flash\":0,\"numbers\":\"%s\"}",
-                    messageText.replace("\"", "\\\""), cleanTo);
+            System.out.println("📲 Dispatching Fast2SMS Cellular OTP (" + otpCode + ") to: +91 " + cleanTo);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://www.fast2sms.com/dev/bulkV2"))
-                    .header("authorization", apiKey.trim())
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
+            // Strategy 1: Fast2SMS High-Priority OTP Route (route=otp)
+            String otpUrl = "https://www.fast2sms.com/dev/bulkV2?authorization=" + apiKey.trim() +
+                    "&route=otp&variables_values=" + otpCode + "&flash=0&numbers=" + cleanTo;
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("📲 Fast2SMS Dispatch Result (" + response.statusCode() + "): " + response.body());
-            return response.statusCode() == 200 && response.body().contains("\"return\":true");
+            HttpRequest otpRequest = HttpRequest.newBuilder().uri(URI.create(otpUrl)).GET().build();
+            HttpResponse<String> otpResponse = httpClient.send(otpRequest, HttpResponse.BodyHandlers.ofString());
+            System.out.println("📲 Fast2SMS OTP Route Response (" + otpResponse.statusCode() + "): " + otpResponse.body());
+
+            if (otpResponse.statusCode() == 200 && otpResponse.body().contains("\"return\":true")) {
+                return true;
+            }
+
+            // Strategy 2: Fast2SMS Quick Text Route (route=q)
+            String qUrl = "https://www.fast2sms.com/dev/bulkV2?authorization=" + apiKey.trim() +
+                    "&route=q&message=" + URLEncoder.encode(messageText, StandardCharsets.UTF_8) +
+                    "&language=english&flash=0&numbers=" + cleanTo;
+
+            HttpRequest qRequest = HttpRequest.newBuilder().uri(URI.create(qUrl)).GET().build();
+            HttpResponse<String> qResponse = httpClient.send(qRequest, HttpResponse.BodyHandlers.ofString());
+            System.out.println("📲 Fast2SMS Quick Route Response (" + qResponse.statusCode() + "): " + qResponse.body());
+
+            return qResponse.statusCode() == 200 && qResponse.body().contains("\"return\":true");
         } catch (Exception e) {
             System.err.println("Fast2SMS Exception: " + e.getMessage());
             return false;
