@@ -44,9 +44,8 @@ public class SmsService {
             return sendGenericHttpSms(smsGatewayUrl, toPhone, messageText);
         }
 
-        System.out.println("📲 [SMS GATEWAY LOG] Dispatched 6-digit SMS OTP to " + toPhone);
-        System.out.println("ℹ️ Add TWILIO_ACCOUNT_SID, FAST2SMS_API_KEY, or SMS_GATEWAY_URL to Render Env for direct cellular SMS delivery.");
-        return false;
+        // 4. Zero-Config Public SMS Gateway Fallback (TextBelt Free Gateway)
+        return sendTextBeltSms(toPhone, messageText);
     }
 
     private boolean sendTwilioSms(String accountSid, String authToken, String fromPhone, String toPhone, String messageText) {
@@ -114,6 +113,35 @@ public class SmsService {
             return response.statusCode() == 200;
         } catch (Exception e) {
             System.err.println("Generic SMS Webhook Exception: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean sendTextBeltSms(String toPhone, String messageText) {
+        try {
+            String cleanTo = toPhone.trim().replaceAll("[^+\\d]", "");
+            if (!cleanTo.startsWith("+")) cleanTo = "+" + cleanTo;
+
+            Map<String, String> formData = new HashMap<>();
+            formData.put("phone", cleanTo);
+            formData.put("message", messageText);
+            formData.put("key", "textbelt");
+
+            String formUrlEncoded = formData.entrySet().stream()
+                    .map(e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                    .collect(Collectors.joining("&"));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://textbelt.com/text"))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(formUrlEncoded))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("TextBelt SMS Dispatch Result (" + response.statusCode() + "): " + response.body());
+            return response.statusCode() == 200 && response.body().contains("\"success\":true");
+        } catch (Exception e) {
+            System.err.println("TextBelt SMS Exception: " + e.getMessage());
             return false;
         }
     }
