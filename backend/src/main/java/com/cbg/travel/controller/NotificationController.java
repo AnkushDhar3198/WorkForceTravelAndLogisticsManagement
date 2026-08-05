@@ -41,4 +41,21 @@ public class NotificationController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/read-all")
+    public ResponseEntity<?> markAllAsRead() {
+        List<Notification> all = notificationRepo.findAll();
+        all.forEach(n -> n.setReadStatus(true));
+        notificationRepo.saveAll(all);
+        return ResponseEntity.ok(java.util.Map.of("message", "All notifications marked as read"));
+    }
+
+    @DeleteMapping("/clear")
+    public ResponseEntity<?> clearReadNotifications() {
+        List<Notification> readList = notificationRepo.findAll().stream()
+                .filter(Notification::getReadStatus)
+                .toList();
+        notificationRepo.deleteAll(readList);
+        return ResponseEntity.ok(java.util.Map.of("message", "Cleared read notifications"));
+    }
 }

@@ -391,6 +391,108 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  // ===== Phone SMS OTP Verification System =====
+  showPhoneOtpModal = false;
+  otpPhoneInput = '';
+  otpCodeInput = '';
+  otpError = '';
+  isSendingOtp = false;
+  isVerifyingOtp = false;
+  otpTimerSeconds = 0;
+  private otpTimerSub?: Subscription;
+
+  openPhoneOtpModal() {
+    this.otpPhoneInput = this.auth.currentUserValue?.phone || '+1-415-555-0201';
+    this.otpCodeInput = '';
+    this.otpError = '';
+    this.showPhoneOtpModal = true;
+    this.startPhoneOtpSend();
+  }
+
+  startPhoneOtpSend() {
+    const currentEmpId = this.auth.currentUserValue?.id || 1;
+    this.isSendingOtp = true;
+    this.otpError = '';
+    this.api.sendPhoneOtp(currentEmpId, this.otpPhoneInput).subscribe({
+      next: (res: any) => {
+        this.isSendingOtp = false;
+        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code (${res.otp}) was sent to ${this.otpPhoneInput}`);
+        this.startOtpTimer(60);
+        this.loadAllData();
+      },
+      error: (err: any) => {
+        this.isSendingOtp = false;
+        this.otpError = err.error?.message || 'Could not send SMS OTP';
+      }
+    });
+  }
+
+  submitPhoneOtpVerification() {
+    if (!this.otpCodeInput || this.otpCodeInput.trim().length !== 6) {
+      this.otpError = 'Please enter the 6-digit SMS OTP code';
+      return;
+    }
+
+    const currentEmpId = this.auth.currentUserValue?.id || 1;
+    this.isVerifyingOtp = true;
+    this.otpError = '';
+
+    this.api.verifyPhoneOtp(currentEmpId, this.otpCodeInput.trim()).subscribe({
+      next: (res: any) => {
+        this.isVerifyingOtp = false;
+        this.showPhoneOtpModal = false;
+        if (this.auth.currentUserValue) {
+          this.auth.currentUserValue.phoneVerified = true;
+        }
+        this.loadAllData();
+        this.showPopup('success', 'Phone Verified! ✅', 'Your mobile phone number has been verified via SMS 2FA');
+      },
+      error: (err: any) => {
+        this.isVerifyingOtp = false;
+        this.otpError = err.error?.message || 'Invalid OTP code. Please check and try again.';
+      }
+    });
+  }
+
+  startOtpTimer(seconds: number) {
+    this.otpTimerSeconds = seconds;
+    this.otpTimerSub?.unsubscribe();
+    this.otpTimerSub = interval(1000).subscribe(() => {
+      if (this.otpTimerSeconds > 0) {
+        this.otpTimerSeconds--;
+      } else {
+        this.otpTimerSub?.unsubscribe();
+      }
+    });
+  }
+
+  // ===== Synced Functional Notifications =====
+  notificationFilterCategory = 'ALL';
+
+  get filteredNotifications(): Notification[] {
+    return this.notifications.filter(n => {
+      const matchesCategory = this.notificationFilterCategory === 'ALL' || n.category === this.notificationFilterCategory;
+      const matchesSearch = !this.searchTerm ||
+        n.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        n.message.toLowerCase().includes(this.searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }
+
+  markAllNotificationsAsRead() {
+    this.api.markAllNotificationsRead().subscribe(() => {
+      this.loadAllData();
+      this.showPopup('success', 'Notifications Updated', 'All notifications marked as read');
+    });
+  }
+
+  clearReadNotifications() {
+    this.api.clearReadNotifications().subscribe(() => {
+      this.loadAllData();
+      this.showPopup('info', 'Notifications Cleared', 'Cleared read notifications from feed');
+    });
+  }
+
   // ===== 1-Click Official Login with 2FA =====
   startOfficialLogin(key: string) {
     const official = this.officialAccounts[key];

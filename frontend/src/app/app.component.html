@@ -465,6 +465,9 @@
       <button class="view-toggle" [class.active]="forceMobile" (click)="toggleViewMode()">
         {{forceMobile ? '🖥️ Desktop' : '📱 Phone'}}
       </button>
+      <button class="btn btn-sm btn-ghost" (click)="openPhoneOtpModal()">
+        <span style="font-size:14px; margin-right:4px;">📲</span> {{auth.currentUserValue?.phoneVerified ? 'Phone Verified ✓' : 'Verify SMS OTP'}}
+      </button>
       <button class="btn btn-sm btn-ghost" (click)="exportDataCsv()">📥 CSV</button>
       <button class="btn btn-sm btn-ghost" (click)="logout()"><span style="font-size:14px; margin-right:4px;">⎋</span> Sign Out</button>
     </div>
@@ -531,8 +534,8 @@
         <p>{{roleDashboardInfo.subtitle}} — Welcome back, <strong>{{auth.currentUserValue?.fullName}}</strong></p>
       </div>
 
-      <!-- APPLE-STYLE LIVE DESTINATION WEATHER TRACKING WIDGET -->
-      <div class="weather-widget-card" *ngIf="currentWeather">
+      <!-- APPLE-STYLE LIVE DESTINATION WEATHER TRACKING WIDGET (ONLY FOR TRAVELING EMPLOYEES) -->
+      <div class="weather-widget-card" *ngIf="currentWeather && auth.currentRole === 'EMPLOYEE'">
         <div class="weather-top-row">
           <div class="weather-location-info">
             <h3>
@@ -1120,14 +1123,38 @@
 
     <!-- ===== NOTIFICATIONS TAB ===== -->
     <section *ngIf="activeTab === 'notifications'">
-      <div class="page-header"><h2>Disruption Alerts</h2><p>Flight delays, incidents & shipment updates</p></div>
-      <div class="card">
-        <div *ngFor="let n of notifications" class="notification-item">
-          <div class="notification-icon" [style.background]="n.severity === 'HIGH' ? 'rgba(255,69,58,0.12)' : 'rgba(10,132,255,0.12)'">{{getCategoryIcon(n.category)}}</div>
-          <div style="flex:1;"><h4>{{n.title}}</h4><p>{{n.message}}</p><div class="notification-time">{{formatDateTime(n.createdAt)}}</div></div>
-          <button class="btn btn-sm btn-ghost" *ngIf="!n.readStatus" (click)="markRead(n)">Read</button>
+      <div class="page-header">
+        <div class="page-header-actions">
+          <div><h2>Live Real-Time Disruption & Incident Stream</h2><p>Synced flight delays, security alerts, SMS OTP dispatches & expense updates</p></div>
+          <div style="display:flex; gap:8px;">
+            <select class="form-control" style="width:auto;" [(ngModel)]="notificationFilterCategory">
+              <option value="ALL">All Categories</option>
+              <option value="SYSTEM">⚙️ System & SMS</option>
+              <option value="SAFETY">🛡️ Safety & SOS</option>
+              <option value="FLIGHT">✈️ Flight & Transit</option>
+              <option value="EXPENSE">💰 Expense & Audit</option>
+            </select>
+            <button class="btn btn-sm btn-ghost" (click)="markAllNotificationsAsRead()">✓ Mark All Read</button>
+            <button class="btn btn-sm btn-ghost" (click)="clearReadNotifications()">🗑 Clear Read</button>
+          </div>
         </div>
       </div>
+
+      <div class="card" *ngIf="filteredNotifications.length > 0">
+        <div *ngFor="let n of filteredNotifications" class="notification-item" [class.unread]="!n.readStatus">
+          <div class="notification-icon" [style.background]="n.severity === 'HIGH' || n.severity === 'CRITICAL' ? 'rgba(255,69,58,0.12)' : 'rgba(10,132,255,0.12)'">{{getCategoryIcon(n.category)}}</div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h4 style="margin:0;">{{n.title}}</h4>
+              <span class="status-badge" [style.background]="getStatusColor(n.severity)+'1a'" [style.color]="getStatusColor(n.severity)" style="font-size:10px; padding:2px 6px;">{{n.severity}}</span>
+            </div>
+            <p style="margin:4px 0 0 0;">{{n.message}}</p>
+            <div class="notification-time" style="margin-top:4px;">{{formatDateTime(n.createdAt)}} • Target: {{n.targetEmployee?.fullName || 'All Users'}}</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" *ngIf="!n.readStatus" (click)="markRead(n)">Mark Read</button>
+        </div>
+      </div>
+      <div class="card empty-state" *ngIf="filteredNotifications.length === 0"><div class="empty-icon">🔔</div><h4>No alerts in feed</h4></div>
     </section>
 
     <!-- ===== EMPLOYEES TAB ===== -->
@@ -1439,6 +1466,42 @@
 <!-- ============================================
      MODALS
      ============================================ -->
+
+<!-- PHONE SMS OTP VERIFICATION MODAL -->
+<div class="modal-overlay" *ngIf="showPhoneOtpModal" (click)="showPhoneOtpModal = false">
+  <div class="modal-content" style="max-width:440px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📲 SMS Phone OTP Verification</h3>
+      <button class="modal-close" (click)="showPhoneOtpModal = false">✕</button>
+    </div>
+
+    <div style="background:rgba(10,132,255,0.08); border:1px solid rgba(10,132,255,0.2); border-radius:12px; padding:14px; margin-bottom:16px; text-align:center;">
+      <div style="font-size:13px; font-weight:700; color:var(--accent-blue); margin-bottom:4px;">Two-Factor SMS Security Verification</div>
+      <div style="font-size:12px; color:var(--text-secondary);">We sent a 6-digit SMS verification code to:</div>
+      <div style="font-size:15px; font-weight:800; color:var(--text-primary); margin-top:4px; font-family:monospace;">{{otpPhoneInput}}</div>
+    </div>
+
+    <div class="form-group">
+      <label>Enter 6-Digit SMS Code *</label>
+      <input class="form-control" type="text" placeholder="000000" maxlength="6" [(ngModel)]="otpCodeInput" style="letter-spacing:8px; text-align:center; font-weight:800; font-size:22px; font-family:monospace;">
+      <div class="field-error" *ngIf="otpError" style="margin-top:6px; text-align:center;">{{otpError}}</div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:12px; color:var(--text-secondary);">
+      <span>Resend code in: <strong>{{otpTimerSeconds}}s</strong></span>
+      <button class="btn btn-sm btn-ghost" (click)="startPhoneOtpSend()" [disabled]="otpTimerSeconds > 0 || isSendingOtp">
+        {{isSendingOtp ? 'Sending...' : '🔄 Resend SMS'}}
+      </button>
+    </div>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-ghost" (click)="showPhoneOtpModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitPhoneOtpVerification()" [disabled]="isVerifyingOtp">
+        {{isVerifyingOtp ? 'Verifying...' : '✓ Verify Phone'}}
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- CREATE BOOKING MODAL (US-08) -->
 <div class="modal-overlay" *ngIf="showCreateBookingModal" (click)="showCreateBookingModal = false">

@@ -15,6 +15,7 @@ export interface Employee {
   designation: string;
   passkey?: string;
   twoFactorCode?: string;
+  phoneVerified?: boolean;
   active: boolean;
 }
 
@@ -359,6 +360,24 @@ export class ApiService {
     if (filters.entityType) params = params.set('entityType', filters.entityType);
     if (filters.userId) params = params.set('userId', filters.userId.toString());
     return this.http.get<AuditLog[]>(`${this.baseUrl}/audit-logs/filter`, { params });
+  }
+
+  // Phone OTP Verification
+  sendPhoneOtp(employeeId: number, phone?: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/send-phone-otp`, { employeeId, phone });
+  }
+
+  verifyPhoneOtp(employeeId: number, otp: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/verify-phone-otp`, { employeeId, otp });
+  }
+
+  // Enhanced Notifications
+  markAllNotificationsRead(): Observable<any> {
+    return this.http.put(`${this.baseUrl}/notifications/read-all`, {});
+  }
+
+  clearReadNotifications(): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/notifications/clear`);
   }
 
   // Reimbursements (US-17)

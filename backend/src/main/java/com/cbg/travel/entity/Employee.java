@@ -49,6 +49,10 @@ public class Employee {
     private String emergencyContactName;
     private String emergencyContactPhone;
 
+    private Boolean phoneVerified = false;
+    private String phoneOtp;
+    private LocalDateTime phoneOtpExpiry;
+
     @Column(name = "manager_id")
     private Long managerId;
 
@@ -122,6 +126,15 @@ public class Employee {
 
     public String getEmergencyContactPhone() { return emergencyContactPhone; }
     public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
+
+    public Boolean getPhoneVerified() { return phoneVerified != null && phoneVerified; }
+    public void setPhoneVerified(Boolean phoneVerified) { this.phoneVerified = phoneVerified; }
+
+    public String getPhoneOtp() { return phoneOtp; }
+    public void setPhoneOtp(String phoneOtp) { this.phoneOtp = phoneOtp; }
+
+    public LocalDateTime getPhoneOtpExpiry() { return phoneOtpExpiry; }
+    public void setPhoneOtpExpiry(LocalDateTime phoneOtpExpiry) { this.phoneOtpExpiry = phoneOtpExpiry; }
 
     public Long getManagerId() { return managerId; }
     public void setManagerId(Long managerId) { this.managerId = managerId; }
