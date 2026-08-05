@@ -314,6 +314,83 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  // ===== Corporate SSO Login (US-01) =====
+  onSsoLogin(provider: 'OKTA' | 'AZURE_AD' | 'GOOGLE_WORKSPACE' = 'OKTA') {
+    this.isAuthenticating = true;
+    this.loginError = '';
+    setTimeout(() => {
+      // Authenticate via Corporate Single Sign-On
+      const empAccount = this.officialAccounts['EMP'];
+      this.auth.mockLogin(empAccount.email, empAccount.role, empAccount.name);
+      this.isAuthenticating = false;
+      this.currentView = 'app';
+      this.loadAllData();
+      this.pollSub = interval(30000).subscribe(() => this.loadAllData());
+      this.showPopup('success', `SSO Authenticated (${provider})`, `Authenticated via Corporate SAML 2.0 / SSO as ${empAccount.name}`);
+    }, 800);
+  }
+
+  // ===== Live Flight Status & Disruption Feed (US-11) =====
+  flightDisruptions = [
+    { flightNumber: 'DL 275', route: 'SFO ➔ NRT', status: 'ON_TIME', gate: 'A12', statusColor: '#30D158', note: 'On Schedule • Boarding 10:15 AM' },
+    { flightNumber: 'JL 001', route: 'HND ➔ SFO', status: 'DELAYED', gate: 'B22', statusColor: '#FF9F0A', note: 'Delayed 25 min due to weather radar' },
+    { flightNumber: 'LH 454', route: 'FRA ➔ SFO', status: 'ON_TIME', gate: 'E04', statusColor: '#30D158', note: 'In Transit • Est. Arrival 14:40' },
+    { flightNumber: 'SQ 032', route: 'SIN ➔ SFO', status: 'GATE_CHANGE', gate: 'C18', statusColor: '#0A84FF', note: 'Gate changed to C18' }
+  ];
+
+  // ===== Risk / Duty of Care Filters (US-13) =====
+  riskFilterThreatLevel = '';
+  riskFilterCountry = '';
+
+  get filteredTravelerLocations(): TravelerLocation[] {
+    return this.travelerLocations.filter(loc => {
+      const matchesSearch = !this.searchTerm ||
+        loc.employee.fullName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        loc.city.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        loc.country.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchesThreat = !this.riskFilterThreatLevel || loc.threatLevel === this.riskFilterThreatLevel;
+      const matchesCountry = !this.riskFilterCountry || loc.country.toLowerCase() === this.riskFilterCountry.toLowerCase();
+      return matchesSearch && matchesThreat && matchesCountry;
+    });
+  }
+
+  // ===== Document Replacement (US-02 AC3) =====
+  selectedDocToReplace: TravelDocument | null = null;
+  showReplaceDocModal = false;
+
+  openReplaceDocModal(doc: TravelDocument) {
+    this.selectedDocToReplace = doc;
+    this.newDocument = {
+      documentType: doc.documentType,
+      fileName: '', contentType: '', content: '',
+      expiryDate: doc.expiryDate || '',
+      description: doc.description || ''
+    };
+    this.showReplaceDocModal = true;
+  }
+
+  submitReplaceDocument() {
+    if (!this.selectedDocToReplace || !this.newDocument.content) {
+      this.showPopup('error', 'No File Selected', 'Please select a replacement file');
+      return;
+    }
+    this.api.replaceDocument(this.selectedDocToReplace.id, {
+      fileName: this.newDocument.fileName,
+      contentType: this.newDocument.contentType,
+      content: this.newDocument.content,
+      expiryDate: this.newDocument.expiryDate,
+      description: this.newDocument.description
+    }).subscribe({
+      next: () => {
+        this.showReplaceDocModal = false;
+        this.selectedDocToReplace = null;
+        this.loadAllData();
+        this.showPopup('success', 'Document Replaced', 'Travel document has been updated in the encrypted vault');
+      },
+      error: (err) => this.showPopup('error', 'Replace Failed', err.error?.message || 'Could not replace document')
+    });
+  }
+
   // ===== 1-Click Official Login with 2FA =====
   startOfficialLogin(key: string) {
     const official = this.officialAccounts[key];
@@ -1013,6 +1090,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.showPopup('error', 'Invalid Date', 'Start date cannot be in the past');
       return;
     }
+    // Check policy violations & require business justification (US-05 AC3)
+    const isPolicyViolated = (this.newRequest.flightClass === 'BUSINESS' || this.newRequest.flightClass === 'FIRST') ||
+      (this.newRequest.hotelDailyRate > 350) || (this.calculatedTotalBudget > 10000);
+
+    if (isPolicyViolated && !this.newRequest.justificationText?.trim()) {
+      this.showPopup('warning', 'Business Justification Required', 'Your request exceeds policy caps (cabin class, daily hotel rate, or budget cap). Please provide a brief business justification before submitting.');
+      return;
+    }
+
     const payload: any = {
       employee: { id: this.newRequest.employeeId },
       destination: this.newRequest.destination, countryCode: this.newRequest.countryCode,

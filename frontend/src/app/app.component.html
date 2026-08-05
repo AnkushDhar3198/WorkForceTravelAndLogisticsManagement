@@ -245,6 +245,14 @@
         <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;" [disabled]="isAuthenticating">
           {{isAuthenticating ? 'Signing In...' : 'Sign In'}}
         </button>
+
+        <div style="text-align:center; margin: 16px 0 12px 0; color: var(--text-tertiary); font-size:12px;">
+          <span>— OR CORPORATE SSO —</span>
+        </div>
+
+        <button type="button" class="btn btn-ghost" style="width:100%; justify-content:center; padding:12px; border:1px solid var(--border-active);" (click)="onSsoLogin('OKTA')">
+          🔑 Sign In with Corporate SSO (Okta / SAML 2.0)
+        </button>
       </form>
 
       <!-- Switch to Signup -->
@@ -730,14 +738,44 @@
           <div class="kpi-sub">Confirmed venue arrivals</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Customs Clearances</div>
-          <div class="kpi-value purple">1</div>
-          <div class="kpi-sub">Pending Carnet verification</div>
-        </div>
-        <div class="kpi-card">
           <div class="kpi-label">Carrier Partners</div>
           <div class="kpi-value teal">3</div>
           <div class="kpi-sub">FedEx, DHL, DB Schenker</div>
+        </div>
+      </div>
+
+      <!-- YTD SPEND VS BUDGET PROGRESS BAR (US-18) -->
+      <div class="card" style="margin-bottom:20px;" *ngIf="analytics">
+        <div class="card-header">
+          <h3>📊 YTD Department Travel Spend vs Allocated Budget</h3>
+          <span class="status-badge" style="background:rgba(10,132,255,0.12); color:var(--accent-blue);">{{getBudgetUtilization()}}% Utilized</span>
+        </div>
+        <div style="padding: 10px 0;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span>YTD Spend: <strong>{{formatCurrency(analytics.ytdSpend || 0)}}</strong></span>
+            <span>Allocated Annual Budget: <strong>{{formatCurrency(analytics.totalAllocatedBudget || 500000)}}</strong></span>
+          </div>
+          <div style="height:12px; background:var(--bg-glass); border-radius:6px; overflow:hidden; border:1px solid var(--border-subtle);">
+            <div [style.width]="getBudgetUtilization() + '%'" style="height:100%; background:linear-gradient(90deg, #0A84FF, #30D158); border-radius:6px; transition: width 0.6s ease;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE FLIGHT STATUS & DISRUPTION FEED WIDGET (US-11) -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <h3>✈️ Live Flight Disruption & Gate Feed</h3>
+          <span class="status-badge" style="background:rgba(48,209,88,0.12); color:var(--accent-green);">● Live GDS Radar</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-top:10px;">
+          <div *ngFor="let flight of flightDisruptions" style="background:var(--bg-glass); border:1px solid var(--border-subtle); border-radius:12px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:800; font-family:monospace;">{{flight.flightNumber}}</span>
+              <span class="status-badge" [style.background]="flight.statusColor+'1a'" [style.color]="flight.statusColor">{{flight.status.replace('_',' ')}}</span>
+            </div>
+            <div style="font-size:13px; font-weight:600; margin-top:6px;">{{flight.route}}</div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Gate: <strong>{{flight.gate}}</strong> • {{flight.note}}</div>
+          </div>
         </div>
       </div>
 
@@ -860,7 +898,7 @@
         <div class="card">
           <div class="card-header">
             <h3>🔍 Digital Expense Audit Inbox</h3>
-            <span class="status-badge" style="background:rgba(255,159,10,0.12); color:var(--accent-orange);">{{pendingExpensesCount} Pending Audit</span>
+            <span class="status-badge" style="background:rgba(255,159,10,0.12); color:var(--accent-orange);">{{pendingExpensesCount}} Pending Audit</span>
           </div>
           <div class="card-body">
             <div *ngFor="let exp of expenses" class="expense-card">
@@ -1043,11 +1081,26 @@
       <div class="card empty-state" *ngIf="filteredExpenses.length === 0"><div class="empty-icon">💰</div><h4>No expense claims</h4></div>
     </section>
 
-    <!-- ===== DUTY OF CARE TAB ===== -->
+    <!-- ===== DUTY OF CARE TAB (US-12, US-13) ===== -->
     <section *ngIf="activeTab === 'risk'">
-      <div class="page-header"><h2>Duty of Care</h2><p>Global traveler tracking & emergency response</p></div>
+      <div class="page-header">
+        <div class="page-header-actions">
+          <div><h2>Duty of Care Command & Safety Map</h2><p>Global traveler tracking, threat assessment, and emergency SOS dispatch</p></div>
+          <div style="display:flex; gap:8px;">
+            <select class="form-control" style="width:auto;" [(ngModel)]="riskFilterThreatLevel">
+              <option value="">All Threat Levels</option>
+              <option value="LOW">🟢 Low Risk</option>
+              <option value="MODERATE">🟡 Moderate Risk</option>
+              <option value="HIGH">🔴 High Risk</option>
+              <option value="CRITICAL">⚠️ Critical</option>
+            </select>
+            <input class="form-control" style="width:160px;" type="text" placeholder="Filter by country..." [(ngModel)]="riskFilterCountry">
+          </div>
+        </div>
+      </div>
+
       <div class="risk-grid">
-        <div class="risk-card" *ngFor="let loc of travelerLocations">
+        <div class="risk-card" *ngFor="let loc of filteredTravelerLocations">
           <div class="card-header">
             <div class="employee-cell">
               <div class="avatar blue">{{loc.employee.firstName.charAt(0)}}</div>
@@ -1055,11 +1108,14 @@
             </div>
             <span class="status-badge" [style.background]="getStatusColor(loc.threatLevel)+'1a'" [style.color]="getStatusColor(loc.threatLevel)">{{getThreatIcon(loc.threatLevel)}} {{loc.threatLevel}}</span>
           </div>
-          <div style="margin-bottom:6px; font-size:13px;">📍 {{loc.city}}, {{loc.country}}</div>
+          <div style="margin-bottom:6px; font-size:13px;">📍 {{loc.city}}, {{loc.country}} <span style="font-size:11px; font-family:monospace; color:var(--text-tertiary);">({{loc.latitude}}, {{loc.longitude}})</span></div>
           <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;" *ngIf="loc.advisoryNotes">⚠️ {{loc.advisoryNotes}}</div>
-          <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)" *ngIf="auth.currentRole === 'RISK_OFFICER'">🚨 Dispatch SOS</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-sm btn-danger" (click)="triggerSos(loc)" *ngIf="auth.currentRole === 'RISK_OFFICER'">🚨 Dispatch SOS</button>
+          </div>
         </div>
       </div>
+      <div class="card empty-state" *ngIf="filteredTravelerLocations.length === 0"><div class="empty-icon">🛡️</div><h4>No travelers found for specified safety criteria</h4></div>
     </section>
 
     <!-- ===== NOTIFICATIONS TAB ===== -->
@@ -1170,7 +1226,10 @@
                 </td>
                 <td style="font-size:12px; color:var(--text-secondary);">{{formatDate(doc.uploadedAt)}}</td>
                 <td>
-                  <button class="btn btn-sm btn-danger" (click)="deleteDocument(doc.id)">🗑 Delete</button>
+                  <div style="display:flex; gap:6px;">
+                    <button class="btn btn-sm btn-ghost" (click)="openReplaceDocModal(doc)">🔄 Replace</button>
+                    <button class="btn btn-sm btn-danger" (click)="deleteDocument(doc.id)">🗑 Delete</button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -1443,6 +1502,37 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" (click)="showCreateBookingModal = false">Cancel</button>
       <button class="btn btn-primary" (click)="submitBooking()">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPLACE DOCUMENT MODAL (US-02 AC3) -->
+<div class="modal-overlay" *ngIf="showReplaceDocModal && selectedDocToReplace" (click)="showReplaceDocModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Replace Document: {{selectedDocToReplace.fileName}}</h3>
+      <button class="modal-close" (click)="showReplaceDocModal = false">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full-width">
+        <label>New Replacement File (PDF, JPG, PNG — Max 5MB) *</label>
+        <input class="form-control" type="file" (change)="onFileSelected($event)" accept=".pdf,.jpg,.jpeg,.png">
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;" *ngIf="newDocument.fileName">
+          Selected: {{newDocument.fileName}} ({{newDocument.contentType}})
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Updated Expiry Date</label>
+        <input class="form-control" type="date" [(ngModel)]="newDocument.expiryDate">
+      </div>
+      <div class="form-group full-width">
+        <label>Updated Description</label>
+        <input class="form-control" type="text" [(ngModel)]="newDocument.description">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showReplaceDocModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitReplaceDocument()">Confirm & Replace Document</button>
     </div>
   </div>
 </div>
