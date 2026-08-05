@@ -18,7 +18,7 @@ public class SmsService {
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     /**
-     * Dispatches real SMS OTP via Twilio, Fast2SMS, or Generic SMS Gateway API.
+     * Dispatches real SMS OTP via Twilio, Fast2SMS, Generic Webhook, or TextBelt.
      */
     public boolean sendSms(String toPhone, String messageText) {
         // 1. Check Twilio REST API
@@ -26,25 +26,28 @@ public class SmsService {
         String authToken = System.getenv("TWILIO_AUTH_TOKEN");
         String fromPhone = System.getenv("TWILIO_PHONE_NUMBER");
 
-        if (accountSid != null && !accountSid.isEmpty() &&
-            authToken != null && !authToken.isEmpty() &&
-            fromPhone != null && !fromPhone.isEmpty()) {
-            return sendTwilioSms(accountSid, authToken, fromPhone, toPhone, messageText);
+        if (accountSid != null && !accountSid.trim().isEmpty() &&
+            authToken != null && !authToken.trim().isEmpty() &&
+            fromPhone != null && !fromPhone.trim().isEmpty()) {
+            boolean twilioOk = sendTwilioSms(accountSid.trim(), authToken.trim(), fromPhone.trim(), toPhone, messageText);
+            if (twilioOk) return true;
         }
 
-        // 2. Check Fast2SMS API (Popular free/low-cost SMS Gateway)
+        // 2. Check Fast2SMS API (Indian SMS Gateway)
         String fast2smsKey = System.getenv("FAST2SMS_API_KEY");
-        if (fast2smsKey != null && !fast2smsKey.isEmpty()) {
-            return sendFast2Sms(fast2smsKey, toPhone, messageText);
+        if (fast2smsKey != null && !fast2smsKey.trim().isEmpty()) {
+            boolean fast2smsOk = sendFast2Sms(fast2smsKey.trim(), toPhone, messageText);
+            if (fast2smsOk) return true;
         }
 
         // 3. Check Generic HTTP Webhook SMS Gateway
         String smsGatewayUrl = System.getenv("SMS_GATEWAY_URL");
-        if (smsGatewayUrl != null && !smsGatewayUrl.isEmpty()) {
-            return sendGenericHttpSms(smsGatewayUrl, toPhone, messageText);
+        if (smsGatewayUrl != null && !smsGatewayUrl.trim().isEmpty()) {
+            boolean genericOk = sendGenericHttpSms(smsGatewayUrl.trim(), toPhone, messageText);
+            if (genericOk) return true;
         }
 
-        // 4. Zero-Config Public SMS Gateway Fallback (TextBelt Free Gateway)
+        // 4. Zero-Config Public SMS Gateway Fallback (TextBelt)
         return sendTextBeltSms(toPhone, messageText);
     }
 
@@ -73,6 +76,7 @@ public class SmsService {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("📲 Twilio SMS Dispatch Result (" + response.statusCode() + "): " + response.body());
             return response.statusCode() >= 200 && response.statusCode() < 300;
         } catch (Exception e) {
             System.err.println("Twilio SMS Exception: " + e.getMessage());
@@ -93,52 +97,58 @@ public class SmsService {
             }
 
             String cleanKey = apiKey.trim();
-            System.out.println("📲 Dispatching Fast2SMS Cellular OTP (" + otpCode + ") to +91 " + cleanTo);
+            System.out.println("📲 [Fast2SMS Dispatching] OTP (" + otpCode + ") to +91-" + cleanTo);
 
-            // 1. Fast2SMS High-Priority OTP Route (POST JSON with authorization header)
-            String postOtpJson = String.format("{\"route\":\"otp\",\"variables_values\":\"%s\",\"numbers\":\"%s\"}", otpCode, cleanTo);
-            HttpRequest postOtpReq = HttpRequest.newBuilder()
+            // Attempt 1: Fast2SMS Quick Route (route=q) GET Request
+            String simpleMsg = "CBG Enterprise Security OTP code: " + otpCode;
+            String qUrl = "https://www.fast2sms.com/dev/bulkV2?authorization=" + URLEncoder.encode(cleanKey, StandardCharsets.UTF_8) +
+                    "&route=q&message=" + URLEncoder.encode(simpleMsg, StandardCharsets.UTF_8) +
+                    "&language=english&flash=0&numbers=" + cleanTo;
+
+            HttpRequest qReq = HttpRequest.newBuilder()
+                    .uri(URI.create(qUrl))
+                    .header("authorization", cleanKey)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> qRes = httpClient.send(qReq, HttpResponse.BodyHandlers.ofString());
+            System.out.println("📲 [Fast2SMS route=q GET] Status: " + qRes.statusCode() + " | Body: " + qRes.body());
+
+            if (qRes.statusCode() == 200 && qRes.body().contains("\"return\":true")) {
+                return true;
+            }
+
+            // Attempt 2: Fast2SMS High-Priority OTP Route (route=otp) GET Request
+            String otpUrl = "https://www.fast2sms.com/dev/bulkV2?authorization=" + URLEncoder.encode(cleanKey, StandardCharsets.UTF_8) +
+                    "&route=otp&variables_values=" + otpCode + "&flash=0&numbers=" + cleanTo;
+
+            HttpRequest otpReq = HttpRequest.newBuilder()
+                    .uri(URI.create(otpUrl))
+                    .header("authorization", cleanKey)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> otpRes = httpClient.send(otpReq, HttpResponse.BodyHandlers.ofString());
+            System.out.println("📲 [Fast2SMS route=otp GET] Status: " + otpRes.statusCode() + " | Body: " + otpRes.body());
+
+            if (otpRes.statusCode() == 200 && otpRes.body().contains("\"return\":true")) {
+                return true;
+            }
+
+            // Attempt 3: Fast2SMS POST JSON Payload
+            String postJson = String.format("{\"route\":\"q\",\"message\":\"%s\",\"language\":\"english\",\"flash\":0,\"numbers\":\"%s\"}",
+                    simpleMsg, cleanTo);
+            HttpRequest postReq = HttpRequest.newBuilder()
                     .uri(URI.create("https://www.fast2sms.com/dev/bulkV2"))
                     .header("authorization", cleanKey)
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(postOtpJson))
+                    .POST(HttpRequest.BodyPublishers.ofString(postJson))
                     .build();
 
-            HttpResponse<String> postOtpRes = httpClient.send(postOtpReq, HttpResponse.BodyHandlers.ofString());
-            System.out.println("📲 Fast2SMS POST OTP Result (" + postOtpRes.statusCode() + "): " + postOtpRes.body());
+            HttpResponse<String> postRes = httpClient.send(postReq, HttpResponse.BodyHandlers.ofString());
+            System.out.println("📲 [Fast2SMS POST JSON] Status: " + postRes.statusCode() + " | Body: " + postRes.body());
 
-            if (postOtpRes.statusCode() == 200 && postOtpRes.body().contains("\"return\":true")) {
-                return true;
-            }
-
-            // 2. Fast2SMS OTP GET Route with authorization header
-            String getOtpUrl = "https://www.fast2sms.com/dev/bulkV2?route=otp&variables_values=" + otpCode + "&flash=0&numbers=" + cleanTo;
-            HttpRequest getOtpReq = HttpRequest.newBuilder()
-                    .uri(URI.create(getOtpUrl))
-                    .header("authorization", cleanKey)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> getOtpRes = httpClient.send(getOtpReq, HttpResponse.BodyHandlers.ofString());
-            System.out.println("📲 Fast2SMS GET OTP Result (" + getOtpRes.statusCode() + "): " + getOtpRes.body());
-
-            if (getOtpRes.statusCode() == 200 && getOtpRes.body().contains("\"return\":true")) {
-                return true;
-            }
-
-            // 3. Fast2SMS Quick Text GET Route with authorization header
-            String getQUrl = "https://www.fast2sms.com/dev/bulkV2?route=q&message=" + URLEncoder.encode(messageText, StandardCharsets.UTF_8) +
-                    "&language=english&flash=0&numbers=" + cleanTo;
-            HttpRequest getQReq = HttpRequest.newBuilder()
-                    .uri(URI.create(getQUrl))
-                    .header("authorization", cleanKey)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> getQRes = httpClient.send(getQReq, HttpResponse.BodyHandlers.ofString());
-            System.out.println("📲 Fast2SMS GET Quick Result (" + getQRes.statusCode() + "): " + getQRes.body());
-
-            return getQRes.statusCode() == 200 && getQRes.body().contains("\"return\":true");
+            return postRes.statusCode() == 200 && postRes.body().contains("\"return\":true");
         } catch (Exception e) {
             System.err.println("Fast2SMS Exception: " + e.getMessage());
             return false;
