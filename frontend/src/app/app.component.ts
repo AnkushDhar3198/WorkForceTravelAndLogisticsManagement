@@ -626,17 +626,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.auth.step1Complete = false;
   }
 
-  // Mask phone number for display (e.g. +1-415-555-0201 → +1-***-***-0201)
+  // Mask phone number for display (e.g. +91-98765-43210 → +91 98*** ***10)
   getMaskedPhone(): string {
-    const phone = this.twoFAPhone || '';
-    if (!phone) return '***-***-****';
-    // Show only last 4 digits
+    const phone = this.twoFAPhone || '+91-98765-43210';
     const digits = phone.replace(/\D/g, '');
-    if (digits.length >= 4) {
+    if (digits.length >= 10) {
       const last4 = digits.slice(-4);
-      const masked = digits.slice(0, -4).replace(/\d/g, '*');
-      // Re-insert formatting
-      return phone.replace(/\d(?=\d{4})/g, '*');
+      const first2 = digits.length > 10 ? digits.slice(-10, -8) : digits.slice(0, 2);
+      return `+91 ${first2}*** ***${last4}`;
     }
     return phone;
   }
@@ -654,7 +651,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.isAuthenticating = false;
         if (res && res.requires2FA) {
           this.twoFAPhone = res.phone || this.twoFAPhone;
-          this.showPopup('success', 'Code Resent ✓', `A new 6-digit code has been sent to ${this.getMaskedPhone()}`);
+          this.showPopup('success', 'SMS OTP Resent ✓', `A new 6-digit verification code has been sent via SMS to ${this.getMaskedPhone()}`);
         }
       },
       error: () => {
@@ -669,17 +666,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.signupTouched[field] = true;
     const f = this.signupForm;
     const errors: Record<string, string> = { ...this.signupErrors };
+    const indianPhonePattern = /^(\+91[\-\s]?)?[6789]\d{9}$/;
 
     switch (field) {
       case 'firstName':
         errors['firstName'] = !f.firstName.trim() ? 'First name is required' : (f.firstName.trim().length < 2 ? 'Must be at least 2 characters' : '');
         break;
       case 'lastName':
-        errors['lastName'] = !f.lastName.trim() ? 'Last name is required' : '';
+        errors['lastName'] = !f.lastName.trim() ? 'Last name is required' : (f.lastName.trim().length < 2 ? 'Must be at least 2 characters' : '');
         break;
       case 'employeeCode':
-        const codePattern = /^EMP-\d{4,}$/;
-        errors['employeeCode'] = !f.employeeCode.trim() ? 'Employee code is required' : (!codePattern.test(f.employeeCode.trim()) ? 'Format: EMP-XXXX (e.g. EMP-1001)' : '');
+        errors['employeeCode'] = !f.employeeCode.trim() ? 'Employee code is required' : '';
         break;
       case 'email':
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -49,9 +49,17 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // If official account already exists, skipping
+        // Ensure all seeded employees have Indian (+91) phone numbers
+        employeeRepo.findAll().forEach(e -> {
+            if (e.getPhone() == null || !e.getPhone().startsWith("+91")) {
+                e.setPhone("+91-98765-43210");
+                employeeRepo.save(e);
+            }
+        });
+
+        // If official account already exists, skipping full re-seed
         if (employeeRepo.findByEmail("employee.sarah@cbg-enterprise.com").isPresent()) {
-            System.out.println("=== Official accounts already seeded ===");
+            System.out.println("=== Official accounts already seeded with Indian (+91) mobile numbers ===");
             return;
         }
 
@@ -81,11 +89,11 @@ public class DataSeeder implements CommandLineRunner {
         ctm.setPasskey("CTM-9948-ALPHA");
         ctm.setTwoFactorCode("774892");
         ctm.setPassword("CTM-9948-ALPHA");
-        ctm.setPhone("+1-800-555-0101");
+        ctm.setPhone("+91-98111-22334");
         ctm.setRole(UserRole.CORPORATE_TRAVEL_MANAGER);
         ctm.setDepartment("Global Corporate Travel");
         ctm.setDesignation("Global Travel Program Director");
-        ctm.setNationality("US");
+        ctm.setNationality("IN");
         employeeRepo.save(ctm);
 
         // 2. Approving Manager (Department Leader)
@@ -97,11 +105,11 @@ public class DataSeeder implements CommandLineRunner {
         mgr.setPasskey("MGR-3381-BETA");
         mgr.setTwoFactorCode("882194");
         mgr.setPassword("MGR-3381-BETA");
-        mgr.setPhone("+1-415-555-0102");
+        mgr.setPhone("+91-98222-33445");
         mgr.setRole(UserRole.APPROVING_MANAGER);
         mgr.setDepartment("Engineering & Product");
         mgr.setDesignation("VP Engineering & Travel Approver");
-        mgr.setNationality("US");
+        mgr.setNationality("IN");
         mgr = employeeRepo.save(mgr);
 
         // 3. Finance & Procurement Team (Budget & Audit Overseer)
@@ -113,11 +121,11 @@ public class DataSeeder implements CommandLineRunner {
         fin.setPasskey("FIN-5510-GAMMA");
         fin.setTwoFactorCode("551930");
         fin.setPassword("FIN-5510-GAMMA");
-        fin.setPhone("+1-415-555-0401");
+        fin.setPhone("+91-98333-44556");
         fin.setRole(UserRole.FINANCE_ADMIN);
         fin.setDepartment("Finance & Procurement");
         fin.setDesignation("Finance Director");
-        fin.setNationality("US");
+        fin.setNationality("IN");
         employeeRepo.save(fin);
 
         // 4. Security / Risk Officer (Duty of Care Primary Responder)
@@ -129,11 +137,11 @@ public class DataSeeder implements CommandLineRunner {
         sec.setPasskey("SEC-7742-DELTA");
         sec.setTwoFactorCode("993418");
         sec.setPassword("SEC-7742-DELTA");
-        sec.setPhone("+44-20-5555-0103");
+        sec.setPhone("+91-98444-55667");
         sec.setRole(UserRole.RISK_OFFICER);
         sec.setDepartment("Enterprise Security");
         sec.setDesignation("Global Risk & Safety Director");
-        sec.setNationality("GB");
+        sec.setNationality("IN");
         employeeRepo.save(sec);
 
         // 5. Logistics Coordinator (Asset & Prototype Transport Lead)
@@ -161,12 +169,12 @@ public class DataSeeder implements CommandLineRunner {
         emp.setPasskey("EMP-4421-ZETA");
         emp.setTwoFactorCode("123984");
         emp.setPassword("EMP-4421-ZETA");
-        emp.setPhone("+1-415-555-0201");
+        emp.setPhone("+91-98765-43210");
         emp.setRole(UserRole.EMPLOYEE);
         emp.setDepartment("Engineering");
         emp.setDesignation("Senior Field Engineer");
-        emp.setNationality("US");
-        emp.setPassportNumber("US9384756");
+        emp.setNationality("IN");
+        emp.setPassportNumber("IN9384756");
         emp.setManagerId(mgr.getId());
         emp = employeeRepo.save(emp);
 
@@ -179,11 +187,11 @@ public class DataSeeder implements CommandLineRunner {
         admin.setPasskey("ADM-8871-OMEGA");
         admin.setTwoFactorCode("667233");
         admin.setPassword("ADM-8871-OMEGA");
-        admin.setPhone("+1-800-555-0909");
+        admin.setPhone("+91-98999-00000");
         admin.setRole(UserRole.SYSTEM_ADMIN);
         admin.setDepartment("IT Administration");
         admin.setDesignation("System Administrator");
-        admin.setNationality("US");
+        admin.setNationality("IN");
         admin = employeeRepo.save(admin);
 
         // --- POLICY ENGINE RULES ---

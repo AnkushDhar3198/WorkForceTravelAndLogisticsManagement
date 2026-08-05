@@ -107,19 +107,22 @@ public class AuthController {
      */
     @PostMapping("/send-phone-login-otp")
     public ResponseEntity<?> sendPhoneLoginOtp(@RequestBody Map<String, String> payload) {
-        String phone = payload.get("phone");
-        if (phone == null || phone.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Phone number is required"));
+        String phoneInput = phone != null ? phone.trim() : "";
+        String rawPhone = phoneInput.replaceAll("\\D", "");
+        if (rawPhone.length() > 10) rawPhone = rawPhone.substring(rawPhone.length() - 10);
+
+        if (rawPhone.length() != 10 || !rawPhone.matches("[6789]\\d{9}")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9)"));
         }
 
-        String cleanPhone = phone.trim();
+        final String searchDigits = rawPhone;
         Optional<Employee> empOpt = employeeRepo.findAll().stream()
-                .filter(e -> e.getPhone() != null && e.getPhone().replace("-","").replace(" ","").endsWith(cleanPhone.replace("-","").replace(" ","")))
+                .filter(e -> e.getPhone() != null && e.getPhone().replaceAll("\\D", "").endsWith(searchDigits))
                 .findFirst();
 
         if (empOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No account registered with phone number: " + cleanPhone));
+                    .body(Map.of("message", "No account registered with Indian mobile number: +91 " + rawPhone));
         }
 
         Employee employee = empOpt.get();
@@ -204,8 +207,18 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Last name is required"));
         }
         if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Phone number is required"));
+            return ResponseEntity.badRequest().body(Map.of("message", "Indian mobile number is required"));
         }
+
+        String rawPhone = request.getPhone().trim().replaceAll("\\D", "");
+        if (rawPhone.length() > 10) rawPhone = rawPhone.substring(rawPhone.length() - 10);
+
+        if (rawPhone.length() != 10 || !rawPhone.matches("[6789]\\d{9}")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9)"));
+        }
+
+        String formattedIndianPhone = "+91-" + rawPhone.substring(0, 5) + "-" + rawPhone.substring(5);
+
         if (request.getEmployeeCode() == null || request.getEmployeeCode().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Employee code is required"));
         }
@@ -231,7 +244,7 @@ public class AuthController {
         newEmployee.setLastName(request.getLastName().trim());
         newEmployee.setEmail(email);
         newEmployee.setPassword(request.getPassword().trim());
-        newEmployee.setPhone(request.getPhone().trim());
+        newEmployee.setPhone(formattedIndianPhone);
         newEmployee.setEmployeeCode(request.getEmployeeCode().trim());
         newEmployee.setRole(UserRole.EMPLOYEE);
         newEmployee.setDepartment(request.getDepartment() != null ? request.getDepartment().trim() : "General");

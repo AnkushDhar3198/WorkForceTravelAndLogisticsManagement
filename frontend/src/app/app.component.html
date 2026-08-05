@@ -202,16 +202,16 @@
       <!-- 2FA Verification Form (Mandatory for Traveling Employees) -->
       <div *ngIf="twoFAActive">
         <div style="background: rgba(10,132,255,0.08); border: 1px solid rgba(10,132,255,0.25); border-radius: 16px; padding: 20px; margin-bottom: 20px; text-align: center;">
-          <div style="font-size: 32px; margin-bottom: 8px;">📱</div>
-          <div style="font-size: 15px; font-weight: 800; color: var(--accent-blue);">Verify Your Identity</div>
+          <div style="font-size: 32px; margin-bottom: 8px;">🇮🇳 📱</div>
+          <div style="font-size: 15px; font-weight: 800; color: var(--accent-blue);">Verify Indian Mobile Number</div>
           <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5;">
-            We've sent a 6-digit verification code via SMS to your registered mobile number
+            We've sent a 6-digit verification code via SMS to your registered Indian mobile number (+91)
           </div>
           <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-top: 6px; font-family: monospace;">
             {{getMaskedPhone()}}
           </div>
           <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px;">
-            Please check your phone's SMS inbox and enter the code below.
+            Please check your Indian phone's SMS inbox and enter the code below.
           </div>
         </div>
 
@@ -373,9 +373,9 @@
 
         <div class="auth-form-row">
           <div class="auth-field" [ngClass]="getFieldStatus('phone')">
-            <label>Phone Number *</label>
+            <label>Indian Mobile Number (+91) *</label>
             <div class="field-input-wrap">
-              <input type="tel" placeholder="+1-415-555-0100" [(ngModel)]="signupForm.phone" name="phone" (blur)="validateSignupField('phone')">
+              <input type="tel" placeholder="9876543210 or +91-98765-43210" [(ngModel)]="signupForm.phone" name="phone" (blur)="validateSignupField('phone')">
               <span class="field-status" *ngIf="signupTouched['phone']">{{getFieldStatus('phone') === 'valid' ? '✓' : '✗'}}</span>
             </div>
             <div class="field-error">{{signupErrors['phone'] || ''}}</div>
