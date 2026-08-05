@@ -229,27 +229,17 @@
         </button>
       </div>
 
-      <!-- Mode Selector (Email vs Phone Number SMS OTP) -->
-      <div *ngIf="!twoFAActive" style="display:flex; background:var(--bg-tertiary); border:1px solid var(--border-subtle); border-radius:100px; padding:3px; margin-bottom:18px;">
-        <button type="button" class="theme-pill" style="flex:1; justify-content:center; border-radius:100px;" [class.active]="loginMode === 'password'" (click)="loginMode = 'password'">
-          ✉️ Email Login
-        </button>
-        <button type="button" class="theme-pill" style="flex:1; justify-content:center; border-radius:100px;" [class.active]="loginMode === 'phone_otp'" (click)="loginMode = 'phone_otp'">
-          📲 Phone SMS OTP
-        </button>
-      </div>
-
-      <!-- Standard Email + Password Form -->
-      <form *ngIf="!twoFAActive && loginMode === 'password'" (ngSubmit)="onEmployeeLogin()">
+      <!-- Standard Unified Login Form (Email + Password -> Mandatory 2FA SMS OTP) -->
+      <form *ngIf="!twoFAActive" (ngSubmit)="onEmployeeLogin()">
         <div class="auth-field">
-          <label>Corporate Email</label>
+          <label>Corporate Email Address *</label>
           <div class="field-input-wrap">
             <input type="email" placeholder="you@company.com" [(ngModel)]="loginEmail" name="email" autocomplete="email">
           </div>
         </div>
 
         <div class="auth-field">
-          <label>Password / Passkey</label>
+          <label>Password / Official Passkey *</label>
           <div class="field-input-wrap">
             <input type="password" placeholder="Enter your password" [(ngModel)]="loginPassword" name="password" autocomplete="current-password">
           </div>
@@ -257,8 +247,8 @@
 
         <div class="field-error" *ngIf="loginError" style="text-align:center; margin-bottom:16px;">{{loginError}}</div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;" [disabled]="isAuthenticating">
-          {{isAuthenticating ? 'Signing In...' : 'Sign In'}}
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px; font-weight:800;" [disabled]="isAuthenticating">
+          {{isAuthenticating ? 'Authenticating...' : 'Sign In'}}
         </button>
 
         <div style="text-align:center; margin: 16px 0 12px 0; color: var(--text-tertiary); font-size:12px;">
@@ -269,45 +259,6 @@
           🔑 Sign In with Corporate SSO (Okta / SAML 2.0)
         </button>
       </form>
-
-      <!-- Phone Number SMS OTP Form -->
-      <div *ngIf="!twoFAActive && loginMode === 'phone_otp'">
-        <div *ngIf="!showPhoneLoginOtpStep">
-          <div class="auth-field">
-            <label>Registered Phone Number</label>
-            <div class="field-input-wrap">
-              <input type="tel" placeholder="+1-415-555-0201" [(ngModel)]="phoneLoginNumber">
-            </div>
-            <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;">
-              Enter your registered phone number (e.g. Sarah Jenkins: <strong>+1-415-555-0201</strong>)
-            </div>
-          </div>
-          <div class="field-error" *ngIf="phoneLoginError" style="text-align:center; margin-bottom:14px;">{{phoneLoginError}}</div>
-          <button class="btn btn-primary" style="width:100%; justify-content:center; padding:13px; font-weight:800;" (click)="onSendPhoneLoginOtp()" [disabled]="isPhoneLoginLoading">
-            {{isPhoneLoginLoading ? 'Sending SMS OTP...' : '📲 Send SMS OTP'}}
-          </button>
-        </div>
-
-        <div *ngIf="showPhoneLoginOtpStep">
-          <div style="background: rgba(10,132,255,0.08); border: 1px solid rgba(10,132,255,0.25); border-radius: 14px; padding: 14px; margin-bottom: 16px; text-align: center;">
-            <div style="font-size: 13px; font-weight: 700; color: var(--accent-blue);">SMS Verification Dispatched</div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Code sent to {{phoneLoginNumber}}</div>
-          </div>
-
-          <div class="auth-field">
-            <label>Enter 6-Digit Code *</label>
-            <input class="form-control" type="text" placeholder="000000" maxlength="6" [(ngModel)]="phoneLoginOtpCode" style="letter-spacing:8px; text-align:center; font-weight:800; font-size:20px; font-family:monospace;">
-            <div class="field-error" *ngIf="phoneLoginError" style="margin-top:6px; text-align:center;">{{phoneLoginError}}</div>
-          </div>
-
-          <button class="btn btn-primary" style="width:100%; justify-content:center; padding:13px; font-weight:800;" (click)="onVerifyPhoneLoginOtp()" [disabled]="isPhoneLoginLoading">
-            {{isPhoneLoginLoading ? 'Verifying...' : '✓ Verify & Sign In'}}
-          </button>
-          <button class="btn btn-ghost" style="width:100%; justify-content:center; margin-top:8px;" (click)="showPhoneLoginOtpStep = false">
-            ← Change Phone Number
-          </button>
-        </div>
-      </div>
 
       <!-- Switch to Signup -->
       <div class="auth-switch" *ngIf="!twoFAActive">

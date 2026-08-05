@@ -60,14 +60,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   twoFACodeInput = '';
   twoFAError = '';
 
-  // ===== Direct Phone SMS Login =====
-  loginMode: 'password' | 'phone_otp' = 'password';
-  phoneLoginNumber = '';
-  phoneLoginOtpCode = '';
-  showPhoneLoginOtpStep = false;
-  phoneLoginArrivedOtp = '';
-  phoneLoginError = '';
-  isPhoneLoginLoading = false;
+
 
   // ===== Signup Form =====
   signupForm = {
@@ -337,64 +330,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  // ===== Direct Phone Number SMS OTP Login =====
-  onSendPhoneLoginOtp() {
-    if (!this.phoneLoginNumber || this.phoneLoginNumber.trim().length < 7) {
-      this.phoneLoginError = 'Please enter a valid registered mobile phone number';
-      return;
-    }
-    this.isPhoneLoginLoading = true;
-    this.phoneLoginError = '';
 
-    this.api.sendLoginPhoneOtp(this.phoneLoginNumber.trim()).subscribe({
-      next: (res: any) => {
-        this.isPhoneLoginLoading = false;
-        this.showPhoneLoginOtpStep = true;
-        this.phoneLoginArrivedOtp = res.otp || '123984';
-        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code was sent to ${res.phone || this.phoneLoginNumber}`);
-      },
-      error: (err: any) => {
-        this.isPhoneLoginLoading = false;
-        this.showPhoneLoginOtpStep = true;
-        this.phoneLoginArrivedOtp = '123984';
-        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code was sent to ${this.phoneLoginNumber}`);
-      }
-    });
-  }
-
-  onVerifyPhoneLoginOtp() {
-    if (!this.phoneLoginOtpCode || this.phoneLoginOtpCode.trim().length !== 6) {
-      this.phoneLoginError = 'Please enter the 6-digit SMS OTP code';
-      return;
-    }
-    this.isPhoneLoginLoading = true;
-    this.phoneLoginError = '';
-
-    this.api.verifyLoginPhoneOtp(this.phoneLoginNumber.trim(), this.phoneLoginOtpCode.trim()).subscribe({
-      next: (res: any) => {
-        this.isPhoneLoginLoading = false;
-        this.showPhoneLoginOtpStep = false;
-        this.currentView = 'app';
-        this.loadAllData();
-        this.pollSub = interval(30000).subscribe(() => this.loadAllData());
-        this.showPopup('success', 'Phone 2FA Verified! ✅', `Welcome back, ${res.employee?.fullName || 'Sarah Jenkins'}`);
-      },
-      error: () => {
-        if (this.phoneLoginOtpCode.trim() === this.phoneLoginArrivedOtp || this.phoneLoginOtpCode.trim() === '123984' || this.phoneLoginOtpCode.trim() === '123456') {
-          this.auth.mockLogin('employee.sarah@cbg-enterprise.com', 'EMPLOYEE', 'Sarah Jenkins');
-          this.isPhoneLoginLoading = false;
-          this.showPhoneLoginOtpStep = false;
-          this.currentView = 'app';
-          this.loadAllData();
-          this.pollSub = interval(30000).subscribe(() => this.loadAllData());
-          this.showPopup('success', 'Phone 2FA Verified! ✅', 'Welcome back, Sarah Jenkins');
-        } else {
-          this.isPhoneLoginLoading = false;
-          this.phoneLoginError = 'Invalid 6-digit SMS OTP code. Please check and try again.';
-        }
-      }
-    });
-  }
 
   // ===== Corporate SSO Login (US-01) =====
   onSsoLogin(provider: 'OKTA' | 'AZURE_AD' | 'GOOGLE_WORKSPACE' = 'OKTA') {
