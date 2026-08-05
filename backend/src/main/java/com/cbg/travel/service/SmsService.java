@@ -85,18 +85,21 @@ public class SmsService {
             String cleanTo = toPhone.replaceAll("\\D", "");
             if (cleanTo.length() > 10) cleanTo = cleanTo.substring(cleanTo.length() - 10);
 
-            String url = "https://www.fast2sms.com/dev/bulkV2?authorization=" + apiKey +
-                    "&route=q&message=" + URLEncoder.encode(messageText, StandardCharsets.UTF_8) +
-                    "&language=english&flash=0&numbers=" + cleanTo;
+            System.out.println("📲 Dispatching Fast2SMS Cellular SMS to: +91 " + cleanTo);
+
+            String jsonBody = String.format("{\"route\":\"q\",\"message\":\"%s\",\"language\":\"english\",\"flash\":0,\"numbers\":\"%s\"}",
+                    messageText.replace("\"", "\\\""), cleanTo);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("authorization", apiKey)
-                    .GET()
+                    .uri(URI.create("https://www.fast2sms.com/dev/bulkV2"))
+                    .header("authorization", apiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.statusCode() == 200;
+            System.out.println("📲 Fast2SMS Dispatch Result (" + response.statusCode() + "): " + response.body());
+            return response.statusCode() == 200 && response.body().contains("\"return\":true");
         } catch (Exception e) {
             System.err.println("Fast2SMS Exception: " + e.getMessage());
             return false;

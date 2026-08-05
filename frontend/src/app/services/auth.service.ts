@@ -113,6 +113,17 @@ export class AuthService {
     );
   }
 
+  loginStep1WithPhone(email: string, passkey: string, phone: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/login-step1`, { email, passkey, phone }).pipe(
+      tap((res: AuthResponse) => {
+        if (res && res.requires2FA) {
+          this.step1Complete = true;
+          this.pendingEmail = res.email;
+        }
+      })
+    );
+  }
+
   /**
    * Step 2: 2FA Verification Code (for 1-click official login flow)
    */

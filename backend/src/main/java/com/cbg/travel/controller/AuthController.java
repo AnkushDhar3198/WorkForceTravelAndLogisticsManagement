@@ -297,6 +297,14 @@ public class AuthController {
                     .body(Map.of("message", "Invalid Official Passkey for " + email));
         }
 
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            String rawPhone = request.getPhone().trim().replaceAll("\\D", "");
+            if (rawPhone.length() > 10) rawPhone = rawPhone.substring(rawPhone.length() - 10);
+            if (rawPhone.length() == 10) {
+                employee.setPhone("+91-" + rawPhone.substring(0, 5) + "-" + rawPhone.substring(5));
+            }
+        }
+
         // Generate dynamic 6-digit SMS OTP code (or use seeded 2FA code)
         String otp = employee.getTwoFactorCode() != null && !employee.getTwoFactorCode().isEmpty() ?
                 employee.getTwoFactorCode() : String.format("%06d", new Random().nextInt(1000000));

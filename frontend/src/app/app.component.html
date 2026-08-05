@@ -210,6 +210,22 @@
           <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-top: 6px; font-family: monospace;">
             {{getMaskedPhone()}}
           </div>
+          <div style="margin-top:6px;">
+            <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px; color:var(--accent-blue);" (click)="toggleUpdatePhone()">
+              {{showUpdatePhone ? '✕ Cancel' : '📲 Change / Enter My Personal Mobile Number (+91)'}}
+            </button>
+          </div>
+
+          <div *ngIf="showUpdatePhone" style="margin-top:10px; padding:12px; background:rgba(255,255,255,0.05); border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+            <div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">Enter your personal 10-digit Indian Mobile Number:</div>
+            <div style="display:flex; gap:8px;">
+              <input type="tel" placeholder="e.g. 9876543210" [(ngModel)]="customMobileInput" [ngModelOptions]="{standalone: true}" style="flex:1; padding:8px; border-radius:8px; font-size:13px; font-family:monospace;">
+              <button class="btn btn-primary" style="font-size:11px; padding:8px 12px;" (click)="updatePhoneAndResendSMS()" [disabled]="isAuthenticating">
+                Send SMS
+              </button>
+            </div>
+          </div>
+
           <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px;">
             Please check your Indian phone's SMS inbox and enter the code below.
           </div>
