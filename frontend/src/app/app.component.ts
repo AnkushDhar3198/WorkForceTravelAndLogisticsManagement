@@ -311,7 +311,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.twoFAArrivedOtp = res.otp || '123984';
           this.twoFACodeInput = '';
           this.twoFAError = '';
-          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${this.twoFAArrivedOtp}) was sent to registered phone ${this.twoFAPhone}`);
+          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone ${this.twoFAPhone}`);
         } else {
           this.currentView = 'app';
           this.loadAllData();
@@ -329,7 +329,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.twoFAArrivedOtp = official.code || '123984';
           this.twoFACodeInput = '';
           this.twoFAError = '';
-          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${this.twoFAArrivedOtp}) was sent to registered phone ${this.twoFAPhone}`);
+          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone ${this.twoFAPhone}`);
         } else {
           this.loginError = err.error?.message || 'Authentication failed. Please check your credentials.';
         }
@@ -351,13 +351,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.isPhoneLoginLoading = false;
         this.showPhoneLoginOtpStep = true;
         this.phoneLoginArrivedOtp = res.otp || '123984';
-        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code (${this.phoneLoginArrivedOtp}) was sent to ${res.phone || this.phoneLoginNumber}`);
+        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code was sent to ${res.phone || this.phoneLoginNumber}`);
       },
       error: (err: any) => {
         this.isPhoneLoginLoading = false;
         this.showPhoneLoginOtpStep = true;
         this.phoneLoginArrivedOtp = '123984';
-        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code (123984) was sent to ${this.phoneLoginNumber}`);
+        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code was sent to ${this.phoneLoginNumber}`);
       }
     });
   }
@@ -500,7 +500,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.api.sendPhoneOtp(currentEmpId, this.otpPhoneInput).subscribe({
       next: (res: any) => {
         this.isSendingOtp = false;
-        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code (${res.otp}) was sent to ${this.otpPhoneInput}`);
+        this.showPopup('info', 'SMS OTP Dispatched 📲', `A 6-digit verification code was sent to ${this.otpPhoneInput}`);
         this.startOtpTimer(60);
         this.loadAllData();
       },
@@ -637,7 +637,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.twoFAArrivedOtp = res.otp || official.code;
         this.twoFACodeInput = '';
         this.twoFAError = '';
-        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${this.twoFAArrivedOtp}) was sent to registered phone ${this.twoFAPhone}`);
+        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone ${this.twoFAPhone}`);
       },
       error: () => {
         this.isAuthenticating = false;
@@ -647,7 +647,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.twoFAArrivedOtp = official.code;
         this.twoFACodeInput = '';
         this.twoFAError = '';
-        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code (${official.code}) was sent to registered phone +1-415-555-0201`);
+        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone +1-415-555-0201`);
       }
     });
   }

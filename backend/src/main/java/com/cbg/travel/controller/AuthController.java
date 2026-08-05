@@ -75,7 +75,7 @@ public class AuthController {
             // Dispatch SMS OTP Notification
             Notification notification = new Notification();
             notification.setTitle("📲 Mandatory 2FA Login OTP");
-            notification.setMessage("Your 6-digit SMS OTP for login is: " + otp + ". Valid for 5 minutes.");
+            notification.setMessage("A 6-digit 2FA SMS OTP code was dispatched to your mobile phone (" + employee.getPhone() + "). Valid for 5 minutes.");
             notification.setSeverity("HIGH");
             notification.setCategory("SYSTEM");
             notification.setTargetEmployee(employee);
@@ -124,7 +124,7 @@ public class AuthController {
 
         Notification notification = new Notification();
         notification.setTitle("📲 SMS Login OTP Dispatched");
-        notification.setMessage("Your 6-digit SMS login OTP is: " + otp + ". Valid for 5 minutes.");
+        notification.setMessage("A 6-digit SMS login OTP was dispatched to your mobile phone (" + employee.getPhone() + "). Valid for 5 minutes.");
         notification.setSeverity("HIGH");
         notification.setCategory("SYSTEM");
         notification.setTargetEmployee(employee);
