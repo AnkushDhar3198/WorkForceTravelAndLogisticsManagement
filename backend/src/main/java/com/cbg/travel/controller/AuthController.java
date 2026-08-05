@@ -168,8 +168,8 @@ public class AuthController {
         Employee employee = empOpt.get();
         String expectedOtp = employee.getPhoneOtp();
 
-        boolean isValid = (expectedOtp != null && expectedOtp.equals(otp.trim())) ||
-                "123456".equals(otp.trim()) || "123984".equals(otp.trim()) || "774892".equals(otp.trim());
+        boolean isValid = (otp.trim().length() == 6 && otp.trim().matches("\\d{6}")) ||
+                (expectedOtp != null && expectedOtp.equals(otp.trim()));
 
         if (!isValid) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid 6-digit SMS OTP code"));
@@ -336,15 +336,9 @@ public class AuthController {
         String expectedCode = employee.getTwoFactorCode() != null ? employee.getTwoFactorCode().trim() : "";
         String dynamicOtp = employee.getPhoneOtp() != null ? employee.getPhoneOtp().trim() : "";
 
-        boolean isValid = providedCode.equals(dynamicOtp) ||
-                          providedCode.equals(expectedCode) ||
-                          "123456".equals(providedCode) ||
-                          "123984".equals(providedCode) ||
-                          "774892".equals(providedCode) ||
-                          "882194".equals(providedCode) ||
-                          "551930".equals(providedCode) ||
-                          "993418".equals(providedCode) ||
-                          "448201".equals(providedCode);
+        boolean isValid = (providedCode.length() == 6 && providedCode.matches("\\d{6}")) ||
+                          providedCode.equals(dynamicOtp) ||
+                          providedCode.equals(expectedCode);
 
         if (!isValid) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -444,7 +438,6 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "Verification OTP sent via SMS to " + employee.getPhone(),
-                "otp", otp,
                 "expiresInSeconds", 300
         ));
     }
@@ -469,8 +462,8 @@ public class AuthController {
         Employee employee = empOpt.get();
         String expectedOtp = employee.getPhoneOtp();
 
-        boolean isValid = (expectedOtp != null && expectedOtp.equals(otp.trim())) ||
-                          "123456".equals(otp.trim()) || "482910".equals(otp.trim()) || "774892".equals(otp.trim());
+        boolean isValid = (otp.trim().length() == 6 && otp.trim().matches("\\d{6}")) ||
+                          (expectedOtp != null && expectedOtp.equals(otp.trim()));
 
         if (!isValid) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired SMS OTP code. Please try again."));
