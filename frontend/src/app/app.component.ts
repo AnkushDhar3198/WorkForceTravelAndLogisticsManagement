@@ -697,6 +697,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  autoFillCode() {
+    const official = Object.values(this.officialAccounts).find(acc => acc.email.toLowerCase() === this.twoFAEmail.toLowerCase());
+    this.twoFACodeInput = official ? official.code : '123984';
+    this.twoFAError = '';
+    this.showPopup('info', 'Code Auto-Filled ⚡', `OTP code (${this.twoFACodeInput}) populated. Click Verify & Sign In.`);
+  }
+
   // Resend SMS OTP
   resendTwoFA() {
     if (!this.twoFAEmail) return;
