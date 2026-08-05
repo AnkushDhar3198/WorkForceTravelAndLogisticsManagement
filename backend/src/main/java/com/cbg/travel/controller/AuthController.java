@@ -107,6 +107,7 @@ public class AuthController {
      */
     @PostMapping("/send-phone-login-otp")
     public ResponseEntity<?> sendPhoneLoginOtp(@RequestBody Map<String, String> payload) {
+        String phone = payload != null ? payload.get("phone") : null;
         String phoneInput = phone != null ? phone.trim() : "";
         String rawPhone = phoneInput.replaceAll("\\D", "");
         if (rawPhone.length() > 10) rawPhone = rawPhone.substring(rawPhone.length() - 10);
