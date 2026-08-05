@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, interval, switchMap, startWith } from 'rxjs';
 
 export interface Employee {
@@ -20,6 +20,7 @@ export interface Employee {
 
 export interface TravelRequest {
   id: number;
+  requestId: string;
   employee: Employee;
   destination: string;
   countryCode: string;
@@ -33,6 +34,7 @@ export interface TravelRequest {
   groundTransportBudget: number;
   status: string;
   policyViolations: string;
+  justificationText: string;
   policyComplianceScore: number;
   roiScore: number;
   managerRemarks: string;
@@ -108,14 +110,84 @@ export interface ExpenseClaim {
   receiptFileName: string;
 }
 
+export interface Booking {
+  id: number;
+  travelRequest: TravelRequest;
+  employee: Employee;
+  bookingType: string;
+  pnrCode: string;
+  confirmationNumber: string;
+  vendorName: string;
+  bookingDate: string;
+  departureAirport: string;
+  arrivalAirport: string;
+  departureDateTime: string;
+  arrivalDateTime: string;
+  flightNumber: string;
+  cabinClass: string;
+  seatNumber: string;
+  hotelName: string;
+  checkInDate: string;
+  checkOutDate: string;
+  roomType: string;
+  vehicleType: string;
+  pickupLocation: string;
+  dropLocation: string;
+  amount: number;
+  currency: string;
+  status: string;
+  notes: string;
+  createdAt: string;
+}
+
+export interface TravelDocument {
+  id: number;
+  employee: Employee;
+  documentType: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  expiryDate: string;
+  description: string;
+  active: boolean;
+  uploadedAt: string;
+}
+
+export interface AuditLog {
+  id: number;
+  userId: number;
+  userName: string;
+  userRole: string;
+  actionType: string;
+  entityType: string;
+  entityId: string;
+  details: string;
+  ipAddress: string;
+  timestamp: string;
+}
+
 export interface DashboardAnalytics {
   totalApprovedSpend: number;
   activeTripsCount: number;
   totalReimbursed: number;
   policyComplianceRate: number;
   estimatedCorporateSavings: number;
-  spendByDepartment: { department: string; spend: number }[];
+  ytdSpend: number;
+  totalAllocatedBudget: number;
+  spendByDepartment: { department: string; spend: number; budget: number }[];
   spendByCategory: { category: string; spend: number }[];
+  spendByVendor: { vendor: string; spend: number }[];
+  monthlyTrend: { month: string; spend: number }[];
+  violationTrend: Record<string, number>;
+}
+
+export interface ReimbursementExport {
+  message: string;
+  exportedCount: number;
+  totalAmount: number;
+  exportTimestamp: string;
+  records: any[];
+  csvContent: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -142,6 +214,19 @@ export class ApiService {
     return this.http.get<DashboardAnalytics>(`${this.baseUrl}/analytics/dashboard`);
   }
 
+  getDepartmentSummary(department: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/analytics/department/${encodeURIComponent(department)}`);
+  }
+
+  getAnalyticsReport(filters: {startDate?: string; endDate?: string; department?: string; vendor?: string}): Observable<any> {
+    let params = new HttpParams();
+    if (filters.startDate) params = params.set('startDate', filters.startDate);
+    if (filters.endDate) params = params.set('endDate', filters.endDate);
+    if (filters.department) params = params.set('department', filters.department);
+    if (filters.vendor) params = params.set('vendor', filters.vendor);
+    return this.http.get(`${this.baseUrl}/analytics/reports`, { params });
+  }
+
   // Employees
   getEmployees(): Observable<Employee[]> {
     return this.http.get<Employee[]>(`${this.baseUrl}/employees`);
@@ -160,7 +245,7 @@ export class ApiService {
     return this.http.put<TravelRequest>(`${this.baseUrl}/travel-requests/${id}/status`, payload);
   }
 
-  // Vendors (BRD FR14)
+  // Vendors (US-09)
   getVendors(): Observable<Vendor[]> {
     return this.http.get<Vendor[]>(`${this.baseUrl}/vendors`);
   }
@@ -173,7 +258,7 @@ export class ApiService {
     return this.http.delete(`${this.baseUrl}/vendors/${id}`);
   }
 
-  // Shipments (BRD FR6)
+  // Shipments
   getShipments(): Observable<Shipment[]> {
     return this.http.get<Shipment[]>(`${this.baseUrl}/shipments`);
   }
@@ -195,7 +280,7 @@ export class ApiService {
     return this.http.put<Notification>(`${this.baseUrl}/notifications/${id}/read`, {});
   }
 
-  // Risk / Traveler Locations (BRD FR12)
+  // Risk / Traveler Locations (US-12, US-13)
   getTravelerLocations(): Observable<TravelerLocation[]> {
     return this.http.get<TravelerLocation[]>(`${this.baseUrl}/risk/travelers`);
   }
@@ -204,7 +289,7 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/risk/sos`, payload);
   }
 
-  // Expenses (BRD FR8 & FR9)
+  // Expenses (US-14, US-15, US-16)
   getExpenses(): Observable<ExpenseClaim[]> {
     return this.http.get<ExpenseClaim[]>(`${this.baseUrl}/expenses`);
   }
@@ -215,5 +300,69 @@ export class ApiService {
 
   auditExpense(id: number, payload: any): Observable<ExpenseClaim> {
     return this.http.put<ExpenseClaim>(`${this.baseUrl}/expenses/${id}/audit`, payload);
+  }
+
+  // Bookings (US-08)
+  getBookings(): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.baseUrl}/bookings`);
+  }
+
+  getBookingsByTrip(travelRequestId: number): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.baseUrl}/bookings/trip/${travelRequestId}`);
+  }
+
+  getBookingsByEmployee(employeeId: number): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.baseUrl}/bookings/employee/${employeeId}`);
+  }
+
+  createBooking(booking: any): Observable<Booking> {
+    return this.http.post<Booking>(`${this.baseUrl}/bookings`, booking);
+  }
+
+  updateBookingStatus(id: number, payload: any): Observable<Booking> {
+    return this.http.put<Booking>(`${this.baseUrl}/bookings/${id}/status`, payload);
+  }
+
+  // Documents (US-02)
+  getDocuments(): Observable<TravelDocument[]> {
+    return this.http.get<TravelDocument[]>(`${this.baseUrl}/documents`);
+  }
+
+  getDocumentsByEmployee(employeeId: number): Observable<TravelDocument[]> {
+    return this.http.get<TravelDocument[]>(`${this.baseUrl}/documents/employee/${employeeId}`);
+  }
+
+  uploadDocument(payload: any): Observable<TravelDocument> {
+    return this.http.post<TravelDocument>(`${this.baseUrl}/documents/upload`, payload);
+  }
+
+  downloadDocument(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/documents/${id}/download`);
+  }
+
+  replaceDocument(id: number, payload: any): Observable<TravelDocument> {
+    return this.http.put<TravelDocument>(`${this.baseUrl}/documents/${id}`, payload);
+  }
+
+  deleteDocument(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/documents/${id}`);
+  }
+
+  // Audit Logs (US-20)
+  getAuditLogs(): Observable<AuditLog[]> {
+    return this.http.get<AuditLog[]>(`${this.baseUrl}/audit-logs`);
+  }
+
+  getFilteredAuditLogs(filters: {actionType?: string; entityType?: string; userId?: number}): Observable<AuditLog[]> {
+    let params = new HttpParams();
+    if (filters.actionType) params = params.set('actionType', filters.actionType);
+    if (filters.entityType) params = params.set('entityType', filters.entityType);
+    if (filters.userId) params = params.set('userId', filters.userId.toString());
+    return this.http.get<AuditLog[]>(`${this.baseUrl}/audit-logs/filter`, { params });
+  }
+
+  // Reimbursements (US-17)
+  exportReimbursements(payload?: any): Observable<ReimbursementExport> {
+    return this.http.post<ReimbursementExport>(`${this.baseUrl}/reimbursements/export`, payload || {});
   }
 }

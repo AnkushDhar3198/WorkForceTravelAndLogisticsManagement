@@ -12,6 +12,9 @@ public class TravelRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
+    private String requestId; // Unique alphanumeric e.g. TR-20260805-A7K3
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
@@ -49,6 +52,9 @@ public class TravelRequest {
     @Column(length = 2000)
     private String policyViolations;
 
+    @Column(length = 2000)
+    private String justificationText; // Required when policy violation exists
+
     private Integer policyComplianceScore;
 
     private Integer roiScore;
@@ -85,6 +91,9 @@ public class TravelRequest {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public String getRequestId() { return requestId; }
+    public void setRequestId(String requestId) { this.requestId = requestId; }
 
     public Employee getEmployee() { return employee; }
     public void setEmployee(Employee employee) { this.employee = employee; }
@@ -124,6 +133,9 @@ public class TravelRequest {
 
     public String getPolicyViolations() { return policyViolations; }
     public void setPolicyViolations(String policyViolations) { this.policyViolations = policyViolations; }
+
+    public String getJustificationText() { return justificationText; }
+    public void setJustificationText(String justificationText) { this.justificationText = justificationText; }
 
     public Integer getPolicyComplianceScore() { return policyComplianceScore; }
     public void setPolicyComplianceScore(Integer policyComplianceScore) { this.policyComplianceScore = policyComplianceScore; }

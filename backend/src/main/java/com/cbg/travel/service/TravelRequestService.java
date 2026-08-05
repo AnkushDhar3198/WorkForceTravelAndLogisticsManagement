@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,15 +20,18 @@ public class TravelRequestService {
     private final EmployeeRepository employeeRepo;
     private final PolicyRuleRepository policyRuleRepo;
     private final NotificationRepository notificationRepo;
+    private final AuditService auditService;
 
     public TravelRequestService(TravelRequestRepository travelRequestRepo,
                                 EmployeeRepository employeeRepo,
                                 PolicyRuleRepository policyRuleRepo,
-                                NotificationRepository notificationRepo) {
+                                NotificationRepository notificationRepo,
+                                AuditService auditService) {
         this.travelRequestRepo = travelRequestRepo;
         this.employeeRepo = employeeRepo;
         this.policyRuleRepo = policyRuleRepo;
         this.notificationRepo = notificationRepo;
+        this.auditService = auditService;
     }
 
     public List<TravelRequest> getAllRequests() {
@@ -47,8 +51,18 @@ public class TravelRequestService {
     }
 
     /**
+     * Generates a unique alphanumeric Request ID (US-03 AC3).
+     * Format: TR-YYYYMMDD-XXXX (e.g., TR-20260805-A7K3)
+     */
+    private String generateRequestId() {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String alphaPart = UUID.randomUUID().toString().replace("-", "").substring(0, 4).toUpperCase();
+        return "TR-" + datePart + "-" + alphaPart;
+    }
+
+    /**
      * Creates a new travel request with automated policy engine validation.
-     * This is the core business logic for User Story 1 & 2.
+     * Implements US-03, US-04, US-05.
      */
     public TravelRequest createRequest(TravelRequest request) {
         // Validate employee exists
@@ -61,7 +75,15 @@ public class TravelRequestService {
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
         request.setEmployee(employee);
 
-        // Validate dates
+        // Validate mandatory fields (US-03 AC1)
+        if (request.getDestination() == null || request.getDestination().trim().isEmpty()) {
+            throw new IllegalArgumentException("Destination is required");
+        }
+        if (request.getPurpose() == null || request.getPurpose().trim().isEmpty()) {
+            throw new IllegalArgumentException("Business purpose is required");
+        }
+
+        // Validate dates (US-03 AC2)
         if (request.getStartDate() == null || request.getEndDate() == null) {
             throw new IllegalArgumentException("Start date and end date are required");
         }
@@ -72,7 +94,24 @@ public class TravelRequestService {
             throw new IllegalArgumentException("Start date cannot be in the past");
         }
 
-        // Run automated policy engine
+        // Generate unique Request ID (US-03 AC3)
+        request.setRequestId(generateRequestId());
+
+        // Auto-calculate total estimated budget (US-04 AC2)
+        double totalBudget = 0;
+        if (request.getEstimatedBudget() != null) totalBudget = request.getEstimatedBudget();
+        else {
+            int days = request.getTripDurationDays();
+            if (days <= 0) days = 1;
+            double flightEst = request.getEstimatedBudget() != null ? request.getEstimatedBudget() : 0;
+            double hotelEst = (request.getHotelDailyRate() != null ? request.getHotelDailyRate() : 0) * days;
+            double mealEst = (request.getMealAllowance() != null ? request.getMealAllowance() : 0) * days;
+            double transportEst = request.getGroundTransportBudget() != null ? request.getGroundTransportBudget() : 0;
+            totalBudget = flightEst + hotelEst + mealEst + transportEst;
+            request.setEstimatedBudget(totalBudget);
+        }
+
+        // Run automated policy engine (US-05)
         List<String> violations = runPolicyEngine(request);
 
         if (!violations.isEmpty()) {
@@ -89,15 +128,20 @@ public class TravelRequestService {
 
         TravelRequest saved = travelRequestRepo.save(request);
 
-        // Create notification for manager
+        // Create notification for manager (US-06)
         createApprovalNotification(saved);
+
+        // Audit log
+        auditService.log(employeeId, employee.getFullName(), employee.getRole().name(),
+                "CREATE", "TRAVEL_REQUEST", saved.getRequestId(),
+                "Travel request to " + saved.getDestination() + " ($" + saved.getEstimatedBudget() + ")");
 
         return saved;
     }
 
     /**
      * Automated Policy Engine - evaluates all active policy rules against the request.
-     * This implements User Story 2.
+     * Implements US-05.
      */
     private List<String> runPolicyEngine(TravelRequest request) {
         List<String> violations = new ArrayList<>();
@@ -147,27 +191,36 @@ public class TravelRequestService {
     }
 
     /**
-     * Manager approval/rejection workflow - User Story 3
+     * Manager approval/rejection workflow - US-07.
+     * Rejection enforces mandatory comment field (US-07 AC3).
      */
     public TravelRequest updateStatus(Long requestId, TravelRequestStatus newStatus, Long approverId, String remarks) {
         TravelRequest request = travelRequestRepo.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Travel request not found: " + requestId));
 
+        // Enforce mandatory rejection comment (US-07 AC3)
+        if (newStatus == TravelRequestStatus.REJECTED &&
+                (remarks == null || remarks.trim().isEmpty())) {
+            throw new IllegalArgumentException("A rejection comment is required when rejecting a request");
+        }
+
         request.setStatus(newStatus);
         request.setManagerRemarks(remarks);
 
+        Employee approver = null;
         if (approverId != null) {
-            Employee approver = employeeRepo.findById(approverId).orElse(null);
+            approver = employeeRepo.findById(approverId).orElse(null);
             request.setApprovedBy(approver);
         }
 
         if (newStatus == TravelRequestStatus.APPROVED || newStatus == TravelRequestStatus.REJECTED) {
             request.setApprovedAt(LocalDateTime.now());
 
-            // Create notification for employee
+            // Create notification for employee (US-06)
             Notification notification = new Notification();
             notification.setTitle("Travel Request " + newStatus.name());
-            notification.setMessage("Your request #" + requestId + " to " + request.getDestination()
+            notification.setMessage("Your request " + (request.getRequestId() != null ? request.getRequestId() : "#" + requestId)
+                    + " to " + request.getDestination()
                     + " has been " + newStatus.name().toLowerCase() + "."
                     + (remarks != null ? " Remarks: " + remarks : ""));
             notification.setSeverity(newStatus == TravelRequestStatus.APPROVED ? "INFO" : "HIGH");
@@ -176,7 +229,17 @@ public class TravelRequestService {
             notificationRepo.save(notification);
         }
 
-        return travelRequestRepo.save(request);
+        TravelRequest saved = travelRequestRepo.save(request);
+
+        // Audit log
+        String approverName = approver != null ? approver.getFullName() : "System";
+        String approverRole = approver != null ? approver.getRole().name() : "SYSTEM";
+        auditService.log(approverId != null ? approverId : 0L, approverName, approverRole,
+                newStatus == TravelRequestStatus.APPROVED ? "APPROVE" : "REJECT",
+                "TRAVEL_REQUEST", request.getRequestId() != null ? request.getRequestId() : String.valueOf(requestId),
+                "Request " + newStatus.name().toLowerCase() + ": " + request.getDestination());
+
+        return saved;
     }
 
     private int calculateComplianceScore(int violationCount) {
@@ -211,9 +274,11 @@ public class TravelRequestService {
             employeeRepo.findById(request.getEmployee().getManagerId()).ifPresent(manager -> {
                 Notification notification = new Notification();
                 notification.setTitle("New Travel Request Pending Approval");
-                notification.setMessage(request.getEmployee().getFullName() + " submitted request #"
-                        + request.getId() + " to " + request.getDestination()
-                        + " ($" + request.getEstimatedBudget() + ")");
+                notification.setMessage(request.getEmployee().getFullName() + " submitted request "
+                        + (request.getRequestId() != null ? request.getRequestId() : "#" + request.getId())
+                        + " to " + request.getDestination()
+                        + " (" + request.getStartDate() + " — " + request.getEndDate() + ")"
+                        + " — Estimated: $" + request.getEstimatedBudget());
                 notification.setSeverity(request.getStatus() == TravelRequestStatus.POLICY_VIOLATION ? "HIGH" : "MEDIUM");
                 notification.setCategory("SYSTEM");
                 notification.setTargetEmployee(manager);

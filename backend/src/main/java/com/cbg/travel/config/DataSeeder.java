@@ -5,6 +5,9 @@ import com.cbg.travel.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Component
 public class DataSeeder implements CommandLineRunner {
 
@@ -16,6 +19,9 @@ public class DataSeeder implements CommandLineRunner {
     private final NotificationRepository notificationRepo;
     private final TravelerLocationRepository travelerLocationRepo;
     private final ExpenseClaimRepository expenseClaimRepo;
+    private final BookingRepository bookingRepo;
+    private final AuditLogRepository auditLogRepo;
+    private final TravelDocumentRepository documentRepo;
 
     public DataSeeder(EmployeeRepository employeeRepo,
                       PolicyRuleRepository policyRuleRepo,
@@ -24,7 +30,10 @@ public class DataSeeder implements CommandLineRunner {
                       ShipmentRepository shipmentRepo,
                       NotificationRepository notificationRepo,
                       TravelerLocationRepository travelerLocationRepo,
-                      ExpenseClaimRepository expenseClaimRepo) {
+                      ExpenseClaimRepository expenseClaimRepo,
+                      BookingRepository bookingRepo,
+                      AuditLogRepository auditLogRepo,
+                      TravelDocumentRepository documentRepo) {
         this.employeeRepo = employeeRepo;
         this.policyRuleRepo = policyRuleRepo;
         this.vendorRepo = vendorRepo;
@@ -33,6 +42,9 @@ public class DataSeeder implements CommandLineRunner {
         this.notificationRepo = notificationRepo;
         this.travelerLocationRepo = travelerLocationRepo;
         this.expenseClaimRepo = expenseClaimRepo;
+        this.bookingRepo = bookingRepo;
+        this.auditLogRepo = auditLogRepo;
+        this.documentRepo = documentRepo;
     }
 
     @Override
@@ -47,6 +59,9 @@ public class DataSeeder implements CommandLineRunner {
 
         // Clear existing tables to ensure clean DB state
         try {
+            auditLogRepo.deleteAllInBatch();
+            bookingRepo.deleteAllInBatch();
+            documentRepo.deleteAllInBatch();
             expenseClaimRepo.deleteAllInBatch();
             shipmentRepo.deleteAllInBatch();
             notificationRepo.deleteAllInBatch();
@@ -153,7 +168,23 @@ public class DataSeeder implements CommandLineRunner {
         emp.setNationality("US");
         emp.setPassportNumber("US9384756");
         emp.setManagerId(mgr.getId());
-        employeeRepo.save(emp);
+        emp = employeeRepo.save(emp);
+
+        // 7. System Administrator (Audit Log Access)
+        Employee admin = new Employee();
+        admin.setEmployeeCode("OFFICIAL-ADMIN-01");
+        admin.setFirstName("Marcus");
+        admin.setLastName("Webb");
+        admin.setEmail("admin.marcus@cbg-enterprise.com");
+        admin.setPasskey("ADM-8871-OMEGA");
+        admin.setTwoFactorCode("667233");
+        admin.setPassword("ADM-8871-OMEGA");
+        admin.setPhone("+1-800-555-0909");
+        admin.setRole(UserRole.SYSTEM_ADMIN);
+        admin.setDepartment("IT Administration");
+        admin.setDesignation("System Administrator");
+        admin.setNationality("US");
+        admin = employeeRepo.save(admin);
 
         // --- POLICY ENGINE RULES ---
         if (policyRuleRepo.count() == 0) {
@@ -204,6 +235,140 @@ public class DataSeeder implements CommandLineRunner {
             Vendor v6 = new Vendor(); v6.setName("Sixt Executive"); v6.setCategory("GROUND_TRANSPORT"); v6.setCorporateRate(110.0); v6.setStandardRate(160.0); v6.setRating(4.8); v6.setBadges("EV Fleet,Instant Dispatch"); v6.setRegion("EMEA"); vendorRepo.save(v6);
         }
 
-        System.out.println("=== DataSeeder complete: Clean official accounts seeded successfully ===");
+        // --- SEED TRAVEL REQUEST (for bookings demo) ---
+        TravelRequest tr = new TravelRequest();
+        tr.setEmployee(emp);
+        tr.setRequestId("TR-20260801-AB12");
+        tr.setDestination("Tokyo, Japan");
+        tr.setCountryCode("JP");
+        tr.setStartDate(LocalDate.now().plusDays(5));
+        tr.setEndDate(LocalDate.now().plusDays(12));
+        tr.setPurpose("Client partnership summit and product demo at Tokyo Tech Center");
+        tr.setEstimatedBudget(6500.0);
+        tr.setFlightClass("ECONOMY");
+        tr.setHotelDailyRate(280.0);
+        tr.setMealAllowance(75.0);
+        tr.setGroundTransportBudget(200.0);
+        tr.setStatus(TravelRequestStatus.APPROVED);
+        tr.setPolicyComplianceScore(100);
+        tr.setRoiScore(90);
+        tr.setApprovedBy(mgr);
+        tr.setApprovedAt(LocalDateTime.now().minusDays(2));
+        tr = travelRequestRepo.save(tr);
+
+        // --- SEED BOOKINGS (US-08 demo data) ---
+        if (bookingRepo.count() == 0) {
+            Booking flightBooking = new Booking();
+            flightBooking.setTravelRequest(tr);
+            flightBooking.setEmployee(emp);
+            flightBooking.setBookingType("FLIGHT");
+            flightBooking.setPnrCode("PNR-X7K92A");
+            flightBooking.setConfirmationNumber("DL-2026-98741");
+            flightBooking.setVendorName("Delta Airlines");
+            flightBooking.setBookingDate(LocalDate.now().minusDays(1));
+            flightBooking.setDepartureAirport("SFO");
+            flightBooking.setArrivalAirport("NRT");
+            flightBooking.setDepartureDateTime(LocalDateTime.now().plusDays(5).withHour(10).withMinute(30));
+            flightBooking.setArrivalDateTime(LocalDateTime.now().plusDays(6).withHour(14).withMinute(0));
+            flightBooking.setFlightNumber("DL 275");
+            flightBooking.setCabinClass("ECONOMY");
+            flightBooking.setSeatNumber("24A");
+            flightBooking.setAmount(1250.0);
+            flightBooking.setStatus("CONFIRMED");
+            bookingRepo.save(flightBooking);
+
+            Booking hotelBooking = new Booking();
+            hotelBooking.setTravelRequest(tr);
+            hotelBooking.setEmployee(emp);
+            hotelBooking.setBookingType("HOTEL");
+            hotelBooking.setPnrCode("PNR-H3M81B");
+            hotelBooking.setConfirmationNumber("PH-TKY-440291");
+            hotelBooking.setVendorName("Park Hyatt Tokyo");
+            hotelBooking.setBookingDate(LocalDate.now().minusDays(1));
+            hotelBooking.setHotelName("Park Hyatt Tokyo");
+            hotelBooking.setCheckInDate(LocalDate.now().plusDays(6));
+            hotelBooking.setCheckOutDate(LocalDate.now().plusDays(12));
+            hotelBooking.setRoomType("Deluxe King");
+            hotelBooking.setAmount(1960.0);
+            hotelBooking.setStatus("CONFIRMED");
+            bookingRepo.save(hotelBooking);
+
+            Booking transportBooking = new Booking();
+            transportBooking.setTravelRequest(tr);
+            transportBooking.setEmployee(emp);
+            transportBooking.setBookingType("TRANSPORT");
+            transportBooking.setPnrCode("PNR-T9R44C");
+            transportBooking.setVendorName("Sixt Executive Japan");
+            transportBooking.setBookingDate(LocalDate.now().minusDays(1));
+            transportBooking.setVehicleType("Executive Sedan");
+            transportBooking.setPickupLocation("NRT Airport Terminal 1");
+            transportBooking.setDropLocation("Park Hyatt Tokyo, Shinjuku");
+            transportBooking.setAmount(180.0);
+            transportBooking.setStatus("CONFIRMED");
+            bookingRepo.save(transportBooking);
+        }
+
+        // --- SEED TRAVEL DOCUMENTS (US-02 demo data) ---
+        if (documentRepo.count() == 0) {
+            TravelDocument passport = new TravelDocument();
+            passport.setEmployee(emp);
+            passport.setDocumentType("PASSPORT");
+            passport.setFileName("passport_sarah_jenkins.pdf");
+            passport.setFileSize(245000L);
+            passport.setContentType("application/pdf");
+            passport.setExpiryDate(LocalDate.of(2029, 3, 15));
+            passport.setDescription("US Passport — Sarah Jenkins");
+            passport.setEncryptedContent(""); // Empty content for demo
+            documentRepo.save(passport);
+
+            TravelDocument visa = new TravelDocument();
+            visa.setEmployee(emp);
+            visa.setDocumentType("VISA");
+            visa.setFileName("japan_business_visa.pdf");
+            visa.setFileSize(182000L);
+            visa.setContentType("application/pdf");
+            visa.setExpiryDate(LocalDate.of(2027, 6, 30));
+            visa.setDescription("Japan Business Visa — Multiple Entry");
+            visa.setEncryptedContent("");
+            documentRepo.save(visa);
+
+            TravelDocument insurance = new TravelDocument();
+            insurance.setEmployee(emp);
+            insurance.setDocumentType("INSURANCE");
+            insurance.setFileName("cigna_travel_insurance.pdf");
+            insurance.setFileSize(310000L);
+            insurance.setContentType("application/pdf");
+            insurance.setExpiryDate(LocalDate.of(2026, 12, 31));
+            insurance.setDescription("Cigna Global Executive Travel Insurance");
+            insurance.setEncryptedContent("");
+            documentRepo.save(insurance);
+        }
+
+        // --- SEED AUDIT LOGS (US-20 demo data) ---
+        if (auditLogRepo.count() == 0) {
+            auditLogRepo.save(new AuditLog(emp.getId(), "Sarah Jenkins", "EMPLOYEE", "LOGIN", "EMPLOYEE", emp.getId().toString(), "Employee login from corporate VPN", "10.0.1.45"));
+            auditLogRepo.save(new AuditLog(emp.getId(), "Sarah Jenkins", "EMPLOYEE", "CREATE", "TRAVEL_REQUEST", "TR-20260801-AB12", "Travel request to Tokyo, Japan ($6,500)", "10.0.1.45"));
+            auditLogRepo.save(new AuditLog(mgr.getId(), "David Chen", "APPROVING_MANAGER", "LOGIN", "EMPLOYEE", mgr.getId().toString(), "Manager login", "10.0.2.101"));
+            auditLogRepo.save(new AuditLog(mgr.getId(), "David Chen", "APPROVING_MANAGER", "APPROVE", "TRAVEL_REQUEST", "TR-20260801-AB12", "Approved travel request to Tokyo", "10.0.2.101"));
+            auditLogRepo.save(new AuditLog(emp.getId(), "Sarah Jenkins", "EMPLOYEE", "CREATE", "BOOKING", "PNR-X7K92A", "Booked Delta Airlines flight SFO→NRT", "10.0.1.45"));
+            auditLogRepo.save(new AuditLog(emp.getId(), "Sarah Jenkins", "EMPLOYEE", "CREATE", "DOCUMENT", "1", "Uploaded Passport: passport_sarah_jenkins.pdf", "10.0.1.45"));
+            auditLogRepo.save(new AuditLog(admin.getId(), "Marcus Webb", "SYSTEM_ADMIN", "LOGIN", "EMPLOYEE", admin.getId().toString(), "Admin login for audit review", "10.0.0.1"));
+        }
+
+        // --- SEED TRAVELER LOCATIONS (for risk map demo) ---
+        if (travelerLocationRepo.count() == 0) {
+            TravelerLocation loc1 = new TravelerLocation();
+            loc1.setEmployee(emp);
+            loc1.setCity("Tokyo");
+            loc1.setCountry("Japan");
+            loc1.setLatitude(35.6762);
+            loc1.setLongitude(139.6503);
+            loc1.setThreatLevel("LOW");
+            loc1.setStatus("SAFE");
+            loc1.setAdvisoryNotes("Low risk region. Standard precautions apply.");
+            travelerLocationRepo.save(loc1);
+        }
+
+        System.out.println("=== DataSeeder complete: All accounts, bookings, documents, and audit logs seeded ===");
     }
 }

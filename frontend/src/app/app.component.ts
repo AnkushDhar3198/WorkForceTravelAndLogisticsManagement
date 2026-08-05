@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import {
   ApiService,
   TravelRequest, Employee, Vendor, Shipment,
-  Notification, TravelerLocation, ExpenseClaim, DashboardAnalytics
+  Notification, TravelerLocation, ExpenseClaim, DashboardAnalytics,
+  Booking, TravelDocument, AuditLog, ReimbursementExport
 } from './services/api.service';
 import { AuthService } from './services/auth.service';
 import { ThemeService, ThemeMode } from './services/theme.service';
@@ -37,6 +38,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   notifications: Notification[] = [];
   travelerLocations: TravelerLocation[] = [];
   expenses: ExpenseClaim[] = [];
+  bookings: Booking[] = [];
+  documents: TravelDocument[] = [];
+  auditLogs: AuditLog[] = [];
 
   // Search & Filter
   searchTerm = '';
@@ -72,7 +76,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     'FIN': { email: 'finance.lisa@cbg-enterprise.com', passkey: 'FIN-5510-GAMMA', code: '551930', role: 'FINANCE_ADMIN', name: 'Lisa Park' },
     'SEC': { email: 'security.elena@cbg-enterprise.com', passkey: 'SEC-7742-DELTA', code: '993418', role: 'RISK_OFFICER', name: 'Elena Rostova' },
     'LOG': { email: 'logistics.raj@cbg-enterprise.com', passkey: 'LOG-1193-EPSILON', code: '448201', role: 'LOGISTICS_COORDINATOR', name: 'Raj Patel' },
-    'EMP': { email: 'employee.sarah@cbg-enterprise.com', passkey: 'EMP-4421-ZETA', code: '123984', role: 'EMPLOYEE', name: 'Sarah Jenkins' }
+    'EMP': { email: 'employee.sarah@cbg-enterprise.com', passkey: 'EMP-4421-ZETA', code: '123984', role: 'EMPLOYEE', name: 'Sarah Jenkins' },
+    'ADMIN': { email: 'admin.marcus@cbg-enterprise.com', passkey: 'ADM-8871-OMEGA', code: '667233', role: 'SYSTEM_ADMIN', name: 'Marcus Webb' }
   };
 
   // ===== Custom Popup =====
@@ -87,6 +92,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   showCreateExpenseModal = false;
   showCreateShipmentModal = false;
   showDetailModal = false;
+  showCreateBookingModal = false;
+  showUploadDocModal = false;
   selectedRequest: TravelRequest | null = null;
 
   // ===== Next-Gen Document Preview & PDF Generation State =====
@@ -119,7 +126,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   newRequest = {
     employeeId: null as number | null, destination: '', countryCode: '',
     startDate: '', endDate: '', purpose: '', estimatedBudget: 0,
-    flightClass: 'ECONOMY', hotelDailyRate: 0, mealAllowance: 50, groundTransportBudget: 100
+    flightClass: 'ECONOMY', hotelDailyRate: 0, mealAllowance: 50, groundTransportBudget: 100,
+    justificationText: ''
   };
   newVendor = { name: '', category: 'FLIGHT', corporateRate: 0, standardRate: 0, rating: 4.8, preferred: true, badges: 'Corporate Partner', region: 'GLOBAL' };
   newExpense: any = {
@@ -129,6 +137,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     amount: 0,
     currency: 'USD',
     receiptFileName: 'document_scan.pdf',
+    travelRequestId: null,
     passportNumber: '',
     issuingCountry: 'United States',
     clearanceExpiry: '',
@@ -160,6 +169,30 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     tripRoute: 'Airport -> City Center'
   };
   newShipment = { assetName: '', serialNumber: '', destinationVenue: '', targetDeliveryDate: '', trackingCode: '', shippingCarrier: 'FedEx Express', weightKg: 5.0 };
+
+  // Booking form (US-08)
+  newBooking: any = {
+    travelRequestId: null, bookingType: 'FLIGHT', vendorName: '',
+    departureAirport: '', arrivalAirport: '', flightNumber: '', cabinClass: 'ECONOMY', seatNumber: '',
+    departureDateTime: '', arrivalDateTime: '',
+    hotelName: '', checkInDate: '', checkOutDate: '', roomType: 'Standard King',
+    vehicleType: 'Executive Sedan', pickupLocation: '', dropLocation: '',
+    amount: 0
+  };
+
+  // Document upload form (US-02)
+  newDocument: any = {
+    documentType: 'PASSPORT', fileName: '', contentType: '', content: '', expiryDate: '', description: ''
+  };
+
+  // Audit log filters (US-20)
+  auditFilterAction = '';
+  auditFilterEntity = '';
+
+  // Report filters (US-19)
+  reportFilters = { startDate: '', endDate: '', department: '', vendor: '' };
+  reportData: any = null;
+
   approvalRemarks = '';
   isLoading = true;
 
@@ -299,7 +332,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.twoFAError = '';
       },
       error: () => {
-        // Direct transition for 1-Click Official Access in phone view / standalone mode
         this.isAuthenticating = false;
         this.twoFAActive = true;
         this.twoFAEmail = official.email;
@@ -495,7 +527,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       shipments: this.api.getShipments().pipe(catchError(() => of([]))),
       notifications: this.api.getNotifications().pipe(catchError(() => of([]))),
       locations: this.api.getTravelerLocations().pipe(catchError(() => of([]))),
-      expenses: this.api.getExpenses().pipe(catchError(() => of([])))
+      expenses: this.api.getExpenses().pipe(catchError(() => of([]))),
+      bookings: this.api.getBookings().pipe(catchError(() => of([]))),
+      documents: this.api.getDocuments().pipe(catchError(() => of([]))),
+      auditLogs: this.api.getAuditLogs().pipe(catchError(() => of([])))
     }).subscribe({
       next: (data: any) => {
         this.analytics = data.analytics;
@@ -506,6 +541,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.notifications = data.notifications;
         this.travelerLocations = data.locations;
         this.expenses = data.expenses;
+        this.bookings = data.bookings;
+        this.documents = data.documents;
+        this.auditLogs = data.auditLogs;
         this.isLoading = false;
         this.chartsDrawn = false;
         this.fetchLiveDestinationWeather();
@@ -544,6 +582,25 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     } else {
       document.body.classList.remove('force-mobile');
     }
+  }
+
+  // ===== Auto-Calculate Estimated Total (US-04 AC2) =====
+  get calculatedTotalBudget(): number {
+    const days = this.getNewRequestDuration();
+    const flight = this.newRequest.estimatedBudget || 0;
+    const hotel = (this.newRequest.hotelDailyRate || 0) * (days || 1);
+    const meals = (this.newRequest.mealAllowance || 0) * (days || 1);
+    const transport = this.newRequest.groundTransportBudget || 0;
+    return flight + hotel + meals + transport;
+  }
+
+  getNewRequestDuration(): number {
+    if (this.newRequest.startDate && this.newRequest.endDate) {
+      const start = new Date(this.newRequest.startDate);
+      const end = new Date(this.newRequest.endDate);
+      return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+    return 1;
   }
 
   // ===== 100% DISTINCT ROLE-BASED SIDEBAR & DASHBOARD LABELS =====
@@ -599,6 +656,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
           title: 'Equipment & Asset Transport Control',
           subtitle: 'Track prototype cargo, customs clearance, and 3PL carrier dispatch'
         };
+      case 'SYSTEM_ADMIN':
+        return {
+          homeTabName: 'System Administration',
+          homeIcon: '⚙️',
+          homeSection: 'Administration',
+          title: 'System Administration & Audit Center',
+          subtitle: 'Review audit trails, system logs, and platform security compliance'
+        };
       default:
         return {
           homeTabName: 'Dashboard',
@@ -625,7 +690,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       case 'EMPLOYEE':
         items.push({ section: 'My Activities', items: [
           { tab: 'requests', icon: '🗂️', label: 'My Trip Requests', badge: this.myRequestsCount },
-          { tab: 'expenses', icon: '🧾', label: 'My Expense Claims', badge: this.myExpensesCount }
+          { tab: 'bookings', icon: '✈️', label: 'My Bookings', badge: this.myBookingsCount },
+          { tab: 'documents', icon: '📄', label: 'My Documents', badge: this.myDocumentsCount },
+          { tab: 'expenses', icon: '🧾', label: 'My Expense Claims', badge: this.myExpensesCount },
+          { tab: 'itinerary', icon: '🗓️', label: 'Active Trip Itinerary' }
         ]});
         break;
 
@@ -633,14 +701,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       case 'MANAGER':
         items.push({ section: 'Approvals & Team', items: [
           { tab: 'requests', icon: '✅', label: 'Pending Approvals Queue', badge: this.pendingRequestsCount },
-          { tab: 'employees', icon: '👥', label: 'Direct Reports Directory' }
+          { tab: 'employees', icon: '👥', label: 'Direct Reports Directory' },
+          { tab: 'reports', icon: '📊', label: 'Department Analytics' }
         ]});
         break;
 
       case 'CORPORATE_TRAVEL_MANAGER':
         items.push({ section: 'Program Assets', items: [
           { tab: 'vendors', icon: '🤝', label: 'Preferred Vendor Directory' },
-          { tab: 'requests', icon: '📋', label: 'Policy Violation Alerts', badge: this.policyViolationsCount }
+          { tab: 'requests', icon: '📋', label: 'Policy Violation Alerts', badge: this.policyViolationsCount },
+          { tab: 'reports', icon: '📊', label: 'Analytics Reports' }
         ]});
         items.push({ section: 'Financial Control', items: [
           { tab: 'expenses', icon: '📊', label: 'Program Spend Analytics' }
@@ -650,7 +720,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       case 'FINANCE_ADMIN':
         items.push({ section: 'Audit Queue', items: [
           { tab: 'expenses', icon: '🔍', label: 'Expense Claims Audit', badge: this.pendingExpensesCount },
-          { tab: 'requests', icon: '📑', label: 'Approved Budget Reconciliations' }
+          { tab: 'requests', icon: '📑', label: 'Approved Budget Reconciliations' },
+          { tab: 'reports', icon: '📊', label: 'Financial Reports' }
         ]});
         break;
 
@@ -668,15 +739,27 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         ]});
         break;
 
+      case 'SYSTEM_ADMIN':
+        items.push({ section: 'System Tools', items: [
+          { tab: 'auditlogs', icon: '📋', label: 'Audit Logs', badge: this.auditLogs.length },
+          { tab: 'employees', icon: '👥', label: 'Employee Directory' },
+          { tab: 'requests', icon: '🗂️', label: 'All Travel Requests' },
+          { tab: 'reports', icon: '📊', label: 'System Reports' }
+        ]});
+        break;
+
       default:
         items.push({ section: 'Navigation', items: [
           { tab: 'requests', icon: '🗂️', label: 'Travel Requests' },
+          { tab: 'bookings', icon: '✈️', label: 'Bookings' },
+          { tab: 'documents', icon: '📄', label: 'Documents' },
           { tab: 'vendors', icon: '🤝', label: 'Vendors' },
           { tab: 'shipments', icon: '📦', label: 'Shipments' },
           { tab: 'expenses', icon: '💰', label: 'Expenses' },
           { tab: 'risk', icon: '🛡️', label: 'Risk' },
           { tab: 'notifications', icon: '🔔', label: 'Alerts' },
-          { tab: 'employees', icon: '👥', label: 'Directory' }
+          { tab: 'employees', icon: '👥', label: 'Directory' },
+          { tab: 'auditlogs', icon: '📋', label: 'Audit Logs' }
         ]});
     }
 
@@ -689,7 +772,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       const matchesSearch = !this.searchTerm ||
         req.destination.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         req.employee.fullName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        req.purpose.toLowerCase().includes(this.searchTerm.toLowerCase());
+        req.purpose.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (req.requestId && req.requestId.toLowerCase().includes(this.searchTerm.toLowerCase()));
       const matchesStatus = this.statusFilter === 'ALL' || req.status === this.statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -714,6 +798,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  get filteredAuditLogs(): AuditLog[] {
+    return this.auditLogs.filter(log => {
+      const matchesSearch = !this.searchTerm ||
+        log.userName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        log.details.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        log.entityId?.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchesAction = !this.auditFilterAction || log.actionType === this.auditFilterAction;
+      const matchesEntity = !this.auditFilterEntity || log.entityType === this.auditFilterEntity;
+      return matchesSearch && matchesAction && matchesEntity;
+    });
+  }
+
   // ===== My Data (For Employee Role) =====
   get myTravelRequests(): TravelRequest[] {
     const currentEmpId = this.auth.currentUserValue?.id;
@@ -727,8 +823,46 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     return this.expenses.filter(e => e.employee.id === currentEmpId);
   }
 
+  get myBookings(): Booking[] {
+    const currentEmpId = this.auth.currentUserValue?.id;
+    if (!currentEmpId) return this.bookings;
+    return this.bookings.filter(b => b.employee.id === currentEmpId);
+  }
+
+  get myDocuments(): TravelDocument[] {
+    const currentEmpId = this.auth.currentUserValue?.id;
+    if (!currentEmpId) return this.documents;
+    return this.documents.filter(d => d.employee.id === currentEmpId);
+  }
+
+  get approvedRequests(): TravelRequest[] {
+    const currentEmpId = this.auth.currentUserValue?.id;
+    return this.travelRequests.filter(r =>
+      r.status === 'APPROVED' && (currentEmpId ? r.employee.id === currentEmpId : true)
+    );
+  }
+
+  get completedTrips(): TravelRequest[] {
+    return this.travelRequests.filter(r => r.status === 'COMPLETED' || r.status === 'APPROVED');
+  }
+
+  get activeTrip(): TravelRequest | null {
+    const today = new Date().toISOString().split('T')[0];
+    return this.travelRequests.find(r =>
+      r.status === 'APPROVED' && r.startDate <= today && r.endDate >= today
+    ) || this.travelRequests.find(r => r.status === 'APPROVED') || null;
+  }
+
+  get activeTripBookings(): Booking[] {
+    const trip = this.activeTrip;
+    if (!trip) return [];
+    return this.bookings.filter(b => b.travelRequest?.id === trip.id);
+  }
+
   get myRequestsCount(): number { return this.myTravelRequests.length; }
   get myExpensesCount(): number { return this.myExpenseClaims.length; }
+  get myBookingsCount(): number { return this.myBookings.length; }
+  get myDocumentsCount(): number { return this.myDocuments.length; }
   get policyViolationsCount(): number { return this.travelRequests.filter(r => r.status === 'POLICY_VIOLATION').length; }
 
   // ===== Charts (Pure Canvas) =====
@@ -785,7 +919,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (role === 'FINANCE_ADMIN') {
       const auditMap: Record<string, number> = {};
       this.expenses.forEach(e => { auditMap[e.auditStatus] = (auditMap[e.auditStatus] || 0) + 1; });
-      const colors: Record<string, string> = { 'PENDING_AUDIT': '#FF9F0A', 'APPROVED_PAYOUT': '#30D158', 'REJECTED_FLAGGED': '#FF453A' };
+      const colors: Record<string, string> = { 'PENDING_AUDIT': '#FF9F0A', 'APPROVED_PAYOUT': '#30D158', 'REJECTED_FLAGGED': '#FF453A', 'PAID': '#0A84FF' };
       return Object.entries(auditMap).map(([k, v]) => ({ label: k.replace('_', ' '), value: v, color: colors[k] || '#8e8e93' }));
     }
     const depts = this.analytics?.spendByDepartment || [];
@@ -861,7 +995,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.newRequest = {
       employeeId: this.auth.currentUserValue?.id || null, destination: '', countryCode: '',
       startDate: '', endDate: '', purpose: '', estimatedBudget: 0,
-      flightClass: 'ECONOMY', hotelDailyRate: 0, mealAllowance: 50, groundTransportBudget: 100
+      flightClass: 'ECONOMY', hotelDailyRate: 0, mealAllowance: 50, groundTransportBudget: 100,
+      justificationText: ''
     };
   }
 
@@ -869,19 +1004,31 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   submitTravelRequest() {
     if (!this.newRequest.employeeId || !this.newRequest.destination) return;
-    const payload = {
+    if (!this.newRequest.startDate || !this.newRequest.endDate || !this.newRequest.purpose) {
+      this.showPopup('error', 'Missing Required Fields', 'Destination, dates, and purpose are mandatory');
+      return;
+    }
+    // Prevent past dates (US-03 AC2)
+    if (this.newRequest.startDate < new Date().toISOString().split('T')[0]) {
+      this.showPopup('error', 'Invalid Date', 'Start date cannot be in the past');
+      return;
+    }
+    const payload: any = {
       employee: { id: this.newRequest.employeeId },
       destination: this.newRequest.destination, countryCode: this.newRequest.countryCode,
       startDate: this.newRequest.startDate, endDate: this.newRequest.endDate,
-      purpose: this.newRequest.purpose, estimatedBudget: this.newRequest.estimatedBudget,
+      purpose: this.newRequest.purpose, estimatedBudget: this.calculatedTotalBudget,
       flightClass: this.newRequest.flightClass, hotelDailyRate: this.newRequest.hotelDailyRate,
       mealAllowance: this.newRequest.mealAllowance, groundTransportBudget: this.newRequest.groundTransportBudget
     };
+    if (this.newRequest.justificationText) {
+      payload.justificationText = this.newRequest.justificationText;
+    }
     this.api.createTravelRequest(payload).subscribe({
-      next: () => {
+      next: (created) => {
         this.showCreateRequestModal = false;
         this.loadAllData();
-        this.showPopup('success', 'Trip Submitted', `Your travel request to ${this.newRequest.destination} has been submitted for approval`);
+        this.showPopup('success', 'Trip Submitted', `Request ${created.requestId || ''} to ${this.newRequest.destination} submitted for approval`);
       },
       error: () => this.showPopup('error', 'Submission Failed', 'Could not submit travel request. Please try again.')
     });
@@ -908,6 +1055,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   rejectRequest() {
     if (!this.selectedRequest) return;
+    // Enforce mandatory rejection comment (US-07 AC3)
+    if (!this.approvalRemarks.trim()) {
+      this.showPopup('error', 'Comment Required', 'Please provide a reason for rejection before rejecting this request');
+      return;
+    }
     this.api.updateTravelRequestStatus(this.selectedRequest.id, {
       status: 'REJECTED', approverId: String(this.auth.currentUserValue?.id || 1), remarks: this.approvalRemarks
     }).subscribe(() => {
@@ -917,6 +1069,125 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  // ===== Booking Operations (US-08) =====
+  openCreateBookingModal(requestId?: number) {
+    this.showCreateBookingModal = true;
+    this.newBooking = {
+      travelRequestId: requestId || null, bookingType: 'FLIGHT', vendorName: '',
+      departureAirport: '', arrivalAirport: '', flightNumber: '', cabinClass: 'ECONOMY', seatNumber: '',
+      departureDateTime: '', arrivalDateTime: '',
+      hotelName: '', checkInDate: '', checkOutDate: '', roomType: 'Standard King',
+      vehicleType: 'Executive Sedan', pickupLocation: '', dropLocation: '',
+      amount: 0
+    };
+  }
+
+  submitBooking() {
+    if (!this.newBooking.travelRequestId || !this.newBooking.vendorName) {
+      this.showPopup('error', 'Missing Fields', 'Please select a trip and enter vendor details');
+      return;
+    }
+    const payload: any = {
+      travelRequest: { id: this.newBooking.travelRequestId },
+      employee: { id: this.auth.currentUserValue?.id || 1 },
+      bookingType: this.newBooking.bookingType,
+      vendorName: this.newBooking.vendorName,
+      amount: this.newBooking.amount,
+      status: 'CONFIRMED'
+    };
+
+    if (this.newBooking.bookingType === 'FLIGHT') {
+      payload.departureAirport = this.newBooking.departureAirport;
+      payload.arrivalAirport = this.newBooking.arrivalAirport;
+      payload.flightNumber = this.newBooking.flightNumber;
+      payload.cabinClass = this.newBooking.cabinClass;
+      payload.seatNumber = this.newBooking.seatNumber;
+      if (this.newBooking.departureDateTime) payload.departureDateTime = this.newBooking.departureDateTime;
+      if (this.newBooking.arrivalDateTime) payload.arrivalDateTime = this.newBooking.arrivalDateTime;
+    } else if (this.newBooking.bookingType === 'HOTEL') {
+      payload.hotelName = this.newBooking.hotelName;
+      if (this.newBooking.checkInDate) payload.checkInDate = this.newBooking.checkInDate;
+      if (this.newBooking.checkOutDate) payload.checkOutDate = this.newBooking.checkOutDate;
+      payload.roomType = this.newBooking.roomType;
+    } else if (this.newBooking.bookingType === 'TRANSPORT') {
+      payload.vehicleType = this.newBooking.vehicleType;
+      payload.pickupLocation = this.newBooking.pickupLocation;
+      payload.dropLocation = this.newBooking.dropLocation;
+    }
+
+    this.api.createBooking(payload).subscribe({
+      next: (created) => {
+        this.showCreateBookingModal = false;
+        this.loadAllData();
+        this.showPopup('success', 'Booking Confirmed', `${created.bookingType} booked — PNR: ${created.pnrCode}`);
+      },
+      error: (err) => this.showPopup('error', 'Booking Failed', err.error?.message || 'Only approved trips can have bookings')
+    });
+  }
+
+  // ===== Document Operations (US-02) =====
+  openUploadDocModal() {
+    this.showUploadDocModal = true;
+    this.newDocument = {
+      documentType: 'PASSPORT', fileName: '', contentType: '', content: '', expiryDate: '', description: ''
+    };
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      this.showPopup('error', 'Invalid File Type', 'Only PDF, JPG, and PNG files are supported');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.showPopup('error', 'File Too Large', 'Maximum file size is 5MB');
+      return;
+    }
+    this.newDocument.fileName = file.name;
+    this.newDocument.contentType = file.type;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(',')[1];
+      this.newDocument.content = base64;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  submitDocument() {
+    if (!this.newDocument.content || !this.newDocument.fileName) {
+      this.showPopup('error', 'No File Selected', 'Please select a file to upload');
+      return;
+    }
+    this.api.uploadDocument({
+      employeeId: this.auth.currentUserValue?.id,
+      documentType: this.newDocument.documentType,
+      fileName: this.newDocument.fileName,
+      contentType: this.newDocument.contentType,
+      content: this.newDocument.content,
+      expiryDate: this.newDocument.expiryDate,
+      description: this.newDocument.description
+    }).subscribe({
+      next: () => {
+        this.showUploadDocModal = false;
+        this.loadAllData();
+        this.showPopup('success', 'Document Uploaded', `${this.newDocument.fileName} uploaded successfully`);
+      },
+      error: (err) => this.showPopup('error', 'Upload Failed', err.error?.message || 'Could not upload document')
+    });
+  }
+
+  deleteDocument(docId: number) {
+    this.showPopup('warning', 'Delete Document?', 'This document will be permanently removed.', () => {
+      this.api.deleteDocument(docId).subscribe(() => {
+        this.loadAllData();
+        this.showPopup('success', 'Document Deleted', 'The document has been removed');
+      });
+    });
+  }
+
+  // ===== Expense Operations =====
   openCreateExpenseModal() {
     this.showCreateExpenseModal = true;
     this.newExpense = {
@@ -926,35 +1197,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       amount: 0,
       currency: 'USD',
       receiptFileName: 'document_scan.pdf',
-      passportNumber: '',
-      issuingCountry: 'United States',
-      clearanceExpiry: '',
+      travelRequestId: null,
+      passportNumber: '', issuingCountry: 'United States', clearanceExpiry: '',
       borderAgency: 'Customs & Border Protection',
-      visaNumber: '',
-      visaType: 'Business Visa (B1/B2)',
-      targetJurisdiction: 'Schengen / EU',
-      validUntilDate: '',
-      pnrNumber: '',
-      airlineCarrier: 'Delta Air Lines',
-      originAirport: 'JFK',
-      destinationAirport: 'LHR',
-      cabinClass: 'BUSINESS',
+      visaNumber: '', visaType: 'Business Visa (B1/B2)', targetJurisdiction: 'Schengen / EU', validUntilDate: '',
+      pnrNumber: '', airlineCarrier: 'Delta Air Lines', originAirport: 'JFK', destinationAirport: 'LHR', cabinClass: 'BUSINESS',
       policyNumber: 'POL-CBG-' + Math.floor(100000 + Math.random() * 900000),
-      insuranceProvider: 'Cigna Global Executive',
-      coverageScope: 'Worldwide Emergency Medevac',
-      policyExpiry: '',
+      insuranceProvider: 'Cigna Global Executive', coverageScope: 'Worldwide Emergency Medevac', policyExpiry: '',
       carnetNumber: 'ATA-CARNET-' + Math.floor(10000 + Math.random() * 90000),
-      cargoAssetSerial: '',
-      customsVenue: 'Tokyo Port Customs',
-      declaredValue: 15000,
-      hotelName: 'Grand Hyatt',
-      checkInDate: '',
-      checkOutDate: '',
-      roomRatePerNight: 220,
-      mealType: 'Client Executive Dinner',
-      attendeesCount: 3,
-      transportMode: 'Corporate Black Car / Rail',
-      tripRoute: 'Airport -> City Center'
+      cargoAssetSerial: '', customsVenue: 'Tokyo Port Customs', declaredValue: 15000,
+      hotelName: 'Grand Hyatt', checkInDate: '', checkOutDate: '', roomRatePerNight: 220,
+      mealType: 'Client Executive Dinner', attendeesCount: 3,
+      transportMode: 'Corporate Black Car / Rail', tripRoute: 'Airport -> City Center'
     };
   }
 
@@ -974,13 +1228,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     }
     const amt = Number(this.newExpense.amount) || 150;
-    const payload = {
+    const payload: any = {
       employee: { id: this.auth.currentUserValue?.id || 1 },
       vendorName: vendor, category: this.newExpense.category,
       expenseDate: this.newExpense.expenseDate, amount: amt,
       currency: this.newExpense.currency, ocrConfidence: 98.2,
       auditStatus: 'PENDING_AUDIT', receiptFileName: this.newExpense.receiptFileName || 'category_document.pdf'
     };
+    // Link to trip if selected (US-14 AC1)
+    if (this.newExpense.travelRequestId) {
+      payload.travelRequest = { id: this.newExpense.travelRequestId };
+    }
     this.api.createExpense(payload).subscribe(() => {
       this.showCreateExpenseModal = false;
       this.loadAllData();
@@ -1010,6 +1268,67 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  // ===== Reimbursement Export (US-17) =====
+  exportReimbursements() {
+    this.api.exportReimbursements({
+      userId: this.auth.currentUserValue?.id,
+      userName: this.auth.currentUserValue?.fullName
+    }).subscribe({
+      next: (result: ReimbursementExport) => {
+        if (result.exportedCount === 0) {
+          this.showPopup('info', 'No Claims', 'No approved claims pending for export');
+          return;
+        }
+        // Download the CSV
+        const blob = new Blob([result.csvContent], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `cbg_reimbursement_export_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        this.loadAllData();
+        this.showPopup('success', 'Export Complete', `${result.exportedCount} claims ($${result.totalAmount.toFixed(2)}) exported and marked as PAID`);
+      },
+      error: () => this.showPopup('error', 'Export Failed', 'Could not export reimbursements')
+    });
+  }
+
+  // ===== Report Generation (US-19) =====
+  generateReport() {
+    this.api.getAnalyticsReport(this.reportFilters).subscribe({
+      next: (data) => {
+        this.reportData = data;
+      },
+      error: () => this.showPopup('error', 'Report Failed', 'Could not generate report')
+    });
+  }
+
+  exportReportCsv() {
+    if (!this.reportData) return;
+    let csv = 'Metric,Value\n';
+    csv += `Total Requests,${this.reportData.totalRequests}\n`;
+    csv += `Total Expenses,${this.reportData.totalExpenses}\n`;
+    csv += `Travel Spend,$${this.reportData.totalTravelSpend}\n`;
+    csv += `Expense Spend,$${this.reportData.totalExpenseSpend}\n`;
+    csv += `Policy Violations,${this.reportData.policyViolations}\n`;
+    csv += `Compliance Rate,${this.reportData.complianceRate}%\n`;
+    csv += '\nVendor,Spend\n';
+    (this.reportData.spendByVendor || []).forEach((v: any) => {
+      csv += `"${v.vendor}",$${v.spend}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `cbg_analytics_report_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.showPopup('success', 'Report Exported', 'CSV report downloaded successfully');
+  }
+
+  // ===== Shipment Operations =====
   openCreateShipmentModal() {
     this.showCreateShipmentModal = true;
     this.newShipment = {
@@ -1050,24 +1369,63 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   triggerSos(location: TravelerLocation) {
     this.showPopup('warning', 'Dispatch Emergency SOS?', `Send emergency assistance to ${location.employee.fullName} in ${location.city}, ${location.country}?`, () => {
-      this.api.triggerSos({ employeeId: location.employee.id }).subscribe(() => {
+      this.api.triggerSos({
+        employeeId: location.employee.id,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        city: location.city,
+        country: location.country
+      }).subscribe(() => {
         this.loadAllData();
         this.showPopup('success', 'SOS Dispatched', `Emergency response initiated for ${location.employee.fullName}`);
       });
     });
   }
 
+  // Employee SOS button (US-12 — persistent on mobile)
+  triggerEmployeeSos() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          this.api.triggerSos({
+            employeeId: this.auth.currentUserValue?.id,
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          }).subscribe(() => {
+            this.showPopup('success', 'SOS Sent!', 'Emergency team has been notified with your GPS location');
+          });
+        },
+        () => {
+          this.api.triggerSos({
+            employeeId: this.auth.currentUserValue?.id
+          }).subscribe(() => {
+            this.showPopup('success', 'SOS Sent!', 'Emergency team has been notified');
+          });
+        }
+      );
+    } else {
+      this.api.triggerSos({ employeeId: this.auth.currentUserValue?.id }).subscribe(() => {
+        this.showPopup('success', 'SOS Sent!', 'Emergency team has been notified');
+      });
+    }
+  }
+
   exportDataCsv() {
     let csvContent = 'data:text/csv;charset=utf-8,';
     if (this.activeTab === 'requests') {
-      csvContent += 'ID,Employee,Destination,StartDate,EndDate,Budget,Status,ComplianceScore\n';
+      csvContent += 'RequestID,Employee,Destination,StartDate,EndDate,Budget,Status,ComplianceScore\n';
       this.filteredRequests.forEach(r => {
-        csvContent += `"${r.id}","${r.employee.fullName}","${r.destination}","${r.startDate}","${r.endDate}","${r.estimatedBudget}","${r.status}","${r.policyComplianceScore}"\n`;
+        csvContent += `"${r.requestId || r.id}","${r.employee.fullName}","${r.destination}","${r.startDate}","${r.endDate}","${r.estimatedBudget}","${r.status}","${r.policyComplianceScore}"\n`;
       });
     } else if (this.activeTab === 'expenses') {
       csvContent += 'ID,Employee,Vendor,Category,ExpenseDate,Amount,Currency,Status\n';
       this.filteredExpenses.forEach(e => {
         csvContent += `"${e.id}","${e.employee.fullName}","${e.vendorName}","${e.category}","${e.expenseDate}","${e.amount}","${e.currency}","${e.auditStatus}"\n`;
+      });
+    } else if (this.activeTab === 'auditlogs') {
+      csvContent += 'Timestamp,User,Role,Action,Entity,EntityID,Details,IP\n';
+      this.filteredAuditLogs.forEach(l => {
+        csvContent += `"${l.timestamp}","${l.userName}","${l.userRole}","${l.actionType}","${l.entityType}","${l.entityId}","${l.details}","${l.ipAddress}"\n`;
       });
     } else {
       csvContent += 'ID,Name,Category,CorporateRate,StandardRate,Rating\n';
@@ -1088,11 +1446,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   getStatusColor(status: string): string {
     const map: Record<string, string> = {
       'APPROVED': '#30D158', 'COMPLETED': '#30D158', 'DELIVERED': '#30D158', 'SAFE': '#30D158',
-      'APPROVED_PAYOUT': '#30D158', 'PENDING_APPROVAL': '#FF9F0A', 'PENDING_AUDIT': '#FF9F0A',
+      'APPROVED_PAYOUT': '#30D158', 'CONFIRMED': '#30D158', 'PAID': '#0A84FF',
+      'PENDING_APPROVAL': '#FF9F0A', 'PENDING_AUDIT': '#FF9F0A',
       'IN_TRANSIT': '#0A84FF', 'CUSTOMS_CLEARANCE': '#BF5AF2', 'POLICY_VIOLATION': '#FF453A',
-      'REJECTED': '#FF453A', 'REJECTED_FLAGGED': '#FF453A', 'ALERT': '#FF9F0A',
-      'ASSISTANCE_REQUESTED': '#FF453A', 'MODERATE': '#FF9F0A', 'HIGH': '#FF453A',
-      'CRITICAL': '#FF453A', 'LOW': '#30D158', 'DRAFT': '#8e8e93'
+      'REJECTED': '#FF453A', 'REJECTED_FLAGGED': '#FF453A', 'CANCELLED': '#FF453A',
+      'ALERT': '#FF9F0A', 'ASSISTANCE_REQUESTED': '#FF453A', 'MODERATE': '#FF9F0A',
+      'HIGH': '#FF453A', 'CRITICAL': '#FF453A', 'LOW': '#30D158', 'DRAFT': '#8e8e93',
+      'SUBMITTED': '#FF9F0A', 'CHECKED_IN': '#0A84FF'
     };
     return map[status] || '#8e8e93';
   }
@@ -1109,7 +1469,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       'FLIGHT_TRANSIT': '✈️',
       'HEALTH_INSURANCE': '🏥',
       'CUSTOMS_MANIFEST': '📦',
-      'FLIGHT': '✈️', 'HOTEL': '🏨', 'GROUND_TRANSPORT': '🚗',
+      'FLIGHT': '✈️', 'HOTEL': '🏨', 'GROUND_TRANSPORT': '🚗', 'TRANSPORT': '🚗',
       'MEALS': '🍽️', 'MISC': '📦', 'LOGISTICS': '📦', 'RISK': '🛡️', 'SYSTEM': '⚙️'
     };
     return map[category] || '📋';
@@ -1131,6 +1491,33 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     return map[category] || category?.replace('_', ' ') || '';
   }
 
+  getDocTypeIcon(type: string): string {
+    const map: Record<string, string> = {
+      'PASSPORT': '🛂', 'VISA': '📄', 'INSURANCE': '🏥', 'ID_CARD': '🪪', 'OTHER': '📎'
+    };
+    return map[type] || '📋';
+  }
+
+  getDocTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      'PASSPORT': 'Passport', 'VISA': 'Visa', 'INSURANCE': 'Insurance', 'ID_CARD': 'ID Card', 'OTHER': 'Other'
+    };
+    return map[type] || type;
+  }
+
+  getAuditActionIcon(action: string): string {
+    const map: Record<string, string> = {
+      'LOGIN': '🔐', 'LOGOUT': '🚪', 'CREATE': '➕', 'UPDATE': '✏️', 'DELETE': '🗑️',
+      'APPROVE': '✅', 'REJECT': '❌', 'EXPORT': '📤', 'SOS_TRIGGER': '🆘'
+    };
+    return map[action] || '📋';
+  }
+
+  getBookingTypeIcon(type: string): string {
+    const map: Record<string, string> = { 'FLIGHT': '✈️', 'HOTEL': '🏨', 'TRANSPORT': '🚗' };
+    return map[type] || '📋';
+  }
+
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
   }
@@ -1143,6 +1530,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   formatDateTime(date: string): string {
     if (!date) return '';
     return new Date(date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
   }
 
   get unreadNotifications(): number { return this.notifications.filter(n => !n.readStatus).length; }
@@ -1161,5 +1554,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   getPopupIcon(): string {
     const map: Record<string, string> = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
     return map[this.popup.type] || 'ℹ';
+  }
+
+  getBudgetUtilization(): number {
+    if (!this.analytics?.totalAllocatedBudget) return 0;
+    return Math.round((this.analytics.ytdSpend / this.analytics.totalAllocatedBudget) * 100);
   }
 }

@@ -1094,6 +1094,278 @@
         </div>
       </div>
     </section>
+
+    <!-- ===== BOOKINGS TAB (US-08) ===== -->
+    <section *ngIf="activeTab === 'bookings'">
+      <div class="page-header">
+        <div class="page-header-actions">
+          <div><h2>Flight, Hotel & Transport Bookings</h2><p>Confirmed travel reservations linked to approved requisitions with automated PNR codes</p></div>
+          <button class="btn btn-primary btn-sm" (click)="openCreateBookingModal()">✚ Create Reservation</button>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="bookings.length > 0">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr><th>PNR Code</th><th>Type</th><th>Vendor</th><th>Details</th><th>Dates</th><th>Amount</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of bookings">
+                <td style="font-family:monospace; font-weight:700; color:var(--accent-blue);">{{b.pnrCode}}</td>
+                <td><span style="font-size:16px; margin-right:6px;">{{getBookingTypeIcon(b.bookingType)}}</span>{{b.bookingType}}</td>
+                <td style="font-weight:600;">{{b.vendorName}}</td>
+                <td style="font-size:12px;">
+                  <span *ngIf="b.bookingType === 'FLIGHT'">{{b.flightNumber || 'Flight'}} ({{b.departureAirport}} ➔ {{b.arrivalAirport}}) — Seat {{b.seatNumber || 'TBD'}}</span>
+                  <span *ngIf="b.bookingType === 'HOTEL'">{{b.hotelName}} ({{b.roomType}})</span>
+                  <span *ngIf="b.bookingType === 'TRANSPORT'">{{b.vehicleType}} ({{b.pickupLocation}} ➔ {{b.dropLocation}})</span>
+                </td>
+                <td style="font-size:12px; color:var(--text-secondary);">
+                  <span *ngIf="b.departureDateTime">{{formatDateTime(b.departureDateTime)}}</span>
+                  <span *ngIf="b.checkInDate">{{formatDate(b.checkInDate)}} → {{formatDate(b.checkOutDate)}}</span>
+                  <span *ngIf="!b.departureDateTime && !b.checkInDate">{{formatDate(b.bookingDate)}}</span>
+                </td>
+                <td style="font-weight:700;">{{formatCurrency(b.amount)}}</td>
+                <td><span class="status-badge" [style.background]="getStatusColor(b.status)+'1a'" [style.color]="getStatusColor(b.status)"><span class="status-dot" [style.background]="getStatusColor(b.status)"></span>{{b.status}}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card empty-state" *ngIf="bookings.length === 0"><div class="empty-icon">✈️</div><h4>No bookings found</h4><p style="font-size:12px; color:var(--text-secondary);">Create reservations for your approved travel requests</p></div>
+    </section>
+
+    <!-- ===== DOCUMENTS TAB (US-02) ===== -->
+    <section *ngIf="activeTab === 'documents'">
+      <div class="page-header">
+        <div class="page-header-actions">
+          <div><h2>Travel Documents Vault</h2><p>Encrypted vault for passports, visas, insurance policies, and travel clearances</p></div>
+          <button class="btn btn-primary btn-sm" (click)="openUploadDocModal()">✚ Upload Document</button>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="documents.length > 0">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr><th>Document</th><th>Type</th><th>File Name</th><th>Size</th><th>Expiry Date</th><th>Uploaded</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let doc of documents">
+                <td>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;">{{getDocTypeIcon(doc.documentType)}}</span>
+                    <div>
+                      <div style="font-weight:600;">{{doc.description || getDocTypeLabel(doc.documentType)}}</div>
+                      <div style="font-size:11px; color:var(--text-tertiary);">{{doc.employee?.fullName}}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="status-badge" style="background:rgba(10,132,255,0.1); color:var(--accent-blue);">{{getDocTypeLabel(doc.documentType)}}</span></td>
+                <td style="font-family:monospace; font-size:12px;">{{doc.fileName}}</td>
+                <td style="font-size:12px; color:var(--text-secondary);">{{formatFileSize(doc.fileSize)}}</td>
+                <td style="font-size:12px;">
+                  <span *ngIf="doc.expiryDate" [style.color]="doc.expiryDate < '2026-12-31' ? 'var(--accent-orange)' : 'var(--text-primary)'">{{formatDate(doc.expiryDate)}}</span>
+                  <span *ngIf="!doc.expiryDate" style="color:var(--text-tertiary);">N/A</span>
+                </td>
+                <td style="font-size:12px; color:var(--text-secondary);">{{formatDate(doc.uploadedAt)}}</td>
+                <td>
+                  <button class="btn btn-sm btn-danger" (click)="deleteDocument(doc.id)">🗑 Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card empty-state" *ngIf="documents.length === 0"><div class="empty-icon">📄</div><h4>No documents stored</h4><p style="font-size:12px; color:var(--text-secondary);">Upload your passport, visa, or travel insurance documents</p></div>
+    </section>
+
+    <!-- ===== ACTIVE TRIP ITINERARY TAB (US-10) ===== -->
+    <section *ngIf="activeTab === 'itinerary'">
+      <div class="page-header">
+        <h2>Active Trip Itinerary Timeline</h2>
+        <p>Chronological itinerary view with real-time flight, lodging, and transport events</p>
+      </div>
+
+      <div *ngIf="activeTrip" class="card" style="margin-bottom:20px; background:linear-gradient(135deg, rgba(10,132,255,0.08), rgba(191,90,242,0.08)); border:1px solid rgba(10,132,255,0.2);">
+        <div class="card-header">
+          <div>
+            <h3 style="font-size:18px;">📍 Active Trip: {{activeTrip.destination}}</h3>
+            <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Request ID: <strong>{{activeTrip.requestId || '#' + activeTrip.id}}</strong> • {{formatDate(activeTrip.startDate)}} → {{formatDate(activeTrip.endDate)}} ({{activeTrip.tripDurationDays || 7}} Days)</p>
+          </div>
+          <span class="status-badge" style="background:rgba(48,209,88,0.15); color:var(--accent-green); font-size:13px; padding:6px 12px;">IN PROGRESS</span>
+        </div>
+        <div style="font-size:13px; color:var(--text-secondary); margin-top:8px;">
+          <strong>Purpose:</strong> {{activeTrip.purpose}}
+        </div>
+      </div>
+
+      <!-- Chronological Timeline -->
+      <div class="card" *ngIf="activeTrip">
+        <div class="card-header"><h3>🗓️ Master Event Timeline</h3></div>
+        <div class="itinerary-timeline" style="position:relative; padding-left:30px; margin-top:16px;">
+          <div style="position:absolute; left:12px; top:0; bottom:0; width:2px; background:var(--accent-blue);"></div>
+
+          <!-- Departure Event -->
+          <div class="timeline-event" style="position:relative; margin-bottom:24px;">
+            <div style="position:absolute; left:-24px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--accent-blue); border:2px solid var(--card-bg);"></div>
+            <div style="font-size:11px; font-weight:700; color:var(--accent-blue);">DAY 1 — {{formatDate(activeTrip.startDate)}}</div>
+            <h4 style="font-size:14px; margin:4px 0 2px 0;">✈️ Outbound Flight Departure</h4>
+            <p style="font-size:12px; color:var(--text-secondary);">Transit from origin to {{activeTrip.destination}}. Economy / Business Class booking.</p>
+          </div>
+
+          <!-- Hotel Check-in -->
+          <div class="timeline-event" style="position:relative; margin-bottom:24px;">
+            <div style="position:absolute; left:-24px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--accent-purple); border:2px solid var(--card-bg);"></div>
+            <div style="font-size:11px; font-weight:700; color:var(--accent-purple);">DAY 1 — EVENING</div>
+            <h4 style="font-size:14px; margin:4px 0 2px 0;">🏨 Hotel Lodging Check-in</h4>
+            <p style="font-size:12px; color:var(--text-secondary);">Check-in at corporate preferred hotel property in {{activeTrip.destination}}.</p>
+          </div>
+
+          <!-- Business Purpose / Meetings -->
+          <div class="timeline-event" style="position:relative; margin-bottom:24px;">
+            <div style="position:absolute; left:-24px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--accent-green); border:2px solid var(--card-bg);"></div>
+            <div style="font-size:11px; font-weight:700; color:var(--accent-green);">DAYS 2-{{(activeTrip.tripDurationDays || 7) - 1}} — BUSINESS EXECUTION</div>
+            <h4 style="font-size:14px; margin:4px 0 2px 0;">🤝 Business Engagement: {{activeTrip.purpose}}</h4>
+            <p style="font-size:12px; color:var(--text-secondary);">On-site client meetings, conference sessions, or operational tasks at destination.</p>
+          </div>
+
+          <!-- Return Flight -->
+          <div class="timeline-event" style="position:relative; margin-bottom:10px;">
+            <div style="position:absolute; left:-24px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--accent-orange); border:2px solid var(--card-bg);"></div>
+            <div style="font-size:11px; font-weight:700; color:var(--accent-orange);">DAY {{activeTrip.tripDurationDays || 7}} — {{formatDate(activeTrip.endDate)}}</div>
+            <h4 style="font-size:14px; margin:4px 0 2px 0;">🛬 Return Transit & Hotel Check-out</h4>
+            <p style="font-size:12px; color:var(--text-secondary);">Hotel check-out and return transit flight back home.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card empty-state" *ngIf="!activeTrip"><div class="empty-icon">🗓️</div><h4>No active trip currently in progress</h4></div>
+    </section>
+
+    <!-- ===== AUDIT LOGS TAB (US-20) ===== -->
+    <section *ngIf="activeTab === 'auditlogs'">
+      <div class="page-header">
+        <div class="page-header-actions">
+          <div><h2>System Audit Logs</h2><p>Immutable event log of all CRUD operations, approvals, logins, and system actions</p></div>
+          <div style="display:flex; gap:8px;">
+            <select class="form-control" style="width:auto;" [(ngModel)]="auditFilterAction">
+              <option value="">All Actions</option>
+              <option value="LOGIN">LOGIN</option>
+              <option value="CREATE">CREATE</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="DELETE">DELETE</option>
+              <option value="APPROVE">APPROVE</option>
+              <option value="REJECT">REJECT</option>
+              <option value="EXPORT">EXPORT</option>
+            </select>
+            <select class="form-control" style="width:auto;" [(ngModel)]="auditFilterEntity">
+              <option value="">All Entities</option>
+              <option value="TRAVEL_REQUEST">Travel Request</option>
+              <option value="BOOKING">Booking</option>
+              <option value="DOCUMENT">Document</option>
+              <option value="EXPENSE">Expense</option>
+              <option value="EMPLOYEE">Employee</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="filteredAuditLogs.length > 0">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr><th>Timestamp</th><th>User</th><th>Role</th><th>Action</th><th>Entity</th><th>Details</th><th>IP Address</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of filteredAuditLogs">
+                <td style="font-size:12px; font-family:monospace; color:var(--text-secondary);">{{formatDateTime(log.timestamp)}}</td>
+                <td style="font-weight:600;">{{log.userName}}</td>
+                <td><span class="status-badge" style="background:rgba(10,132,255,0.1); color:var(--accent-blue);">{{log.userRole?.replace('_',' ')}}</span></td>
+                <td style="font-weight:700;"><span style="margin-right:4px;">{{getAuditActionIcon(log.actionType)}}</span>{{log.actionType}}</td>
+                <td><span style="font-family:monospace; font-size:12px;">{{log.entityType}}</span></td>
+                <td style="font-size:12px;">{{log.details}}</td>
+                <td style="font-size:11px; font-family:monospace; color:var(--text-tertiary);">{{log.ipAddress}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card empty-state" *ngIf="filteredAuditLogs.length === 0"><div class="empty-icon">📋</div><h4>No audit logs found</h4></div>
+    </section>
+
+    <!-- ===== ANALYTICS REPORTS TAB (US-18, US-19) ===== -->
+    <section *ngIf="activeTab === 'reports'">
+      <div class="page-header">
+        <div class="page-header-actions">
+          <div><h2>Analytics & Custom Reports</h2><p>Generate, filter, and export customized travel program spend and policy compliance reports</p></div>
+          <button class="btn btn-primary btn-sm" (click)="exportReimbursements()" *ngIf="auth.currentRole === 'FINANCE_ADMIN'">💳 Export for Payroll</button>
+        </div>
+      </div>
+
+      <!-- Filter Controls (US-19) -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><h3>🔍 Report Filters & Parameters</h3></div>
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+          <div class="form-group"><label>Start Date</label><input class="form-control" type="date" [(ngModel)]="reportFilters.startDate"></div>
+          <div class="form-group"><label>End Date</label><input class="form-control" type="date" [(ngModel)]="reportFilters.endDate"></div>
+          <div class="form-group"><label>Department</label>
+            <select class="form-control" [(ngModel)]="reportFilters.department">
+              <option value="">All Departments</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Engineering & Product">Engineering & Product</option>
+              <option value="Global Corporate Travel">Global Corporate Travel</option>
+              <option value="Finance & Procurement">Finance & Procurement</option>
+              <option value="Sales">Sales</option>
+              <option value="Marketing">Marketing</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Vendor</label><input class="form-control" type="text" placeholder="e.g. Delta, Hyatt" [(ngModel)]="reportFilters.vendor"></div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:14px;">
+          <button class="btn btn-primary btn-sm" (click)="generateReport()">📊 Generate Report</button>
+          <button class="btn btn-ghost btn-sm" (click)="exportReportCsv()" *ngIf="reportData">📥 Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Report Output Display (US-18, US-19) -->
+      <div *ngIf="reportData">
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom:20px;">
+          <div class="kpi-card">
+            <div class="kpi-label">TOTAL REQUESTS</div>
+            <div class="kpi-value">{{reportData.totalRequests}}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">TOTAL TRAVEL SPEND</div>
+            <div class="kpi-value" style="color:var(--accent-blue);">{{formatCurrency(reportData.totalTravelSpend)}}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">TOTAL EXPENSE SPEND</div>
+            <div class="kpi-value" style="color:var(--accent-purple);">{{formatCurrency(reportData.totalExpenseSpend)}}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">COMPLIANCE RATE</div>
+            <div class="kpi-value" style="color:var(--accent-green);">{{reportData.complianceRate}}%</div>
+          </div>
+        </div>
+
+        <div class="card" *ngIf="reportData.spendByVendor?.length > 0">
+          <div class="card-header"><h3>🤝 Top Spend by Vendor</h3></div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead><tr><th>Vendor</th><th>Total Spend</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let v of reportData.spendByVendor">
+                  <td style="font-weight:600;">{{v.vendor}}</td>
+                  <td style="font-weight:700; color:var(--accent-blue);">{{formatCurrency(v.spend)}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Mobile Bottom Bar -->
@@ -1109,20 +1381,142 @@
      MODALS
      ============================================ -->
 
+<!-- CREATE BOOKING MODAL (US-08) -->
+<div class="modal-overlay" *ngIf="showCreateBookingModal" (click)="showCreateBookingModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Create Reservation / Booking</h3>
+      <button class="modal-close" (click)="showCreateBookingModal = false">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full-width">
+        <label>Approved Travel Requisition *</label>
+        <select class="form-control" [(ngModel)]="newBooking.travelRequestId">
+          <option [ngValue]="null" disabled>Select approved trip...</option>
+          <option *ngFor="let req of approvedRequests" [ngValue]="req.id">
+            #{{req.requestId || req.id}} — {{req.destination}} ({{req.employee?.fullName}})
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Booking Type *</label>
+        <select class="form-control" [(ngModel)]="newBooking.bookingType">
+          <option value="FLIGHT">✈️ Flight</option>
+          <option value="HOTEL">🏨 Hotel</option>
+          <option value="TRANSPORT">🚗 Transport</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Vendor / Provider *</label>
+        <input class="form-control" type="text" placeholder="e.g. Delta Airlines / Park Hyatt" [(ngModel)]="newBooking.vendorName">
+      </div>
+
+      <!-- Flight specific -->
+      <ng-container *ngIf="newBooking.bookingType === 'FLIGHT'">
+        <div class="form-group"><label>Departure Airport</label><input class="form-control" type="text" placeholder="SFO" [(ngModel)]="newBooking.departureAirport"></div>
+        <div class="form-group"><label>Arrival Airport</label><input class="form-control" type="text" placeholder="NRT" [(ngModel)]="newBooking.arrivalAirport"></div>
+        <div class="form-group"><label>Flight Number</label><input class="form-control" type="text" placeholder="DL 275" [(ngModel)]="newBooking.flightNumber"></div>
+        <div class="form-group"><label>Seat Number</label><input class="form-control" type="text" placeholder="24A" [(ngModel)]="newBooking.seatNumber"></div>
+        <div class="form-group"><label>Departure Date & Time</label><input class="form-control" type="datetime-local" [(ngModel)]="newBooking.departureDateTime"></div>
+        <div class="form-group"><label>Arrival Date & Time</label><input class="form-control" type="datetime-local" [(ngModel)]="newBooking.arrivalDateTime"></div>
+      </ng-container>
+
+      <!-- Hotel specific -->
+      <ng-container *ngIf="newBooking.bookingType === 'HOTEL'">
+        <div class="form-group full-width"><label>Hotel Property Name</label><input class="form-control" type="text" placeholder="Park Hyatt Tokyo" [(ngModel)]="newBooking.hotelName"></div>
+        <div class="form-group"><label>Check-in Date</label><input class="form-control" type="date" [(ngModel)]="newBooking.checkInDate"></div>
+        <div class="form-group"><label>Check-out Date</label><input class="form-control" type="date" [(ngModel)]="newBooking.checkOutDate"></div>
+        <div class="form-group"><label>Room Type</label><input class="form-control" type="text" placeholder="Deluxe King" [(ngModel)]="newBooking.roomType"></div>
+      </ng-container>
+
+      <!-- Transport specific -->
+      <ng-container *ngIf="newBooking.bookingType === 'TRANSPORT'">
+        <div class="form-group"><label>Vehicle Type</label><input class="form-control" type="text" placeholder="Executive Sedan" [(ngModel)]="newBooking.vehicleType"></div>
+        <div class="form-group"><label>Pickup Location</label><input class="form-control" type="text" placeholder="Airport Terminal 1" [(ngModel)]="newBooking.pickupLocation"></div>
+        <div class="form-group full-width"><label>Drop Location</label><input class="form-control" type="text" placeholder="Hotel Property" [(ngModel)]="newBooking.dropLocation"></div>
+      </ng-container>
+
+      <div class="form-group"><label>Total Amount ($) *</label><input class="form-control" type="number" [(ngModel)]="newBooking.amount"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showCreateBookingModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitBooking()">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD DOCUMENT MODAL (US-02) -->
+<div class="modal-overlay" *ngIf="showUploadDocModal" (click)="showUploadDocModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Upload Travel Document</h3>
+      <button class="modal-close" (click)="showUploadDocModal = false">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Document Type *</label>
+        <select class="form-control" [(ngModel)]="newDocument.documentType">
+          <option value="PASSPORT">🛂 Passport</option>
+          <option value="VISA">📄 Visa / Permit</option>
+          <option value="INSURANCE">🏥 Insurance Policy</option>
+          <option value="ID_CARD">🪪 ID Card</option>
+          <option value="OTHER">📎 Other Document</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Expiry Date</label>
+        <input class="form-control" type="date" [(ngModel)]="newDocument.expiryDate">
+      </div>
+
+      <div class="form-group full-width">
+        <label>Description / Title</label>
+        <input class="form-control" type="text" placeholder="e.g. US Passport — Multiple Entry Visa" [(ngModel)]="newDocument.description">
+      </div>
+
+      <div class="form-group full-width">
+        <label>Select File (PDF, JPG, PNG — Max 5MB) *</label>
+        <input class="form-control" type="file" (change)="onFileSelected($event)" accept=".pdf,.jpg,.jpeg,.png">
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;" *ngIf="newDocument.fileName">
+          Selected: {{newDocument.fileName}} ({{newDocument.contentType}})
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" (click)="showUploadDocModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitDocument()">Upload Encrypted Document</button>
+    </div>
+  </div>
+</div>
+
 <!-- CREATE TRAVEL REQUEST -->
 <div class="modal-overlay" *ngIf="showCreateRequestModal" (click)="closeCreateModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
+  <div class="modal-content" style="max-width:680px;" (click)="$event.stopPropagation()">
     <div class="modal-header"><h3>Submit Travel Requisition</h3><button class="modal-close" (click)="closeCreateModal()">✕</button></div>
     <div class="form-grid">
-      <div class="form-group"><label>Traveler</label><select class="form-control" [(ngModel)]="newRequest.employeeId"><option [ngValue]="null" disabled>Select...</option><option *ngFor="let emp of employees" [ngValue]="emp.id">{{emp.fullName}}</option></select></div>
-      <div class="form-group"><label>Destination</label><input class="form-control" type="text" placeholder="e.g. Tokyo, Japan" [(ngModel)]="newRequest.destination"></div>
-      <div class="form-group"><label>Start Date</label><input class="form-control" type="date" [(ngModel)]="newRequest.startDate"></div>
-      <div class="form-group"><label>End Date</label><input class="form-control" type="date" [(ngModel)]="newRequest.endDate"></div>
-      <div class="form-group full-width"><label>Purpose</label><textarea class="form-control" placeholder="Business objective..." [(ngModel)]="newRequest.purpose"></textarea></div>
-      <div class="form-group"><label>Flight Class</label><select class="form-control" [(ngModel)]="newRequest.flightClass"><option value="ECONOMY">Economy</option><option value="PREMIUM_ECONOMY">Premium Economy</option><option value="BUSINESS">Business</option><option value="FIRST">First</option></select></div>
-      <div class="form-group"><label>Budget ($)</label><input class="form-control" type="number" [(ngModel)]="newRequest.estimatedBudget"></div>
+      <div class="form-group"><label>Traveler *</label><select class="form-control" [(ngModel)]="newRequest.employeeId"><option [ngValue]="null" disabled>Select...</option><option *ngFor="let emp of employees" [ngValue]="emp.id">{{emp.fullName}}</option></select></div>
+      <div class="form-group"><label>Destination *</label><input class="form-control" type="text" placeholder="e.g. Tokyo, Japan" [(ngModel)]="newRequest.destination"></div>
+      <div class="form-group"><label>Start Date *</label><input class="form-control" type="date" [(ngModel)]="newRequest.startDate"></div>
+      <div class="form-group"><label>End Date *</label><input class="form-control" type="date" [(ngModel)]="newRequest.endDate"></div>
+      <div class="form-group full-width"><label>Business Purpose *</label><textarea class="form-control" placeholder="Business objective..." [(ngModel)]="newRequest.purpose"></textarea></div>
+      <div class="form-group"><label>Flight Class</label><select class="form-control" [(ngModel)]="newRequest.flightClass"><option value="ECONOMY">Economy</option><option value="PREMIUM_ECONOMY">Premium Economy</option><option value="BUSINESS">Business Class</option><option value="FIRST">First Class</option></select></div>
+      <div class="form-group"><label>Airfare Est. ($)</label><input class="form-control" type="number" [(ngModel)]="newRequest.estimatedBudget"></div>
+      <div class="form-group"><label>Hotel Daily Rate ($)</label><input class="form-control" type="number" placeholder="220" [(ngModel)]="newRequest.hotelDailyRate"></div>
+      <div class="form-group"><label>Daily Meal Allowance ($)</label><input class="form-control" type="number" placeholder="50" [(ngModel)]="newRequest.mealAllowance"></div>
+      <div class="form-group"><label>Ground Transport ($)</label><input class="form-control" type="number" placeholder="100" [(ngModel)]="newRequest.groundTransportBudget"></div>
+      <div class="form-group full-width"><label>Policy Exception Justification (If Required)</label><input class="form-control" type="text" placeholder="Required if flight class or hotel rate exceeds policy caps..." [(ngModel)]="newRequest.justificationText"></div>
     </div>
-    <div class="modal-actions"><button class="btn btn-ghost" (click)="closeCreateModal()">Cancel</button><button class="btn btn-primary" (click)="submitTravelRequest()">Submit</button></div>
+    <!-- Auto-Calculated Total Display (US-04 AC2) -->
+    <div style="background:rgba(10,132,255,0.08); border:1px solid rgba(10,132,255,0.2); border-radius:10px; padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:var(--text-tertiary);">AUTO-CALCULATED TOTAL ESTIMATED COST</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Trip Duration: {{getNewRequestDuration()}} Day(s)</div>
+      </div>
+      <div style="font-size:20px; font-weight:800; color:var(--accent-blue);">{{formatCurrency(calculatedTotalBudget)}}</div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-ghost" (click)="closeCreateModal()">Cancel</button><button class="btn btn-primary" (click)="submitTravelRequest()">Submit Requisition</button></div>
   </div>
 </div>
 
