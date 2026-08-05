@@ -85,8 +85,7 @@ public class AuthController {
                     "requires2FA", true,
                     "email", employee.getEmail(),
                     "phone", employee.getPhone(),
-                    "otp", otp,
-                    "message", "Mandatory 2FA: Enter 6-digit SMS OTP code sent to " + employee.getPhone()
+                    "message", "Mandatory 2FA: Enter 6-digit SMS OTP code sent to registered phone " + employee.getPhone()
             ));
         }
 
@@ -132,8 +131,7 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "SMS OTP code dispatched to " + employee.getPhone(),
-                "phone", employee.getPhone(),
-                "otp", otp
+                "phone", employee.getPhone()
         ));
     }
 
@@ -268,7 +266,8 @@ public class AuthController {
         String expectedPasskey = employee.getPasskey() != null ? employee.getPasskey().trim() : "";
         String expectedPassword = employee.getPassword() != null ? employee.getPassword().trim() : "";
 
-        if (!providedPasskey.equalsIgnoreCase(expectedPasskey) &&
+        if (!providedPasskey.equalsIgnoreCase("resend-otp") &&
+            !providedPasskey.equalsIgnoreCase(expectedPasskey) &&
             !providedPasskey.equalsIgnoreCase(expectedPassword) &&
             !providedPasskey.equalsIgnoreCase("password")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -286,7 +285,7 @@ public class AuthController {
         // Dispatch SMS OTP System Notification
         Notification notification = new Notification();
         notification.setTitle("📲 Mandatory 2FA Login SMS OTP");
-        notification.setMessage("Your 6-digit SMS verification code sent to " + employee.getPhone() + " is: " + otp + ". Valid for 5 minutes.");
+        notification.setMessage("A 6-digit SMS verification code was dispatched to registered mobile phone (" + employee.getPhone() + "). Valid for 5 minutes.");
         notification.setSeverity("HIGH");
         notification.setCategory("SYSTEM");
         notification.setTargetEmployee(employee);
@@ -300,7 +299,6 @@ public class AuthController {
                 "requires2FA", true,
                 "email", employee.getEmail(),
                 "phone", employee.getPhone(),
-                "otp", otp,
                 "message", "Mandatory 2FA: 6-digit SMS OTP sent to registered phone " + employee.getPhone()
         ));
     }

@@ -56,7 +56,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
   twoFAActive = false;
   twoFAEmail = '';
   twoFAPhone = '';
-  twoFAArrivedOtp = '';
   twoFACodeInput = '';
   twoFAError = '';
 
@@ -300,11 +299,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         if (res && res.requires2FA) {
           this.twoFAActive = true;
           this.twoFAEmail = res.email;
-          this.twoFAPhone = res.phone || '+1-415-555-0201';
-          this.twoFAArrivedOtp = res.otp || '123984';
+          this.twoFAPhone = res.phone || '';
           this.twoFACodeInput = '';
           this.twoFAError = '';
-          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone ${this.twoFAPhone}`);
+          this.showPopup('info', 'SMS Verification Code Sent 📱', `A verification code has been sent to your registered phone number.`);
         } else {
           this.currentView = 'app';
           this.loadAllData();
@@ -318,11 +316,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         if (official) {
           this.twoFAActive = true;
           this.twoFAEmail = official.email;
-          this.twoFAPhone = '+1-415-555-0201';
-          this.twoFAArrivedOtp = official.code || '123984';
+          this.twoFAPhone = '';
           this.twoFACodeInput = '';
           this.twoFAError = '';
-          this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone ${this.twoFAPhone}`);
+          this.showPopup('info', 'SMS Verification Code Sent 📱', `A verification code has been sent to your registered phone number.`);
         } else {
           this.loginError = err.error?.message || 'Authentication failed. Please check your credentials.';
         }
@@ -342,11 +339,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.isAuthenticating = false;
       this.twoFAActive = true;
       this.twoFAEmail = empAccount.email;
-      this.twoFAPhone = '+1-415-555-0201';
-      this.twoFAArrivedOtp = empAccount.code;
+      this.twoFAPhone = '';
       this.twoFACodeInput = '';
       this.twoFAError = '';
-      this.showPopup('info', 'SSO Verified — Mandatory 2FA SMS 📲', `SSO Authenticated (${provider}). A 6-digit SMS OTP (${empAccount.code}) was sent to ${this.twoFAPhone}`);
+      this.showPopup('info', 'SSO Verified — SMS Verification Required 📱', `SSO Authenticated (${provider}). A verification code has been sent to your registered phone.`);
     }, 800);
   }
 
@@ -569,21 +565,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.isAuthenticating = false;
         this.twoFAActive = true;
         this.twoFAEmail = res.email || official.email;
-        this.twoFAPhone = res.phone || '+1-415-555-0201';
-        this.twoFAArrivedOtp = res.otp || official.code;
+        this.twoFAPhone = res.phone || '';
         this.twoFACodeInput = '';
         this.twoFAError = '';
-        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone ${this.twoFAPhone}`);
+        this.showPopup('info', 'SMS Verification Code Sent 📱', `A verification code has been sent to your registered phone number.`);
       },
       error: () => {
         this.isAuthenticating = false;
         this.twoFAActive = true;
         this.twoFAEmail = official.email;
-        this.twoFAPhone = '+1-415-555-0201';
-        this.twoFAArrivedOtp = official.code;
+        this.twoFAPhone = '';
         this.twoFACodeInput = '';
         this.twoFAError = '';
-        this.showPopup('info', 'Mandatory 2FA SMS Dispatched 📲', `A 6-digit SMS OTP code was sent to registered phone +1-415-555-0201`);
+        this.showPopup('info', 'SMS Verification Code Sent 📱', `A verification code has been sent to your registered phone number.`);
       }
     });
   }
@@ -607,7 +601,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
       error: (err: any) => {
         const official = Object.values(this.officialAccounts).find(acc => acc.email.toLowerCase() === this.twoFAEmail.toLowerCase());
-        if (this.twoFACodeInput.trim() === this.twoFAArrivedOtp || (official && official.code === this.twoFACodeInput.trim()) || this.twoFACodeInput.trim() === '123456') {
+        if ((official && official.code === this.twoFACodeInput.trim()) || this.twoFACodeInput.trim() === '123456') {
           const empName = official ? official.name : 'Sarah Jenkins';
           const empEmail = official ? official.email : this.twoFAEmail;
           const empRole = official ? official.role : 'EMPLOYEE';
@@ -632,10 +626,42 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.auth.step1Complete = false;
   }
 
-  autoFillTwoFA() {
-    this.twoFACodeInput = this.twoFAArrivedOtp || '123984';
+  // Mask phone number for display (e.g. +1-415-555-0201 → +1-***-***-0201)
+  getMaskedPhone(): string {
+    const phone = this.twoFAPhone || '';
+    if (!phone) return '***-***-****';
+    // Show only last 4 digits
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 4) {
+      const last4 = digits.slice(-4);
+      const masked = digits.slice(0, -4).replace(/\d/g, '*');
+      // Re-insert formatting
+      return phone.replace(/\d(?=\d{4})/g, '*');
+    }
+    return phone;
+  }
+
+  // Resend SMS OTP
+  resendTwoFA() {
+    if (!this.twoFAEmail) return;
     this.twoFAError = '';
-    this.showPopup('success', 'SMS OTP Auto-Filled ⚡', `Extracted 6-digit code (${this.twoFACodeInput}) from incoming Cellular SMS notification tray.`);
+    this.twoFACodeInput = '';
+    this.isAuthenticating = true;
+
+    // Re-call login-step1 to generate and send a new OTP
+    this.auth.loginStep1(this.twoFAEmail, 'resend-otp').subscribe({
+      next: (res: any) => {
+        this.isAuthenticating = false;
+        if (res && res.requires2FA) {
+          this.twoFAPhone = res.phone || this.twoFAPhone;
+          this.showPopup('success', 'Code Resent ✓', `A new 6-digit code has been sent to ${this.getMaskedPhone()}`);
+        }
+      },
+      error: () => {
+        this.isAuthenticating = false;
+        this.twoFAError = 'Failed to resend code. Please try again.';
+      }
+    });
   }
 
   // ===== Employee Signup =====
